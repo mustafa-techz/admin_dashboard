@@ -3,43 +3,49 @@ import { Student, Teacher, SubAdmin, Attendance, DashboardStats } from '../types
 export const mockStudents: Student[] = [
   {
     id: '1',
-    name: 'Alice Johnson',
+    firstName: 'John',
+    lastName: 'Doe',
+    name: 'John Doe',
     rollNumber: '101',
     class: '10',
     section: 'A',
-    parentName: 'Bob Johnson',
-    contact: '+1234567890',
-    email: 'alice@example.com',
-    address: '123 Maple St',
+    parentName: 'Richard Doe',
+    contact: '+1 234 567 890',
+    email: 'john@example.com',
+    address: '123 Street, NY',
     admissionDate: '2023-09-01',
     feeStatus: 'paid',
     attendanceRate: 95,
   },
   {
     id: '2',
-    name: 'Charlie Smith',
+    firstName: 'Jane',
+    lastName: 'Smith',
+    name: 'Jane Smith',
     rollNumber: '102',
     class: '10',
-    section: 'A',
-    parentName: 'Diana Smith',
-    contact: '+1234567891',
-    email: 'charlie@example.com',
-    address: '456 Oak St',
-    admissionDate: '2023-09-01',
+    section: 'B',
+    parentName: 'Robert Smith',
+    contact: '+1 234 567 891',
+    email: 'jane@example.com',
+    address: '456 Avenue, CA',
+    admissionDate: '2023-09-02',
     feeStatus: 'pending',
     attendanceRate: 88,
   },
   {
     id: '3',
-    name: 'Eva Brown',
-    rollNumber: '201',
+    firstName: 'Alice',
+    lastName: 'Johnson',
+    name: 'Alice Johnson',
+    rollNumber: '103',
     class: '9',
-    section: 'B',
-    parentName: 'Frank Brown',
-    contact: '+1234567892',
-    email: 'eva@example.com',
-    address: '789 Pine St',
-    admissionDate: '2023-09-02',
+    section: 'A',
+    parentName: 'Mark Johnson',
+    contact: '+1 234 567 892',
+    email: 'alice@example.com',
+    address: '789 Road, TX',
+    admissionDate: '2023-09-03',
     feeStatus: 'paid',
     attendanceRate: 92,
   },
@@ -112,19 +118,21 @@ export const getAttendance = async (): Promise<Attendance[]> => {
   return new Promise((resolve) => setTimeout(() => resolve(mockAttendance), 500));
 };
 
+import { studentService } from './studentService';
+
 export const getDashboardStats = async (): Promise<DashboardStats> => {
-  return new Promise((resolve) =>
-    setTimeout(
-      () =>
-        resolve({
-          totalStudents: 400,
-          totalTeachers: 25,
-          totalSubAdmins: 5,
-          attendanceToday: { present: 334, total: 400 },
-        }),
-      500
-    )
-  );
+  await new Promise(resolve => setTimeout(resolve, 800));
+  const students = await studentService.getStudents();
+  
+  return {
+    totalStudents: students.length,
+    totalTeachers: 12,
+    totalSubAdmins: 4,
+    attendanceToday: {
+      present: Math.floor(students.length * 0.92),
+      total: students.length
+    }
+  };
 };
 
 export const markAttendance = async (studentId: string, status: 'present' | 'absent'): Promise<void> => {

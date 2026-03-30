@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getStudents } from '@/services/mockApi';
+import { studentService } from '@/services/studentService';
 import DataTable from '@/components/tables/DataTable';
 import FilterBar from '@/components/tables/FilterBar';
 import { Student } from '@/types';
@@ -12,14 +12,14 @@ import { cn } from '@/lib/utils';
 export default function StudentsPage() {
   const [search, setSearch] = useState('');
   const router = useRouter();
-  
+
   const { data: students, isLoading } = useQuery<Student[]>({
     queryKey: ['students'],
-    queryFn: getStudents,
+    queryFn: () => studentService.getStudents(),
   });
 
-  const filteredStudents = students?.filter(student => 
-    student.name.toLowerCase().includes(search.toLowerCase()) ||
+  const filteredStudents = students?.filter(student =>
+    student?.firstName.toLowerCase().includes(search.toLowerCase()) ||
     student.rollNumber.toLowerCase().includes(search.toLowerCase())
   ) || [];
 
@@ -29,10 +29,10 @@ export default function StudentsPage() {
       cell: (student: Student) => (
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center text-primary font-bold">
-            {student.name.charAt(0)}
+            {student?.firstName.charAt(0)}
           </div>
           <div>
-            <p className="font-bold text-foreground tracking-tight">{student.name}</p>
+            <p className="font-bold text-foreground tracking-tight">{student?.firstName}</p>
             <p className="text-xs text-muted-foreground font-medium">Roll: {student.rollNumber}</p>
           </div>
         </div>
@@ -55,13 +55,13 @@ export default function StudentsPage() {
       cell: (student: Student) => (
         <div className="flex items-center gap-2">
           <div className="flex-1 w-24 h-1.5 bg-secondary rounded-full overflow-hidden">
-             <div 
-               className={cn(
-                 "h-full rounded-full transition-all duration-1000",
-                 student.attendanceRate > 90 ? "bg-green-500" : "bg-amber-500"
-               )} 
-               style={{ width: `${student.attendanceRate}%` }} 
-             />
+            <div
+              className={cn(
+                "h-full rounded-full transition-all duration-1000",
+                student.attendanceRate > 90 ? "bg-green-500" : "bg-amber-500"
+              )}
+              style={{ width: `${student.attendanceRate}%` }}
+            />
           </div>
           <span className="text-xs font-bold">{student.attendanceRate}%</span>
         </div>
@@ -87,15 +87,15 @@ export default function StudentsPage() {
         <p className="text-muted-foreground mt-1 font-medium">Browse and manage school student records.</p>
       </div>
 
-      <FilterBar 
-        onSearch={setSearch} 
+      <FilterBar
+        onSearch={setSearch}
         addLabel="Enroll Student"
         placeholder="Search by name or roll number..."
       />
 
-      <DataTable 
-        columns={columns} 
-        data={filteredStudents} 
+      <DataTable
+        columns={columns}
+        data={filteredStudents}
         isLoading={isLoading}
         onRowClick={(student) => router.push(`/students/${student.id}`)}
       />

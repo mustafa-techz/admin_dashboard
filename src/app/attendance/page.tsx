@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getStudents, markAttendance } from '@/services/mockApi';
+import { studentService } from '@/services/studentService';
+import { markAttendance } from '@/services/mockApi';
 import DataTable from '@/components/tables/DataTable';
 import FilterBar from '@/components/tables/FilterBar';
 import { Student } from '@/types';
@@ -15,21 +16,24 @@ export default function AttendancePage() {
   
   const { data: students, isLoading } = useQuery({
     queryKey: ['students'],
-    queryFn: getStudents,
+    queryFn: () => studentService.getStudents(),
   });
 
   const mutation = useMutation({
     mutationFn: ({ id, status }: { id: string, status: 'present' | 'absent' }) => 
       markAttendance(id, status),
     onSuccess: () => {
-      // In a real app, we would invalidate the attendance query
       alert('Attendance updated successfully!');
     }
   });
 
+  const totalStrength = students?.length || 0;
+  const presentToday = students?.filter(s => s.attendanceRate > 90).length || 0; 
+  const absentToday = totalStrength - presentToday;
+
   const filteredStudents = students?.filter(student => 
     student.name.toLowerCase().includes(search.toLowerCase()) ||
-    student.class.includes(search)
+    student.class.toLowerCase().includes(search.toLowerCase())
   ) || [];
 
   const columns = [
@@ -115,15 +119,15 @@ export default function AttendancePage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-green-50 border border-green-100 p-6 rounded-3xl">
               <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-1">Present Today</p>
-              <h3 className="text-3xl font-black text-green-700">334</h3>
+              <h3 className="text-3xl font-black text-green-700">{presentToday}</h3>
           </div>
           <div className="bg-red-50 border border-red-100 p-6 rounded-3xl">
               <p className="text-[10px] font-black text-red-600 uppercase tracking-widest mb-1">Absent Today</p>
-              <h3 className="text-3xl font-black text-red-700">66</h3>
+              <h3 className="text-3xl font-black text-red-700">{absentToday}</h3>
           </div>
           <div className="bg-primary/5 border border-primary/10 p-6 rounded-3xl">
               <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Total Strength</p>
-              <h3 className="text-3xl font-black text-foreground">400</h3>
+              <h3 className="text-3xl font-black text-foreground">{totalStrength}</h3>
           </div>
       </div>
 

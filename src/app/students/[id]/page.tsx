@@ -1,24 +1,29 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getStudents } from '@/services/mockApi';
+import { studentService } from '@/services/studentService';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronLeft, Mail, Phone, MapPin, Calendar, CreditCard, Award, ArrowRight } from 'lucide-react';
+import { ChevronLeft, Mail, Phone, MapPin, Calendar, CreditCard, Award, ArrowRight, Loader2 } from 'lucide-react';
 import StatCircle from '@/components/shared/StatCircle';
 import { cn } from '@/lib/utils';
+import { Student } from '@/types';
 
 export default function StudentDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   
-  const { data: students, isLoading } = useQuery({
-    queryKey: ['students'],
-    queryFn: getStudents,
+  const { data: student, isLoading } = useQuery<Student | null>({
+    queryKey: ['student', id],
+    queryFn: () => studentService.getStudentById(id as string),
+    enabled: !!id,
   });
 
-  const student = students?.find(s => s.id === id);
-
-  if (isLoading) return <div className="p-8 text-center">Loading student details...</div>;
+  if (isLoading) return (
+    <div className="p-12 text-center flex flex-col items-center gap-2">
+      <Loader2 size={32} className="animate-spin text-primary" />
+      <p className="text-sm font-bold text-muted-foreground">Fetching student data...</p>
+    </div>
+  );
   if (!student) return <div className="p-8 text-center text-red-500 font-bold">Student not found!</div>;
 
   return (

@@ -8,20 +8,8 @@ export interface User {
   avatar?: string;
 }
 
-export interface Student {
-  id: string;
-  name: string;
-  rollNumber: string;
-  class: string;
-  section: string;
-  parentName: string;
-  contact: string;
-  email: string;
-  address: string;
-  admissionDate: string;
-  feeStatus: 'paid' | 'pending';
-  attendanceRate: number;
-}
+import { Student } from './student';
+export type { Student };
 
 export interface Teacher {
   id: string;
