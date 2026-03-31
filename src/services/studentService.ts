@@ -8,7 +8,8 @@ import {
   getDoc,
   serverTimestamp,
   query,
-  orderBy
+  orderBy,
+  runTransaction
 } from "firebase/firestore";
 import { db } from "../firebase/firestore";
 import { Student } from "../types/student";
@@ -16,29 +17,46 @@ import { Student } from "../types/student";
 const studentCollection = collection(db, "students");
 
 export const studentService = {
-  // Create
+  // Create with Sequential Roll Number
   async addStudent(student: Omit<Student, 'id' | 'createdAt'>) {
-    const docRef = await addDoc(studentCollection, {
-      ...student,
-      createdAt: serverTimestamp(),
+    const classKey = `${student.classId}${student.sectionId}`;
+    const counterDocRef = doc(db, "counters", classKey);
+
+    return await runTransaction(db, async (transaction) => {
+      const counterDoc = await transaction.get(counterDocRef);
+      let newCount = 1;
+
+      if (counterDoc.exists()) {
+        newCount = (counterDoc.data()?.lastRollNumber || 0) + 1;
+      }
+
+      transaction.set(counterDocRef, { lastRollNumber: newCount }, { merge: true });
+
+      const rollNumber = `${student.classId}${student.sectionId}-${newCount.toString().padStart(3, '0')}`;
+      
+      const newStudentRef = doc(collection(db, "students"));
+      transaction.set(newStudentRef, {
+        ...student,
+        rollNumber,
+        createdAt: serverTimestamp(),
+      });
+
+      return newStudentRef.id;
     });
-    return docRef.id;
   },
 
   // Read
   async getStudents(): Promise<Student[]> {
-    const querySnapshot = await getDocs(studentCollection);
+    const q = query(studentCollection, orderBy("createdAt", "desc"));
+    const querySnapshot = await getDocs(q);
 
     const students = querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     })) as Student[];
 
-    console.log("Students:", students);
-
     return students;
   },
-
 
   // Get Single Student
   async getStudentById(id: string): Promise<Student | null> {
@@ -50,9 +68,8 @@ export const studentService = {
       return {
         id: docSnap.id,
         ...data,
-        name: `${data.firstName} ${data.lastName}`,
         createdAt: data.createdAt?.toDate()?.toISOString(),
-      } as Student;
+      } as unknown as Student;
     }
     return null;
   },
@@ -60,7 +77,10 @@ export const studentService = {
   // Update
   async updateStudent(id: string, student: Partial<Student>) {
     const docRef = doc(db, "students", id);
-    await updateDoc(docRef, student);
+    await updateDoc(docRef, {
+      ...student,
+      updatedAt: serverTimestamp(),
+    });
   },
 
   // Delete
