@@ -10,12 +10,20 @@ interface DashboardCardProps {
     value: number;
     isUp: boolean;
   };
+  onClick?: () => void;
   className?: string;
 }
 
-export default function DashboardCard({ title, value, icon, description, trend, className }: DashboardCardProps) {
+export default function DashboardCard({ title, value, icon, description, trend, onClick, className }: DashboardCardProps) {
   return (
-    <div className={cn("p-6 bg-card rounded-2xl border border-border shadow-soft hover:shadow-lg transition-all duration-300 group", className)}>
+    <div 
+      onClick={onClick}
+      className={cn(
+        "p-6 bg-card rounded-2xl border border-border shadow-soft hover:shadow-lg transition-all duration-300 group", 
+        onClick && "cursor-pointer hover:border-primary/50 translate-x-0 hover:-translate-y-1",
+        className
+      )}
+    >
       <div className="flex items-center justify-between mb-4">
         <div className="p-3 bg-primary/10 rounded-xl group-hover:bg-primary/20 transition-colors">
           <div className="text-primary">{icon}</div>

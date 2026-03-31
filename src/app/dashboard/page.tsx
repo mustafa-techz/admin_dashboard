@@ -8,11 +8,13 @@ import DashboardCard from '@/components/dashboard/DashboardCard';
 import ActivityFeed from '@/components/dashboard/ActivityFeed';
 import StatCircle from '@/components/shared/StatCircle';
 import { Users, UserCheck, BookOpen, AlertCircle, Calendar, Activity as ActivityIcon } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { DashboardStats } from '@/types';
 
 export default function DashboardPage() {
   const { role } = useAuthStore();
   const { user, loading } = useAuth();
+  const router = useRouter();
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ['dashboardStats'],
@@ -48,17 +50,19 @@ export default function DashboardPage() {
         {/* Role-based Widgets */}
         {(role === 'admin' || role === 'sub-admin') && (
           <>
-            <DashboardCard
-              title="Total Students"
-              value={stats?.totalStudents || 0}
-              icon={<Users size={24} />}
-              trend={{ value: 12, isUp: true }}
+            <DashboardCard~
+            title="Total Students"
+            value={stats?.totalStudents || 0}
+            icon={<Users size={24} />}
+            trend={{ value: 12, isUp: true }}
+            onClick={() => router.push('/students')}
             />
             <DashboardCard
               title="Total Teachers"
               value={stats?.totalTeachers || 0}
               icon={<UserCheck size={24} />}
               trend={{ value: 2, isUp: true }}
+              onClick={() => router.push('/teachers')}
             />
           </>
         )}
@@ -69,6 +73,7 @@ export default function DashboardPage() {
               title="My Students"
               value="42"
               icon={<BookOpen size={24} />}
+              onClick={() => router.push('/students')}
             />
             <DashboardCard
               title="Student Alerts"
@@ -76,6 +81,7 @@ export default function DashboardPage() {
               icon={<AlertCircle size={24} />}
               description="Action required for 3 students"
               className="border-red-100"
+              onClick={() => router.push('/students?tab=alerts')}
             />
           </>
         )}
@@ -85,6 +91,7 @@ export default function DashboardPage() {
           value={`${stats?.attendanceToday.present} / ${stats?.attendanceToday.total}`}
           icon={<Calendar size={24} />}
           description="83% average attendance"
+          onClick={() => router.push('/attendance')}
         />
 
         {(role === 'admin') && (

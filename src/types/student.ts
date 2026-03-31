@@ -1,18 +1,31 @@
+export interface ParentDetails {
+  fatherName: string;
+  motherName: string;
+  phone: string;
+}
+
+export interface AddressDetails {
+  street: string;
+  city: string;
+  state: string;
+  pincode: string;
+}
+
 export interface Student {
-  id: string;
-  firstName: string;
-  lastName: string;
-  name: string; // Required full name for UI
-  rollNumber: string;
-  class: string;
-  section: string;
-  parentName: string;
-  contact: string;
-  email: string;
-  address: string;
+  id: string; // Firestore document ID
+  rollNumber: string; // Formatted ID/Roll Number
+  fullName: string;
+  classId: string;
+  sectionId: string;
+  parentId: string;
+  parentDetails: ParentDetails;
+  addressDetails: AddressDetails;
+  dateOfBirth: string;
   admissionDate: string;
-  feeStatus: 'paid' | 'pending';
-  attendanceRate: number;
-  createdAt?: string;
-  classId?: string;
+  branchId: string;
+  bloodGroup: string;
+  gender: string;
+  // UI helper fields
+  attendanceRate?: number;
+  feeStatus?: 'paid' | 'pending';
 }
