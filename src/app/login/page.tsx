@@ -1,41 +1,30 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 import { LogIn, GraduationCap } from 'lucide-react';
+import { loginUser } from '@/services/auth.service';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuthStore();
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulated Authentication Logic
-    setTimeout(() => {
-      let role: 'admin' | 'sub-admin' | 'teacher' = 'admin';
-      
-      if (email === 'admin@school.com' && password === 'admin123') {
-        role = 'admin';
-      } else if (email === 'subadmin@school.com' && password === 'subadmin123') {
-        role = 'sub-admin';
-      } else if (email === 'teacher@school.com' && password === 'teacher123') {
-        role = 'teacher';
-      } else {
-        alert('Invalid credentials! Use: admin@school.com / admin123');
-        setIsLoading(false);
-        return;
-      }
-
-      login(email, role);
+    try {
+      const result = await loginUser(email, password);
+      console.log("result", result);
       router.push('/dashboard');
+    } catch (error: any) {
+      console.error(error);
+      alert(error.message || 'Login failed! Check your credentials.');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -95,16 +84,9 @@ export default function LoginPage() {
         </form>
 
         <div className="mt-8 pt-6 border-t border-border">
-          <p className="text-xs text-muted-foreground mb-3 font-semibold uppercase tracking-wider">Demo Credentials:</p>
-          <div className="grid grid-cols-1 gap-2 text-xs">
-            <div className="flex justify-between p-2 rounded-md bg-secondary/50">
-              <span className="font-medium">Admin:</span>
-              <span>admin@school.com / admin123</span>
-            </div>
-            <div className="flex justify-between p-2 rounded-md bg-secondary/50">
-              <span className="font-medium">Teacher:</span>
-              <span>teacher@school.com / teacher123</span>
-            </div>
+          <p className="text-xs text-muted-foreground mb-3 font-semibold uppercase tracking-wider">Note:</p>
+          <div className="text-xs text-muted-foreground">
+            Use your Firebase credentials to log in.
           </div>
         </div>
       </div>

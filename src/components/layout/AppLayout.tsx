@@ -3,23 +3,31 @@
 import { ReactNode } from 'react';
 import Header from './Header';
 import BottomNavigation from './BottomNavigation';
-import { useAuthStore } from '@/store/authStore';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-  const { isAuthenticated, role } = useAuthStore();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!isAuthenticated && pathname !== '/login') {
+    if (!loading && !user && pathname !== '/login') {
       router.push('/login');
     }
-  }, [isAuthenticated, pathname, router]);
+  }, [user, loading, pathname, router]);
 
-  if (!isAuthenticated && pathname !== '/login') {
-    return null; // Or a loader
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!user && pathname !== '/login') {
+    return null;
   }
 
   return (
