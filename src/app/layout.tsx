@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   description: "Modern, production-ready school management system.",
 };
 
+import { AuthProvider } from "@/context/AuthProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -27,11 +29,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <QueryProvider>
-          <AppLayout>
-            {children}
-          </AppLayout>
-        </QueryProvider>
+        <AuthProvider>
+          <QueryProvider>
+            <AppLayout>
+              {children}
+            </AppLayout>
+          </QueryProvider>
+        </AuthProvider>
       </body>
     </html>
   );
