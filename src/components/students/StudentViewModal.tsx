@@ -1,7 +1,7 @@
-import React from 'react';
-import { X, User, Phone, MapPin, Droplet, Calendar, BookOpen } from 'lucide-react';
+import { X, User, Phone, MapPin, Droplet, BookOpen } from 'lucide-react';
 import { Student } from '@/types/student';
-import { useMasterData } from '@/context/MasterDataContext';
+import { useQuery } from '@tanstack/react-query';
+import { classService, sectionService } from '@/services/firebase/masterDataService';
 
 interface StudentViewModalProps {
    isOpen: boolean;
@@ -10,7 +10,18 @@ interface StudentViewModalProps {
 }
 
 export default function StudentViewModal({ isOpen, onClose, student }: StudentViewModalProps) {
-   const { classes, sections } = useMasterData();
+   // Master Data Queries
+   const { data: classes = [] } = useQuery({
+      queryKey: ['classes'],
+      queryFn: () => classService.getClasses(),
+      staleTime: 5 * 60 * 1000,
+   });
+
+   const { data: sections = [] } = useQuery({
+      queryKey: ['sections'],
+      queryFn: () => sectionService.getSections(),
+      staleTime: 5 * 60 * 1000,
+   });
 
    if (!isOpen || !student) return null;
 

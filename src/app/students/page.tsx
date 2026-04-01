@@ -6,22 +6,31 @@ import { studentService } from '@/services/studentService';
 import DataTable from '@/components/tables/DataTable';
 import FilterBar from '@/components/tables/FilterBar';
 import { Student } from '@/types/student';
-import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
 import { Eye, Edit, Trash2 } from 'lucide-react';
 import StudentForm from '@/components/students/StudentForm';
 import StudentViewModal from '@/components/students/StudentViewModal';
 import ConfirmationModal from '@/components/shared/ConfirmationModal';
-import { useMasterData } from '@/context/MasterDataContext';
+import { classService, sectionService } from '@/services/firebase/masterDataService';
 
 export default function StudentsPage() {
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState('');
-  const router = useRouter();
   const queryClient = useQueryClient();
-  const { classes, sections } = useMasterData();
-  console.log('Classes:', classes, 'in students page');
-  console.log('Sections:', sections, 'in students page');
+
+  // Master Data Queries
+  const { data: classes = [], isLoading: isLoadingClasses, isError: isErrorClasses } = useQuery({
+    queryKey: ['classes'],
+    queryFn: () => classService.getClasses(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  const { data: sections = [], isLoading: isLoadingSections, isError: isErrorSections } = useQuery({
+    queryKey: ['sections'],
+    queryFn: () => sectionService.getSections(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
 
   // Modal states
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -162,6 +171,26 @@ export default function StudentsPage() {
     },
   ];
 
+  if (isErrorClasses || isErrorSections) {
+    return (
+      <div className="p-12 text-center flex flex-col items-center gap-4 bg-red-50 rounded-3xl border border-red-100">
+        <div className="h-16 w-16 bg-red-100 rounded-3xl flex items-center justify-center text-red-600">
+          <Trash2 size={32} />
+        </div>
+        <div className="space-y-1">
+          <h3 className="text-xl font-black tracking-tight text-red-700">Error Loading Master Data</h3>
+          <p className="text-sm font-medium text-red-600/80">There was a problem fetching classes or sections. Please try again.</p>
+        </div>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-6 py-2.5 bg-red-600 text-white rounded-xl font-black text-sm shadow-lg shadow-red-200 hover:scale-105 transition-transform"
+        >
+          Retry Connection
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
@@ -183,7 +212,7 @@ export default function StudentsPage() {
       <DataTable
         columns={columns}
         data={filteredStudents}
-        isLoading={isLoading}
+        isLoading={isLoading || isLoadingClasses || isLoadingSections}
       />
 
       {/* View Modal */}

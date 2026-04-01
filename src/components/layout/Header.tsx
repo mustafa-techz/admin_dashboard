@@ -1,12 +1,55 @@
-'use client';
-
 import { useAuthStore } from '@/store/authStore';
-import { Bell, LogOut, User as UserIcon } from 'lucide-react';
+import { Bell, User as UserIcon, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { logoutUser } from '@/services/auth.service';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { branchService } from '@/services/firebase/masterDataService';
+import { useEffect } from 'react';
 
 export default function Header() {
   const { user, role } = useAuthStore();
+  const queryClient = useQueryClient();
+
+  const { data: branches = [] } = useQuery({
+    queryKey: ['branches'],
+    queryFn: () => branchService.getBranches(),
+  });
+
+  const { data: selectedBranch } = useQuery({
+    queryKey: ['selectedBranch'],
+    queryFn: () => {
+      const saved = localStorage.getItem('selectedBranch');
+      return saved ? JSON.parse(saved) : null;
+    },
+    initialData: null,
+  });
+
+  useEffect(() => {
+    if (branches.length > 0 && !selectedBranch) {
+      const saved = localStorage.getItem('selectedBranch');
+      if (saved) {
+        const branch = JSON.parse(saved);
+        if (branches.some(b => b.id === branch.id)) {
+          queryClient.setQueryData(['selectedBranch'], branch);
+        } else {
+          queryClient.setQueryData(['selectedBranch'], branches[0]);
+          localStorage.setItem('selectedBranch', JSON.stringify(branches[0]));
+        }
+      } else {
+        queryClient.setQueryData(['selectedBranch'], branches[0]);
+        localStorage.setItem('selectedBranch', JSON.stringify(branches[0]));
+      }
+    }
+  }, [branches, selectedBranch, queryClient]);
+
+  const handleBranchChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const branchId = e.target.value;
+    const branch = branches.find(b => b.id === branchId);
+    if (branch) {
+      queryClient.setQueryData(['selectedBranch'], branch);
+      localStorage.setItem('selectedBranch', JSON.stringify(branch));
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -49,6 +92,22 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-4">
+          {/* Branch Dropdown */}
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-secondary rounded-xl border border-border">
+            <MapPin size={14} className="text-primary" />
+            <select
+              value={selectedBranch?.id || ''}
+              onChange={handleBranchChange}
+              className="bg-transparent text-xs font-bold focus:outline-none cursor-pointer"
+            >
+              {branches.map(branch => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.branchName}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <button className="relative p-2 text-muted-foreground hover:text-primary transition-colors">
             <Bell size={20} />
             <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />

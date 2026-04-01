@@ -1,4 +1,4 @@
-import { collection, getDocs, addDoc, query, orderBy } from "firebase/firestore";
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from "firebase/firestore";
 import { db } from "../../firebase/firestore";
 import { ClassMaster, SectionMaster, BranchMaster } from "../../types/masterData";
 
@@ -7,10 +7,6 @@ export const classService = {
     const classCol = collection(db, "classes");
     const q = query(classCol, orderBy("className"));
     const snapshot = await getDocs(q);
-    console.log('Classes: inside api', snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })));
     return snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
@@ -20,6 +16,16 @@ export const classService = {
   async addClass(data: Omit<ClassMaster, 'id'>) {
     const classCol = collection(db, "classes");
     return await addDoc(classCol, data);
+  },
+
+  async updateClass(id: string, data: Partial<ClassMaster>) {
+    const docRef = doc(db, "classes", id);
+    return await updateDoc(docRef, data);
+  },
+
+  async deleteClass(id: string) {
+    const docRef = doc(db, "classes", id);
+    return await deleteDoc(docRef);
   }
 };
 
@@ -37,6 +43,16 @@ export const sectionService = {
   async addSection(data: Omit<SectionMaster, 'id'>) {
     const sectionCol = collection(db, "sections");
     return await addDoc(sectionCol, data);
+  },
+
+  async updateSection(id: string, data: Partial<SectionMaster>) {
+    const docRef = doc(db, "sections", id);
+    return await updateDoc(docRef, data);
+  },
+
+  async deleteSection(id: string) {
+    const docRef = doc(db, "sections", id);
+    return await deleteDoc(docRef);
   }
 };
 
@@ -54,5 +70,15 @@ export const branchService = {
   async addBranch(data: Omit<BranchMaster, 'id'>) {
     const branchCol = collection(db, "branches");
     return await addDoc(branchCol, data);
+  },
+
+  async updateBranch(id: string, data: Partial<BranchMaster>) {
+    const docRef = doc(db, "branches", id);
+    return await updateDoc(docRef, data);
+  },
+
+  async deleteBranch(id: string) {
+    const docRef = doc(db, "branches", id);
+    return await deleteDoc(docRef);
   }
 };

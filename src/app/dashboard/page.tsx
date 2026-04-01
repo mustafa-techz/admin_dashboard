@@ -40,9 +40,13 @@ export default function DashboardPage() {
             Here's what's happening at your school today.
           </p>
         </div>
-        <div className="bg-primary/10 px-4 py-2 rounded-xl border border-primary/20 self-start md:self-center">
-          <p className="text-xs font-bold text-primary uppercase tracking-widest leading-none mb-1">Current Role</p>
-          <p className="text-sm font-black text-foreground capitalize">{role}</p>
+        <div className="flex items-center gap-3 self-start md:self-center">
+          <button
+            onClick={() => router.push('/create')}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
+          >
+            Create +
+          </button>
         </div>
       </div>
 
@@ -50,12 +54,12 @@ export default function DashboardPage() {
         {/* Role-based Widgets */}
         {(role === 'admin' || role === 'sub-admin') && (
           <>
-            <DashboardCard~
-            title="Total Students"
-            value={stats?.totalStudents || 0}
-            icon={<Users size={24} />}
-            trend={{ value: 12, isUp: true }}
-            onClick={() => router.push('/students')}
+            <DashboardCard
+              title="Total Students"
+              value={stats?.totalStudents || 0}
+              icon={<Users size={24} />}
+              trend={{ value: 12, isUp: true }}
+              onClick={() => router.push('/students')}
             />
             <DashboardCard
               title="Total Teachers"

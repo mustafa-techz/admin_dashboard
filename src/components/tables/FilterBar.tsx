@@ -1,7 +1,8 @@
 'use client';
 
 import { Search, Plus } from 'lucide-react';
-import { useMasterData } from '@/context/MasterDataContext';
+import { useQuery } from '@tanstack/react-query';
+import { classService } from '@/services/firebase/masterDataService';
 
 interface FilterBarProps {
   onSearch: (value: string) => void;
@@ -18,7 +19,11 @@ export default function FilterBar({
   addLabel = "Add New",
   placeholder = "Search..."
 }: FilterBarProps) {
-  const { classes } = useMasterData();
+  const { data: classes = [] } = useQuery({
+    queryKey: ['classes'],
+    queryFn: () => classService.getClasses(),
+    staleTime: 5 * 60 * 1000,
+  });
 
   return (
     <div className="flex flex-col sm:flex-row items-center gap-3 mb-6">
