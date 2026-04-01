@@ -1,6 +1,5 @@
 import {
   collection,
-  addDoc,
   getDocs,
   updateDoc,
   deleteDoc,
@@ -21,19 +20,30 @@ export const studentService = {
   async addStudent(student: Omit<Student, 'id' | 'createdAt'>) {
     const classKey = `${student.classId}${student.sectionId}`;
     const counterDocRef = doc(db, "counters", classKey);
+    const classDocRef = doc(db, "classes", student.classId);
+    const sectionDocRef = doc(db, "sections", student.sectionId);
 
     return await runTransaction(db, async (transaction) => {
       const counterDoc = await transaction.get(counterDocRef);
-      let newCount = 1;
+      const classDoc = await transaction.get(classDocRef);
+      const sectionDoc = await transaction.get(sectionDocRef);
 
+      if (!classDoc.exists() || !sectionDoc.exists()) {
+        throw new Error("Class or Section not found");
+      }
+
+      const className = classDoc.data()?.className || '';
+      const sectionName = sectionDoc.data()?.sectionName || '';
+
+      let newCount = 1;
       if (counterDoc.exists()) {
         newCount = (counterDoc.data()?.lastRollNumber || 0) + 1;
       }
 
       transaction.set(counterDocRef, { lastRollNumber: newCount }, { merge: true });
 
-      const rollNumber = `${student.classId}${student.sectionId}-${newCount.toString().padStart(3, '0')}`;
-      
+      const rollNumber = `${className}${sectionName}-${newCount.toString().padStart(3, '0')}`;
+
       const newStudentRef = doc(collection(db, "students"));
       transaction.set(newStudentRef, {
         ...student,

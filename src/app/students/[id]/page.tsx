@@ -8,20 +8,32 @@ import StatCircle from '@/components/shared/StatCircle';
 import { cn } from '@/lib/utils';
 import { Student } from '@/types/student';
 
-import { useMasterData } from '@/context/MasterDataContext';
+import { classService, sectionService } from '@/services/firebase/masterDataService';
 
 export default function StudentDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const { classes, sections } = useMasterData();
 
-  const { data: student, isLoading } = useQuery<Student | null>({
+  // Master Data Queries
+  const { data: classes = [] } = useQuery({
+    queryKey: ['classes'],
+    queryFn: () => classService.getClasses(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: sections = [] } = useQuery({
+    queryKey: ['sections'],
+    queryFn: () => sectionService.getSections(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: student, isLoading: isLoadingStudent } = useQuery<Student | null>({
     queryKey: ['student', id],
     queryFn: () => studentService.getStudentById(id as string),
     enabled: !!id,
   });
 
-  if (isLoading) return (
+  if (isLoadingStudent) return (
     <div className="p-12 text-center flex flex-col items-center gap-2">
       <Loader2 size={32} className="animate-spin text-primary" />
       <p className="text-sm font-bold text-muted-foreground">Fetching student data...</p>

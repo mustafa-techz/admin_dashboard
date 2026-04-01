@@ -1,8 +1,9 @@
-import React from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
+import { useQuery } from '@tanstack/react-query';
 import { Student } from '@/types/student';
-import { useMasterData } from '@/context/MasterDataContext';
+import { ClassMaster, SectionMaster, BranchMaster } from '@/types/masterData';
+import { classService, sectionService, branchService } from '@/services/firebase/masterDataService';
 
 interface StudentFormProps {
   initialData?: Partial<Student>;
@@ -15,7 +16,6 @@ const validationSchema = Yup.object().shape({
   fullName: Yup.string().required('Full Name is required'),
   classId: Yup.string().required('Class is required'),
   sectionId: Yup.string().required('Section is required'),
-  branchId: Yup.string().required('Branch is required'),
   parentDetails: Yup.object().shape({
     fatherName: Yup.string().required('Father Name is required'),
     motherName: Yup.string(),
@@ -63,10 +63,31 @@ const defaultValues = {
 
 export default function StudentForm({ initialData, onSubmit, onCancel, isLoading }: StudentFormProps) {
   const isEditing = !!initialData;
-  const { classes, sections, branches } = useMasterData();
+
+  // Master Data Queries
+  const { data: classes = [] } = useQuery<ClassMaster[]>({
+    queryKey: ['classes'],
+    queryFn: () => classService.getClasses(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: sections = [] } = useQuery<SectionMaster[]>({
+    queryKey: ['sections'],
+    queryFn: () => sectionService.getSections(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: selectedBranch } = useQuery<BranchMaster | null>({
+    queryKey: ['selectedBranch'],
+    enabled: false, // We only need the cached value
+  });
 
   const handleSubmit = (values: typeof defaultValues) => {
-    onSubmit(values);
+    const finalValues = {
+      ...values,
+      branchId: isEditing ? values.branchId : (selectedBranch?.id || values.branchId)
+    };
+    onSubmit(finalValues);
   };
 
   return (
@@ -166,16 +187,6 @@ export default function StudentForm({ initialData, onSubmit, onCancel, isLoading
                       ))}
                     </Field>
                     <ErrorMessage name="sectionId" component="div" className="text-red-500 text-xs mt-1 font-bold" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold mb-1">Branch *</label>
-                    <Field as="select" name="branchId" className="w-full px-3 py-2 bg-secondary border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
-                      <option value="">Select Branch</option>
-                      {branches.map(br => (
-                        <option key={br.id} value={br.branchId}>{br.branchName}</option>
-                      ))}
-                    </Field>
-                    <ErrorMessage name="branchId" component="div" className="text-red-500 text-xs mt-1 font-bold" />
                   </div>
                   <div>
                     <label className="block text-sm font-bold mb-1">Admission Date</label>
