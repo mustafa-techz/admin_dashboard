@@ -19,9 +19,9 @@ export default function LoginPage() {
       const result = await loginUser(email, password);
       console.log("result", result);
       router.push('/dashboard');
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
-      alert(error.message || 'Login failed! Check your credentials.');
+      alert(error instanceof Error ? error.message : 'Login failed! Check your credentials.');
     } finally {
       setIsLoading(false);
     }

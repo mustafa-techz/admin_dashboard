@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 interface ConfirmationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   title: string;
   message: string;
   confirmText?: string;
@@ -47,8 +47,8 @@ export default function ConfirmationModal({
             {cancelText}
           </button>
           <button
-            onClick={() => {
-              onConfirm();
+            onClick={async () => {
+              await onConfirm();
               onClose();
             }}
             className={`px-4 py-2 rounded-xl text-sm font-bold text-white transition-colors ${

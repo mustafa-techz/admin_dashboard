@@ -11,16 +11,17 @@ import { Users, UserCheck, BookOpen, AlertCircle, Calendar, Activity as Activity
 import { useRouter } from 'next/navigation';
 import { DashboardStats } from '@/types';
 
+
 export default function DashboardPage() {
   const { role } = useAuthStore();
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ['dashboardStats'],
     queryFn: getDashboardStats,
   });
-
+  console.log("olesssss", role);
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -37,15 +38,19 @@ export default function DashboardPage() {
             Hi, {(user?.displayName || user?.email || 'User').split(' ')[0]} 👋
           </h2>
           <p className="text-muted-foreground mt-1 font-medium">
-            Here's what's happening at your school today.
+            Here&apos;s what&apos;s happening at your school today.
           </p>
         </div>
         <div className="flex items-center gap-3 self-start md:self-center">
           <button
-            onClick={() => router.push('/create')}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
-          >
-            Create +
+            onClick={() => router.push('/create')} className="bg-primary/10 px-4 py-2 rounded-xl border border-primary/20 self-start md:self-center">
+            <p className="text-xs font-bold text-primary uppercase tracking-widest leading-none mb-1">Create +</p>
+            <p className="text-sm font-black text-foreground">Class / Section / Branch</p>
+          </button>
+          <button
+            onClick={() => router.push('/users')} className="bg-primary/10 px-4 py-2 rounded-xl border border-primary/20 self-start md:self-center">
+            <p className="text-xs font-bold text-primary uppercase tracking-widest leading-none mb-1">Create +</p>
+            <p className="text-sm font-black text-foreground">Users</p>
           </button>
         </div>
       </div>
@@ -66,7 +71,6 @@ export default function DashboardPage() {
               value={stats?.totalTeachers || 0}
               icon={<UserCheck size={24} />}
               trend={{ value: 2, isUp: true }}
-              onClick={() => router.push('/teachers')}
             />
           </>
         )}
@@ -77,7 +81,6 @@ export default function DashboardPage() {
               title="My Students"
               value="42"
               icon={<BookOpen size={24} />}
-              onClick={() => router.push('/students')}
             />
             <DashboardCard
               title="Student Alerts"
@@ -85,7 +88,6 @@ export default function DashboardPage() {
               icon={<AlertCircle size={24} />}
               description="Action required for 3 students"
               className="border-red-100"
-              onClick={() => router.push('/students?tab=alerts')}
             />
           </>
         )}
@@ -95,7 +97,6 @@ export default function DashboardPage() {
           value={`${stats?.attendanceToday.present} / ${stats?.attendanceToday.total}`}
           icon={<Calendar size={24} />}
           description="83% average attendance"
-          onClick={() => router.push('/attendance')}
         />
 
         {(role === 'admin') && (
