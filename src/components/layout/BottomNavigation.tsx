@@ -12,6 +12,7 @@ export default function BottomNavigation() {
 
   const navLinks = [
     { label: 'Home', href: '/dashboard', icon: Home },
+    { label: 'Users', href: '/users', icon: Users, roles: ['admin'] },
     { label: 'Teachers', href: '/teachers', icon: Users, roles: ['admin', 'sub-admin'] },
     { label: 'Students', href: '/students', icon: BookOpen },
     { label: 'Attendance', href: '/attendance', icon: Calendar },
@@ -26,11 +27,11 @@ export default function BottomNavigation() {
         {filteredLinks.map((link) => {
           const isActive = pathname === link.href;
           const Icon = link.icon;
-          
+
           return (
-            <Link 
-              key={link.href} 
-              href={link.href} 
+            <Link
+              key={link.href}
+              href={link.href}
               className={cn(
                 "inline-flex flex-col items-center justify-center px-5 hover:bg-muted group transition-all",
                 isActive ? "text-primary" : "text-muted-foreground"
