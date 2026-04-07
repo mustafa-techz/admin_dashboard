@@ -11,15 +11,8 @@ export interface User {
 import { Student } from './student';
 export type { Student };
 
-export interface Teacher {
-  id: string;
-  name: string;
-  email: string;
-  subject: string;
-  class: string;
-  experience: string;
-  contact: string;
-}
+import { Teacher, TeacherFormData } from './teacher';
+export type { Teacher, TeacherFormData };
 
 export interface SubAdmin {
   id: string;
