@@ -71,6 +71,7 @@ export default function DashboardPage() {
               value={stats?.totalTeachers || 0}
               icon={<UserCheck size={24} />}
               trend={{ value: 2, isUp: true }}
+              onClick={() => router.push('/teachers')}
             />
           </>
         )}

@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase/firestore";
 import { Student } from "../types/student";
+import { userService } from "./userService";
 
 const studentCollection = collection(db, "students");
 
@@ -23,7 +24,7 @@ export const studentService = {
     const classDocRef = doc(db, "classes", student.classId);
     const sectionDocRef = doc(db, "sections", student.sectionId);
 
-    return await runTransaction(db, async (transaction) => {
+    const studentId = await runTransaction(db, async (transaction) => {
       const counterDoc = await transaction.get(counterDocRef);
       const classDoc = await transaction.get(classDocRef);
       const sectionDoc = await transaction.get(sectionDocRef);
@@ -53,6 +54,19 @@ export const studentService = {
 
       return newStudentRef.id;
     });
+
+    try {
+      await userService.createUser({
+        name: student.parentDetails.fatherName,
+        email: student.parentDetails.email,
+        password: student.parentDetails.email,
+        role: 'parent'
+      });
+    } catch (error) {
+      console.error("Failed to create parent role:", error);
+    }
+
+    return studentId;
   },
 
   // Read

@@ -23,6 +23,7 @@ const validationSchema = Yup.object().shape({
       .matches(/^[0-9]+$/, 'Phone must be a valid number')
       .min(10, 'Must be at least 10 digits')
       .required('Phone is required'),
+    email: Yup.string().required('Email is required').email('Invalid email address').required('Email is required'),
   }),
   addressDetails: Yup.object().shape({
     street: Yup.string().required('Street Address is required'),
@@ -47,6 +48,7 @@ const defaultValues = {
     fatherName: '',
     motherName: '',
     phone: '',
+    email: '',
   },
   addressDetails: {
     street: '',
@@ -79,6 +81,10 @@ export default function StudentForm({ initialData, onSubmit, onCancel, isLoading
 
   const { data: selectedBranch } = useQuery<BranchMaster | null>({
     queryKey: ['selectedBranch'],
+    queryFn: () => {
+      const saved = localStorage.getItem('selectedBranch');
+      return saved ? JSON.parse(saved) : null;
+    },
     enabled: false, // We only need the cached value
   });
 
@@ -212,6 +218,11 @@ export default function StudentForm({ initialData, onSubmit, onCancel, isLoading
                     <label className="block text-sm font-bold mb-1">Contact Phone *</label>
                     <Field name="parentDetails.phone" placeholder="Contact Phone" className="w-full px-3 py-2 bg-secondary border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
                     <ErrorMessage name="parentDetails.phone" component="div" className="text-red-500 text-xs mt-1 font-bold" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold mb-1">Parent Email *</label>
+                    <Field name="parentDetails.email" placeholder="Parent Email" className="w-full px-3 py-2 bg-secondary border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                    <ErrorMessage name="parentDetails.email" component="div" className="text-red-500 text-xs mt-1 font-bold" />
                   </div>
                 </div>
               </div>

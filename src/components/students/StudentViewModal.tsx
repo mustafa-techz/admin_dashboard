@@ -105,9 +105,13 @@ export default function StudentViewModal({ isOpen, onClose, student }: StudentVi
                         <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Mother's Name</p>
                         <p className="text-sm font-bold">{student.parentDetails?.motherName || 'N/A'}</p>
                      </div>
-                     <div className="col-span-2">
+                     <div>
                         <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Contact</p>
                         <p className="text-sm font-bold">{student.parentDetails?.phone}</p>
+                     </div>
+                     <div>
+                        <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Email</p>
+                        <p className="text-sm font-bold">{student.parentDetails?.email || 'N/A'}</p>
                      </div>
                   </div>
                </div>
