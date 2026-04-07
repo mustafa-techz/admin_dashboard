@@ -2,6 +2,7 @@ export interface ParentDetails {
   fatherName: string;
   motherName: string;
   phone: string;
+  email: string;
 }
 
 export interface AddressDetails {
