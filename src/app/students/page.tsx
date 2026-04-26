@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { studentService } from '@/services/studentService';
 import DataTable from '@/components/tables/DataTable';
 import FilterBar from '@/components/tables/FilterBar';
@@ -16,6 +17,7 @@ export default function StudentsPage() {
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState('');
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   // Master Data Queries
   const { data: classes = [], isLoading: isLoadingClasses, isError: isErrorClasses } = useQuery({
@@ -213,6 +215,7 @@ export default function StudentsPage() {
         columns={columns}
         data={filteredStudents}
         isLoading={isLoading || isLoadingClasses || isLoadingSections}
+        onRowClick={(student) => router.push(`/students/${student.id}`)}
       />
 
       {/* View Modal */}
