@@ -41,18 +41,20 @@ export default function DashboardPage() {
             Here&apos;s what&apos;s happening at your school today.
           </p>
         </div>
-        <div className="flex items-center gap-3 self-start md:self-center">
-          <button
-            onClick={() => router.push('/create')} className="bg-primary/10 px-4 py-2 rounded-xl border border-primary/20 self-start md:self-center">
-            <p className="text-xs font-bold text-primary uppercase tracking-widest leading-none mb-1">Create +</p>
-            <p className="text-sm font-black text-foreground">Class / Section / Branch</p>
-          </button>
-          <button
-            onClick={() => router.push('/users')} className="bg-primary/10 px-4 py-2 rounded-xl border border-primary/20 self-start md:self-center">
-            <p className="text-xs font-bold text-primary uppercase tracking-widest leading-none mb-1">Create +</p>
-            <p className="text-sm font-black text-foreground">Users</p>
-          </button>
-        </div>
+        {role === 'admin' && (
+          <div className="flex items-center gap-3 self-start md:self-center">
+            <button
+              onClick={() => router.push('/create')} className="bg-primary/10 px-4 py-2 rounded-xl border border-primary/20 self-start md:self-center">
+              <p className="text-xs font-bold text-primary uppercase tracking-widest leading-none mb-1">Create +</p>
+              <p className="text-sm font-black text-foreground">Class / Section / Branch</p>
+            </button>
+            <button
+              onClick={() => router.push('/users')} className="bg-primary/10 px-4 py-2 rounded-xl border border-primary/20 self-start md:self-center">
+              <p className="text-xs font-bold text-primary uppercase tracking-widest leading-none mb-1">Create +</p>
+              <p className="text-sm font-black text-foreground">Users</p>
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -133,10 +135,11 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-
-        <div className="lg:col-span-1">
-          <ActivityFeed />
-        </div>
+        {role === "admin" && (
+          <div className="lg:col-span-1">
+            <ActivityFeed />
+          </div>
+        )}
       </div>
     </div>
   );

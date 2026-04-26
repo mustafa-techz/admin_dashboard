@@ -8,7 +8,11 @@ import {
   serverTimestamp,
   query,
   orderBy,
-  runTransaction
+  runTransaction,
+  limit,
+  startAfter,
+  DocumentData,
+  QueryDocumentSnapshot
 } from "firebase/firestore";
 import { db } from "../firebase/firestore";
 import { Student } from "../types/student";
@@ -78,8 +82,29 @@ export const studentService = {
       id: doc.id,
       ...doc.data()
     })) as Student[];
+    console.log("🚀 ~ students:", students)
 
     return students;
+  },
+
+  // Read Paginated for 2000+ Students Virtualization
+  async getStudentsPaginated(limitCount = 100, lastDoc?: QueryDocumentSnapshot<DocumentData> | null): Promise<{ students: Student[], lastDoc: QueryDocumentSnapshot<DocumentData> | null }> {
+    let q = query(studentCollection, orderBy("createdAt", "desc"), limit(limitCount));
+    
+    if (lastDoc) {
+       q = query(studentCollection, orderBy("createdAt", "desc"), startAfter(lastDoc), limit(limitCount));
+    }
+    
+    const querySnapshot = await getDocs(q);
+    const students = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Student[];
+    
+    return {
+       students,
+       lastDoc: querySnapshot.docs.length > 0 ? querySnapshot.docs[querySnapshot.docs.length - 1] : null
+    };
   },
 
   // Get Single Student
