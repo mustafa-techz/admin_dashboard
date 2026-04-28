@@ -28,8 +28,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex h-[80vh] items-center justify-center -mt-16">
-      <div className="w-full max-w-md p-8 bg-card rounded-2xl shadow-soft border border-border">
+    <div className="flex h-[80vh] items-center justify-center -mt-16 relative">
+      <div className="half-moon-bg" />
+      <div className="w-full max-w-md p-8 bg-card rounded-2xl shadow-soft border border-border relative z-10">
         <div className="flex flex-col items-center mb-8">
           <div className="h-16 w-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
             <GraduationCap size={40} className="text-primary" />

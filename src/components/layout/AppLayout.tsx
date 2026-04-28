@@ -31,10 +31,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col relative">
+      <div className="half-moon-bg" />
       {pathname !== '/login' && <Header />}
-      
-      <main className="flex-1 pb-20 md:pb-0 md:pt-16">
+
+      <main className="flex-1 pb-20 md:pb-0 md:pt-16 relative z-10">
         <div className="container mx-auto px-4 py-6 max-w-7xl">
           {children}
         </div>
