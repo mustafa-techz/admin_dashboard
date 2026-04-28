@@ -83,3 +83,27 @@
   --input: #374151;
   --ring: #31c4b8;
 }
+
+/* Half-moon background element */
+.half-moon-bg {
+  position: fixed;
+  width: 500px;
+  height: 500px;
+  top: -128px;
+  left: -36%;
+  background: linear-gradient(135deg, #31c4b8 0%, #2ab0a5 100%);
+  border-radius: 50%;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(1px);
+}
+
+@media (min-width: 768px) {
+  .half-moon-bg {
+    width: 1000px;
+    height: 1000px;
+    top: -350px;
+    left: -12%;
+  }
+}
