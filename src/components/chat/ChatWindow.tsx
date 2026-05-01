@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Users, Radio, MessageCircle } from "lucide-react";
 import { useChatStore } from "@/store/chatStore";
 import { useAuthStore } from "@/store/authStore";
-import { useSendMessage, useMarkAsRead, useUploadChatImage } from "@/hooks/useChat";
+import {
+  useChatList,
+  useSendMessage,
+  useMarkAsRead,
+  useUploadChatImage,
+} from "@/hooks/useChat";
 import { getConversation } from "@/services/chatService";
 import { Conversation } from "@/types/chat";
 import MessageList from "./MessageList";
@@ -28,6 +33,8 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   const sendMessageMutation = useSendMessage(user?.id);
   const markAsRead = useMarkAsRead(user?.id);
   const uploadImage = useUploadChatImage();
+  const { data: chats = [] } = useChatList(user?.id);
+  const { mutate: markConversationAsRead, isPending: isMarkingAsRead } = markAsRead;
 
   // Load conversation metadata once
   useEffect(() => {
@@ -37,10 +44,19 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   // Mark as read when the window opens
   useEffect(() => {
     if (user?.id && conversationId) {
-      markAsRead.mutate({ conversationId });
+      markConversationAsRead({ conversationId });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversationId, user?.id]);
+  }, [conversationId, markConversationAsRead, user?.id]);
+
+  // Keep the currently open conversation read while global userChats updates arrive.
+  useEffect(() => {
+    if (!user?.id || !conversationId || isMarkingAsRead) return;
+
+    const activeChat = chats.find((chat) => chat.id === conversationId);
+    if ((activeChat?.unreadCount ?? 0) > 0) {
+      markConversationAsRead({ conversationId });
+    }
+  }, [chats, conversationId, isMarkingAsRead, markConversationAsRead, user?.id]);
 
   // Broadcast: parents are read-only
   const isBroadcast = conversation?.type === "broadcast";
@@ -48,6 +64,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
 
   const handleSend = (text: string, imageUrl?: string) => {
     if (!user || !conversation) return;
+    const tempId = crypto.randomUUID();
     sendMessageMutation.mutate({
       conversationId,
       senderId: user.id,
@@ -55,6 +72,9 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
       text: text || undefined,
       imageUrl,
       participants: conversation.participants,
+      conversationType: conversation.type,
+      conversationName: conversation.name,
+      tempId,
     });
   };
 
@@ -107,6 +127,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
       {/* Messages */}
       {user && conversation && (
         <MessageList
+          key={conversationId}
           conversationId={conversationId}
           currentUserId={user.id}
           conversationType={conversation.type}

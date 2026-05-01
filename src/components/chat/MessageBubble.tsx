@@ -91,7 +91,11 @@ export default function MessageBubble({
               isMine ? "text-primary-foreground/60" : "text-muted-foreground"
             )}
           >
-            {isOptimistic ? "sending…" : timeLabel}
+            {message.status === "sending" || message.hasPendingWrites
+              ? "sending…"
+              : message.status === "error"
+              ? "failed"
+              : timeLabel}
           </span>
         </div>
       </div>

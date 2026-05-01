@@ -4,7 +4,8 @@
  * TanStack Query hooks for the chat system.
  *
  * Architectural split:
- *  - useChatList          → useQuery (one-time getDocs, no listener)
+ *  - useChatList          → reads chat list from TanStack Query cache
+ *  - useChatListRealtime  → one global userChats listener mounted at app root
  *  - useMessages          → useInfiniteQuery (paginated history)
  *  - useRealtimeMessages  → custom hook with useEffect + onSnapshot (active chat only)
  *  - useSendMessage       → useMutation (with optimistic update)
@@ -22,7 +23,7 @@ import {
   useQueryClient,
   InfiniteData,
 } from "@tanstack/react-query";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   getChatList,
   getOrCreateDirectConversation,
@@ -31,6 +32,7 @@ import {
   sendMessage,
   markAsRead,
   uploadChatImage,
+  subscribeToChatList,
   subscribeToMessages,
 } from "@/services/chatService";
 import {
@@ -52,8 +54,8 @@ export const chatKeys = {
 // ─── Chat list ────────────────────────────────────────────────────────────────
 
 /**
- * Fetch the user's chat list once (no real-time listener).
- * Invalidated automatically after a message is sent.
+ * Fetch the user's chat list. A single app-level listener keeps this cache fresh
+ * while this query remains a fallback for first load or listener recovery.
  */
 export const useChatList = (userId: string | undefined) => {
   return useQuery({
@@ -64,12 +66,53 @@ export const useChatList = (userId: string | undefined) => {
   });
 };
 
+export const useChatListRealtime = (userId: string | undefined) => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const unsubscribe = subscribeToChatList(
+      userId,
+      (chats) => {
+        queryClient.setQueryData(chatKeys.list(userId), chats);
+      },
+      (error) => {
+        console.error("Chat list subscription failed:", error);
+        queryClient.invalidateQueries({ queryKey: chatKeys.list(userId) });
+      }
+    );
+
+    return unsubscribe;
+  }, [queryClient, userId]);
+};
+
 // ─── Paginated message history ────────────────────────────────────────────────
 
 interface MessagePage {
   messages: Message[];
   lastDoc: QueryDocumentSnapshot<DocumentData> | null;
 }
+
+const getMessageSortTime = (message: Message) =>
+  message.createdAt?.toMillis() ?? (message.status === "sending" ? Date.now() : 0);
+
+const dedupeAndSortMessages = (messages: Message[]) => {
+  const messageMap = new Map<string, Message>();
+
+  messages.forEach((message) => {
+    const key = message.tempId || message.id;
+    const existing = messageMap.get(key);
+    messageMap.set(key, {
+      ...existing,
+      ...message,
+    });
+  });
+
+  return Array.from(messageMap.values()).sort((a, b) => {
+    return getMessageSortTime(a) - getMessageSortTime(b);
+  });
+};
 
 export const useMessages = (conversationId: string | null) => {
   return useInfiniteQuery<MessagePage, Error, InfiniteData<MessagePage>, ReturnType<typeof chatKeys.messages>, QueryDocumentSnapshot<DocumentData> | null>({
@@ -91,22 +134,63 @@ export const useMessages = (conversationId: string | null) => {
  * with the paginated history from useMessages.
  */
 export const useRealtimeMessages = (conversationId: string | null) => {
-  const [liveMessages, setLiveMessages] = useState<Message[]>([]);
+  const queryClient = useQueryClient();
   const unsubRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    // Tear down any existing subscription
     if (unsubRef.current) {
       unsubRef.current();
       unsubRef.current = null;
     }
 
-    if (!conversationId) {
-      setLiveMessages([]);
-      return;
-    }
+    if (!conversationId) return;
 
-    unsubRef.current = subscribeToMessages(conversationId, setLiveMessages);
+    unsubRef.current = subscribeToMessages(
+      conversationId,
+      (newMessages) => {
+        const key = chatKeys.messages(conversationId);
+
+        queryClient.setQueryData<InfiniteData<MessagePage>>(key, (old) => {
+          const liveMessages: Message[] = newMessages.map((message): Message => ({
+            ...message,
+            status: message.hasPendingWrites ? "sending" : "sent",
+          }));
+
+          if (!old) {
+            return {
+              pages: [
+                { messages: dedupeAndSortMessages(liveMessages), lastDoc: null },
+              ],
+              pageParams: [null],
+            };
+          }
+
+          const pages = [...old.pages];
+          // Page 0 is the latest page because Firestore pages by createdAt desc.
+          const latestPageIndex = 0;
+          const latestPage = { ...pages[latestPageIndex] };
+
+          // Use a Map for O(1) deduplication during merge
+          const messageMap = new Map<string, Message>();
+
+          // 1. Existing messages in this page
+          latestPage.messages.forEach((m) => {
+            messageMap.set(m.tempId || m.id, m);
+          });
+
+          // 2. Overwrite/Add with real-time messages
+          liveMessages.forEach((m) => {
+            const idToMatch = m.tempId || m.id;
+            messageMap.set(idToMatch, m);
+          });
+
+          latestPage.messages = dedupeAndSortMessages(Array.from(messageMap.values()));
+
+          pages[latestPageIndex] = latestPage;
+          return { ...old, pages };
+        });
+      }
+    );
 
     return () => {
       if (unsubRef.current) {
@@ -114,9 +198,7 @@ export const useRealtimeMessages = (conversationId: string | null) => {
         unsubRef.current = null;
       }
     };
-  }, [conversationId]);
-
-  return liveMessages;
+  }, [conversationId, queryClient]);
 };
 
 // ─── Send message ─────────────────────────────────────────────────────────────
@@ -127,33 +209,38 @@ export const useSendMessage = (userId: string | undefined) => {
   return useMutation({
     mutationFn: (input: SendMessageInput) => sendMessage(input),
 
-    // Optimistic update: insert the message locally before server confirms
+    // Optimistic update: insert the message locally
     onMutate: async (input) => {
       const key = chatKeys.messages(input.conversationId);
       await queryClient.cancelQueries({ queryKey: key });
 
       const optimisticMessage: Message = {
-        id: `optimistic_${Date.now()}`,
+        id: `optimistic_${input.tempId}`,
+        tempId: input.tempId,
         senderId: input.senderId,
         senderName: input.senderName,
         text: input.text,
         imageUrl: input.imageUrl,
-        createdAt: null, // will be filled by server
+        createdAt: null,
+        status: "sending",
       };
 
       queryClient.setQueryData<InfiniteData<MessagePage>>(key, (old) => {
         if (!old) return old;
         const pages = [...old.pages];
-        const lastPage = { ...pages[pages.length - 1] };
-        lastPage.messages = [...lastPage.messages, optimisticMessage];
-        pages[pages.length - 1] = lastPage;
+        const latestPage = { ...pages[0] };
+        latestPage.messages = dedupeAndSortMessages([
+          ...latestPage.messages,
+          optimisticMessage,
+        ]);
+        pages[0] = latestPage;
         return { ...old, pages };
       });
 
       return { optimisticMessage };
     },
 
-    onSuccess: (_data, input) => {
+    onSuccess: () => {
       // Invalidate the chat list so lastMessage preview refreshes
       if (userId) {
         queryClient.invalidateQueries({ queryKey: chatKeys.list(userId) });
@@ -168,8 +255,10 @@ export const useSendMessage = (userId: string | undefined) => {
           if (!old) return old;
           const pages = old.pages.map((page) => ({
             ...page,
-            messages: page.messages.filter(
-              (m) => m.id !== context.optimisticMessage.id
+            messages: page.messages.map((m): Message =>
+              m.id === context.optimisticMessage.id
+                ? { ...m, status: "error" }
+                : m
             ),
           }));
           return { ...old, pages };
@@ -198,8 +287,6 @@ export const useMarkAsRead = (userId: string | undefined) => {
         )
       );
     },
-
-    enabled: Boolean(userId),
   });
 };
 

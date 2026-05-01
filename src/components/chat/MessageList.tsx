@@ -26,29 +26,14 @@ function dateSeparatorLabel(ts: Timestamp | null): string {
   }
 }
 
-/** Merge paginated history + live messages, deduplicating by id. */
-function mergeMessages(history: Message[], live: Message[]): Message[] {
-  const seen = new Set<string>();
-  const merged: Message[] = [];
-  for (const m of [...history, ...live]) {
-    if (!seen.has(m.id)) {
-      seen.add(m.id);
-      merged.push(m);
-    }
-  }
-  return merged;
-}
+// deduplication and merging now handled in useRealtimeMessages sync
 
 export default function MessageList({
   conversationId,
   currentUserId,
   conversationType,
 }: MessageListProps) {
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const topSentinelRef = useRef<HTMLDivElement>(null);
-  const isFirstLoad = useRef(true);
-
-  // Paginated history (oldest first after reverse)
+  // Paginated history
   const {
     data,
     fetchNextPage,
@@ -57,24 +42,50 @@ export default function MessageList({
     isLoading,
   } = useMessages(conversationId);
 
-  // Real-time listener for new messages
-  const liveMessages = useRealtimeMessages(conversationId);
-  console.log("🚀 ~ MessageList ~ liveMessages:", liveMessages)
+  // Real-time listener: syncs live Firestore updates directly into TanStack Query cache
+  useRealtimeMessages(conversationId);
 
-  const historyMessages = data?.pages.flatMap((page) => page.messages) || [];
+  const containerRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const topSentinelRef = useRef<HTMLDivElement>(null);
+  const scrollHeightRef = useRef<number>(0);
+  const isFirstLoad = useRef(true);
 
-  const allMessages = mergeMessages(historyMessages, liveMessages) || [];
-  console.log("🚀 ~ MessageList ~ allMessages:", { allMessages, historyMessages, liveMessages })
+  const allMessages =
+    data?.pages
+      .slice()
+      .reverse()
+      .flatMap((page) => page.messages) || [];
+  const historyMessagesCount = allMessages.length; // used for scroll effect
 
-  // Auto-scroll to bottom on first load and new live messages
+  // 1. Handle auto-scroll to bottom for initial load and NEW live messages
   useEffect(() => {
-    if (isFirstLoad.current && allMessages.length > 0) {
+    if (isFirstLoad.current && allMessages.length > 0 && !isLoading) {
       bottomRef.current?.scrollIntoView({ behavior: "instant" });
       isFirstLoad.current = false;
-    } else if (liveMessages.length > 0) {
+    } else if (!isFirstLoad.current) {
+      // Smooth scroll for new messages (detected by length change)
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [liveMessages.length, allMessages.length]);
+  }, [allMessages.length, isLoading]);
+
+  // 2. Preserve scroll position when loading history (prepending)
+  useEffect(() => {
+    if (isFetchingNextPage) {
+      scrollHeightRef.current = containerRef.current?.scrollHeight || 0;
+    }
+  }, [isFetchingNextPage]);
+
+  useEffect(() => {
+    if (!isFetchingNextPage && scrollHeightRef.current > 0 && containerRef.current) {
+      const newScrollHeight = containerRef.current.scrollHeight;
+      const heightDiff = newScrollHeight - scrollHeightRef.current;
+      if (heightDiff > 0) {
+        containerRef.current.scrollTop += heightDiff;
+      }
+      scrollHeightRef.current = 0;
+    }
+  }, [historyMessagesCount, isFetchingNextPage]);
 
   // IntersectionObserver at the top → load more pages
   const handleTopIntersect = useCallback(
@@ -120,7 +131,10 @@ export default function MessageList({
   const showSender = conversationType !== "direct";
 
   return (
-    <div className="flex-1 overflow-y-auto overscroll-contain py-4 space-y-1">
+    <div
+      ref={containerRef}
+      className="flex-1 overflow-y-auto overscroll-contain py-4 space-y-1"
+    >
       {/* Top sentinel — triggers load-more when scrolled into view */}
       <div ref={topSentinelRef} className="h-1" />
 
@@ -141,8 +155,8 @@ export default function MessageList({
         </div>
       )}
 
-      {groups.map((group) => (
-        <div key={group.label}>
+      {groups.map((group, index) => (
+        <div key={group.label + index}>
           {/* Date separator */}
           {group.label && (
             <div className="flex items-center gap-3 px-4 py-3">

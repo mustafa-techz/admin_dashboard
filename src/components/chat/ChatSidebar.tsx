@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Search, Plus, Users, Radio, MessageCircle, X } from "lucide-react";
+import { useState, useRef } from "react";
+import { Search, Users, Radio, MessageCircle, X } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useChatStore } from "@/store/chatStore";
 import { useChatList } from "@/hooks/useChat";
 import ChatListItem from "./ChatListItem";
-import { UserChat } from "@/types/chat";
 
 interface ChatSidebarProps {
   onSelectChat: (chatId: string) => void;
