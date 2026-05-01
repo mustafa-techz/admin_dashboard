@@ -61,3 +61,40 @@ export const requireAdminRequest = async (request: Request) => {
     };
   }
 };
+
+/**
+ * Verifies that the request is authenticated (any signed-in user, not just admin).
+ * Used by chat API routes which are accessible to all roles.
+ */
+export const requireAuthRequest = async (request: Request) => {
+  const token = getTokenFromRequest(request);
+  if (!token) {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    };
+  }
+
+  try {
+    const decodedToken = await authAdmin.verifyIdToken(token);
+    const claimedRole = normalizeUserRole(decodedToken.role);
+
+    let role = claimedRole;
+    if (!role) {
+      const userDoc = await dbAdmin.collection("users").doc(decodedToken.uid).get();
+      role = normalizeUserRole(userDoc.data()?.role);
+    }
+
+    return {
+      ok: true as const,
+      uid: decodedToken.uid,
+      role: role ?? "teacher",
+    };
+  } catch (error) {
+    console.error("Failed to verify auth request:", error);
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    };
+  }
+};
