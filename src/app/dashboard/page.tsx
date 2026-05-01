@@ -22,6 +22,7 @@ export default function DashboardPage() {
     queryFn: getDashboardStats,
   });
   console.log("olesssss", role);
+  console.log("🚀 ~ DashboardPage ~ isLoading:", isLoading,)
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">

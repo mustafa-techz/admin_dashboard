@@ -1,5 +1,6 @@
 import { useAuthStore } from '@/store/authStore';
-import { Bell, User as UserIcon, MapPin } from 'lucide-react';
+import { Bell, User as UserIcon, MapPin, MessageCircle } from 'lucide-react';
+
 import Link from 'next/link';
 import { logoutUser } from '@/services/auth.service';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -61,11 +62,13 @@ export default function Header() {
 
   const navLinks = [
     { label: 'Home', href: '/dashboard' },
+    { label: 'Chat', href: '/chat' },
     { label: 'Users', href: '/users', roles: ['admin'] },
     { label: 'Teachers', href: '/teachers', roles: ['admin', 'sub-admin'] },
     { label: 'Students', href: '/students', roles: ['admin', 'sub-admin', 'teacher'] },
     { label: 'Attendance', href: '/attendance', roles: ['admin', 'sub-admin', 'teacher'] },
   ];
+
 
   const filteredLinks = navLinks.filter(link => !link.roles || (role && link.roles.includes(role)));
 

@@ -75,35 +75,43 @@ export const studentService = {
 
   // Read
   async getStudents(): Promise<Student[]> {
-    const q = query(studentCollection, orderBy("createdAt", "desc"));
-    const querySnapshot = await getDocs(q);
+    try {
+      console.log('testtttt333');
 
-    const students = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })) as Student[];
-    console.log("🚀 ~ students:", students)
+      const q = query(studentCollection, orderBy("createdAt", "desc"));
+      const querySnapshot = await getDocs(q);
 
-    return students;
+      const students = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Student[];
+
+      console.log("students:", students);
+
+      return students;
+    } catch (err) {
+      console.error("🔥 FIRESTORE ERROR:", err);
+      throw err;
+    }
   },
 
   // Read Paginated for 2000+ Students Virtualization
   async getStudentsPaginated(limitCount = 100, lastDoc?: QueryDocumentSnapshot<DocumentData> | null): Promise<{ students: Student[], lastDoc: QueryDocumentSnapshot<DocumentData> | null }> {
     let q = query(studentCollection, orderBy("createdAt", "desc"), limit(limitCount));
-    
+
     if (lastDoc) {
-       q = query(studentCollection, orderBy("createdAt", "desc"), startAfter(lastDoc), limit(limitCount));
+      q = query(studentCollection, orderBy("createdAt", "desc"), startAfter(lastDoc), limit(limitCount));
     }
-    
+
     const querySnapshot = await getDocs(q);
     const students = querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     })) as Student[];
-    
+
     return {
-       students,
-       lastDoc: querySnapshot.docs.length > 0 ? querySnapshot.docs[querySnapshot.docs.length - 1] : null
+      students,
+      lastDoc: querySnapshot.docs.length > 0 ? querySnapshot.docs[querySnapshot.docs.length - 1] : null
     };
   },
 

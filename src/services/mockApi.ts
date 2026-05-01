@@ -127,6 +127,7 @@ import { studentService } from './studentService';
 export const getDashboardStats = async (): Promise<DashboardStats> => {
   await new Promise(resolve => setTimeout(resolve, 800));
   const students = await studentService.getStudents();
+  console.log("🚀 ~ getDashboardStats ~ students:", students)
 
   return {
     totalStudents: students.length,

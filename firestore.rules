@@ -129,5 +129,26 @@ service cloud.firestore {
       allow read:  if isSignedIn();
       allow write: if isAdmin();
     }
+
+    // ──────────────────────────────────────────────────────────────────
+    // Chat System
+    // ──────────────────────────────────────────────────────────────────
+    
+    match /conversations/{conversationId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.participants;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && request.auth.uid in resource.data.admins;
+      
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        allow create: if isSignedIn() && 
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants &&
+          (get(/databases/$(database)/documents/conversations/$(conversationId)).data.type != "broadcast" || isAdmin() || isTeacher());
+      }
+    }
+
+    match /userChats/{userId}/conversations/{conversationId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
   }
 }
