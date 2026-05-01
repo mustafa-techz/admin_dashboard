@@ -34,6 +34,12 @@ export interface Message {
   text?: string;
   imageUrl?: string;
   createdAt: Timestamp | null;
+  /** Client-side generated ID for deduplication during optimistic updates */
+  tempId?: string;
+  /** Status for UI feedback */
+  status?: "sending" | "sent" | "error";
+  /** Whether the message is local-only (Firestore metadata) */
+  hasPendingWrites?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -62,6 +68,9 @@ export interface SendMessageInput {
   text?: string;
   imageUrl?: string;
   participants: string[];
+  conversationType?: ConversationType;
+  conversationName?: string;
+  tempId: string;
 }
 
 export interface CreateGroupInput {
@@ -90,6 +99,6 @@ export interface MessageFanoutPayload {
   senderName: string;
   text: string;
   participants: string[];
-  conversationType: ConversationType;
+  conversationType?: ConversationType;
   conversationName?: string;
 }

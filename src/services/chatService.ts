@@ -5,8 +5,8 @@
  * No React dependencies — can be called from hooks, API routes, or Cloud Functions.
  *
  * Cost-optimisation rules enforced here:
- *  - Chat list is always a one-time getDocs (no listener).
- *  - Listeners are created only for the active conversation (subscribeToMessages).
+ *  - Chat list has one app-level listener on userChats/{uid}/conversations.
+ *  - Message listeners are created only for the active conversation.
  *  - Messages are paginated (limit 20 per page).
  *  - Data is denormalised: lastMessage is written to both conversations + userChats.
  */
@@ -21,11 +21,11 @@ import {
   query,
   orderBy,
   limit,
+  limitToLast,
   startAfter,
   where,
   onSnapshot,
   serverTimestamp,
-  Timestamp,
   writeBatch,
   DocumentData,
   QueryDocumentSnapshot,
@@ -67,6 +67,34 @@ export const getChatList = async (userId: string): Promise<UserChat[]> => {
   );
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserChat));
+};
+
+/**
+ * App-level real-time listener for the user's conversation summaries.
+ * This is the global source of truth for sidebar lastMessage/unreadCount state.
+ */
+export const subscribeToChatList = (
+  userId: string,
+  onChats: (chats: UserChat[]) => void,
+  onError?: (error: Error) => void
+): (() => void) => {
+  const q = query(
+    userChatsRef(userId),
+    orderBy("lastMessageAt", "desc"),
+    limit(50)
+  );
+
+  return onSnapshot(
+    q,
+    { includeMetadataChanges: true },
+    (snap) => {
+      const chats = snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserChat));
+      onChats(chats);
+    },
+    (error) => {
+      onError?.(error);
+    }
+  );
 };
 
 // ─── Direct conversation ──────────────────────────────────────────────────────
@@ -181,7 +209,7 @@ export const loadMessages = async (
   let q = query(
     messagesRef(conversationId),
     orderBy("createdAt", "desc"),
-    // limit(MESSAGES_PAGE_SIZE)
+    limit(MESSAGES_PAGE_SIZE)
   );
 
   if (lastDoc) {
@@ -189,7 +217,7 @@ export const loadMessages = async (
       messagesRef(conversationId),
       orderBy("createdAt", "desc"),
       startAfter(lastDoc),
-      // limit(MESSAGES_PAGE_SIZE)
+      limit(MESSAGES_PAGE_SIZE)
     );
   }
 
@@ -205,27 +233,31 @@ export const loadMessages = async (
 };
 
 /**
- * Real-time listener for new messages — subscribe ONLY when the chat window is open.
+ * Real-time listener for the newest messages — subscribe ONLY when the chat window is open.
  * Returns an unsubscribe function.
  */
 export const subscribeToMessages = (
   conversationId: string,
   onMessages: (messages: Message[]) => void
 ): (() => void) => {
-  // Listen only to the last 20 messages to keep read costs low.
   const q = query(
     messagesRef(conversationId),
     orderBy("createdAt", "asc"),
-    limit(MESSAGES_PAGE_SIZE)
+    limitToLast(50)
   );
 
-  return onSnapshot(q, (snap) => {
-    const messages = snap.docs.map((d) => ({
-      id: d.id,
-      ...d.data(),
-    })) as Message[];
-    onMessages(messages);
-  });
+  return onSnapshot(
+    q,
+    { includeMetadataChanges: true }, // Important for hasPendingWrites
+    (snap) => {
+      const messages = snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+        hasPendingWrites: d.metadata.hasPendingWrites,
+      })) as Message[];
+      onMessages(messages);
+    }
+  );
 };
 
 /**
@@ -234,8 +266,17 @@ export const subscribeToMessages = (
  * and sends FCM push notifications.
  */
 export const sendMessage = async (input: SendMessageInput): Promise<string> => {
-  const { conversationId, senderId, senderName, text, imageUrl, participants } =
-    input;
+  const {
+    conversationId,
+    senderId,
+    senderName,
+    text,
+    imageUrl,
+    participants,
+    conversationType,
+    conversationName,
+    tempId,
+  } = input;
 
   const msgRef = await addDoc(messagesRef(conversationId), {
     senderId,
@@ -243,6 +284,7 @@ export const sendMessage = async (input: SendMessageInput): Promise<string> => {
     ...(text ? { text } : {}),
     ...(imageUrl ? { imageUrl } : {}),
     createdAt: serverTimestamp(),
+    tempId, // Store tempId for deduplication
   });
 
   // Trigger fan-out via Next.js API route (updates userChats + sends FCM).
@@ -253,6 +295,8 @@ export const sendMessage = async (input: SendMessageInput): Promise<string> => {
     senderName,
     text: text ?? (imageUrl ? "📷 Image" : ""),
     participants,
+    conversationType,
+    conversationName,
   };
 
   // Fire-and-forget: don't block the UI on the fan-out
