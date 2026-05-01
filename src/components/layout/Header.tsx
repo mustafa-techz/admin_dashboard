@@ -1,14 +1,17 @@
 import { useAuthStore } from '@/store/authStore';
-import { Bell, User as UserIcon, MapPin, MessageCircle } from 'lucide-react';
+import { Bell, User as UserIcon, MapPin } from 'lucide-react';
 
 import Link from 'next/link';
 import { logoutUser } from '@/services/auth.service';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { branchService } from '@/services/firebase/masterDataService';
 import { useEffect } from 'react';
+import { requestChatNotificationPermission } from '@/lib/chatNotifications';
+import { useChatStore } from '@/store/chatStore';
 
 export default function Header() {
   const { user, role } = useAuthStore();
+  const totalUnreadCount = useChatStore((state) => state.totalUnreadCount);
   const queryClient = useQueryClient();
 
   const { data: branches = [] } = useQuery({
@@ -58,6 +61,10 @@ export default function Header() {
     } catch (error) {
       console.error("Logout failed:", error);
     }
+  };
+
+  const handleBellClick = async () => {
+    await requestChatNotificationPermission();
   };
 
   const navLinks = [
@@ -112,9 +119,18 @@ export default function Header() {
             </select>
           </div>
 
-          <button className="relative p-2 text-muted-foreground hover:text-primary transition-colors">
+          <button
+            type="button"
+            onClick={handleBellClick}
+            className="relative p-2 text-muted-foreground hover:text-primary transition-colors"
+            title="Message notifications"
+          >
             <Bell size={20} />
-            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />
+            {totalUnreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 h-5 min-w-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                {totalUnreadCount > 99 ? "99+" : totalUnreadCount}
+              </span>
+            )}
           </button>
 
           <div className="flex items-center gap-3 pl-2 border-l">

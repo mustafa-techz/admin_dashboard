@@ -43,6 +43,7 @@ import {
   CreateGroupInput,
 } from "@/types/chat";
 import { DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
+import { useChatStore } from "@/store/chatStore";
 
 // ─── Query keys ───────────────────────────────────────────────────────────────
 
@@ -68,14 +69,20 @@ export const useChatList = (userId: string | undefined) => {
 
 export const useChatListRealtime = (userId: string | undefined) => {
   const queryClient = useQueryClient();
+  const setChats = useChatStore((state) => state.setChats);
+  const resetChats = useChatStore((state) => state.resetChats);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      resetChats();
+      return;
+    }
 
     const unsubscribe = subscribeToChatList(
       userId,
       (chats) => {
         queryClient.setQueryData(chatKeys.list(userId), chats);
+        setChats(chats);
       },
       (error) => {
         console.error("Chat list subscription failed:", error);
@@ -84,7 +91,7 @@ export const useChatListRealtime = (userId: string | undefined) => {
     );
 
     return unsubscribe;
-  }, [queryClient, userId]);
+  }, [queryClient, resetChats, setChats, userId]);
 };
 
 // ─── Paginated message history ────────────────────────────────────────────────
@@ -272,6 +279,7 @@ export const useSendMessage = (userId: string | undefined) => {
 
 export const useMarkAsRead = (userId: string | undefined) => {
   const queryClient = useQueryClient();
+  const setChats = useChatStore((state) => state.setChats);
 
   return useMutation({
     mutationFn: ({ conversationId }: { conversationId: string }) =>
@@ -281,11 +289,17 @@ export const useMarkAsRead = (userId: string | undefined) => {
     onMutate: async ({ conversationId }) => {
       if (!userId) return;
       const key = chatKeys.list(userId);
-      queryClient.setQueryData<UserChat[]>(key, (old) =>
-        old?.map((c) =>
+      queryClient.setQueryData<UserChat[]>(key, (old) => {
+        const nextChats = old?.map((c) =>
           c.id === conversationId ? { ...c, unreadCount: 0 } : c
-        )
-      );
+        );
+
+        if (nextChats) {
+          setChats(nextChats);
+        }
+
+        return nextChats;
+      });
     },
   });
 };
