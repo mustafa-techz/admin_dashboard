@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
   const userRole = request.cookies.get('user-role')?.value;
   const { pathname } = request.nextUrl;
 
-  const isProtectedPage = pathname.startsWith('/users');
+  const isProtectedPage = pathname.startsWith('/users') || pathname.startsWith('/create');
   const isProtectedApi = pathname.startsWith('/api/users');
 
   if (!isProtectedPage && !isProtectedApi) {
@@ -42,5 +42,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/users/:path*', '/api/users/:path*'],
+  matcher: ['/users/:path*', '/create/:path*', '/api/users/:path*'],
 };

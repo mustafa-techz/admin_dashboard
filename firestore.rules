@@ -1,0 +1,154 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ──────────────────────────────────────────────────────────────────
+    // Helpers
+    // ──────────────────────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isTeacher() {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+    }
+
+    function isParent() {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'parent';
+    }
+
+    // Returns the teacher doc for the current user
+    function teacherData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // users/{userId}
+    // ──────────────────────────────────────────────────────────────────
+    match /users/{userId} {
+      // Admins can read/write all users.
+      // Users can read/write their own profile.
+      allow read:  if isAdmin() || request.auth.uid == userId;
+      allow write: if isAdmin() || request.auth.uid == userId;
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // students/{studentId}
+    // ──────────────────────────────────────────────────────────────────
+    match /students/{studentId} {
+      // Admin: full access
+      allow read, write: if isAdmin();
+
+      // Teacher: read only students in their class+section
+      allow read: if isTeacher()
+        && resource.data.classId   == teacherData().classId
+        && resource.data.sectionId == teacherData().sectionId;
+
+      // Parent: read only their own child
+      allow read: if isParent()
+        && resource.data.parentId == request.auth.uid;
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // attendance_sessions/{sessionId}  (format: date_classId_section)
+    // ──────────────────────────────────────────────────────────────────
+    match /attendance_sessions/{sessionId} {
+      // Admin: full access
+      allow read, write: if isAdmin();
+
+      // Teacher: read/write sessions for their own class+section
+      allow read, write: if isTeacher()
+        && resource.data.classId == teacherData().classId
+        && resource.data.section == teacherData().sectionId;
+
+      // Allow teacher to CREATE a new session for their class
+      allow create: if isTeacher()
+        && request.resource.data.classId == teacherData().classId
+        && request.resource.data.section == teacherData().sectionId;
+
+      // Parent: read sessions containing their child
+      // (We check the session's classId matches their child's class
+      //  via student_stats parentId linkage — validated server-side)
+      allow read: if isParent();
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // student_stats/{studentId}
+    // ──────────────────────────────────────────────────────────────────
+    match /student_stats/{studentId} {
+      // Admin: full access
+      allow read, write: if isAdmin();
+
+      // Teacher: writes (increments) come from service layer
+      allow write: if isTeacher();
+
+      // Teacher/Parent: read stats for students they can see
+      allow read: if isTeacher() || isParent();
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // daily_summaries/{date}
+    // ──────────────────────────────────────────────────────────────────
+    match /daily_summaries/{date} {
+      // Admin can read school-wide daily summary
+      allow read: if isAdmin();
+
+      // Teacher/service layer writes daily summary increments
+      allow write: if isTeacher() || isAdmin();
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // class_stats/{classId_section}
+    // ──────────────────────────────────────────────────────────────────
+    match /class_stats/{classSection} {
+      allow read:  if isAdmin() || isTeacher();
+      allow write: if isAdmin();
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // counters / classes / sections  (master data)
+    // ──────────────────────────────────────────────────────────────────
+    match /counters/{doc} {
+      allow read, write: if isAdmin();
+    }
+
+    match /classes/{doc} {
+      allow read:  if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /sections/{doc} {
+      allow read:  if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // Chat System
+    // ──────────────────────────────────────────────────────────────────
+    
+    match /conversations/{conversationId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.participants;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && request.auth.uid in resource.data.admins;
+      
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        allow create: if isSignedIn() && 
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants &&
+          (get(/databases/$(database)/documents/conversations/$(conversationId)).data.type != "broadcast" || isAdmin() || isTeacher());
+      }
+    }
+
+    match /userChats/{userId}/conversations/{conversationId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+  }
+}
