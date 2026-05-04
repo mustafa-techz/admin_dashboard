@@ -65,6 +65,7 @@ export default function Header() {
     { label: 'Teachers', href: '/teachers', roles: ['admin', 'sub-admin'] },
     { label: 'Students', href: '/students', roles: ['admin', 'sub-admin', 'teacher'] },
     { label: 'Attendance', href: '/attendance', roles: ['admin', 'sub-admin', 'teacher'] },
+    { label: 'Timetable', href: '/timetable', roles: ['admin', 'sub-admin'] },
   ];
 
   const filteredLinks = navLinks.filter(link => !link.roles || (role && link.roles.includes(role)));

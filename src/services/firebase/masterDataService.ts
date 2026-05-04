@@ -1,6 +1,6 @@
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from "firebase/firestore";
 import { db } from "../../firebase/firestore";
-import { ClassMaster, SectionMaster, BranchMaster } from "../../types/masterData";
+import { ClassMaster, SectionMaster, BranchMaster, SubjectMaster, TimeSlotMaster } from "../../types/masterData";
 
 export const classService = {
   async getClasses(): Promise<ClassMaster[]> {
@@ -79,6 +79,60 @@ export const branchService = {
 
   async deleteBranch(id: string) {
     const docRef = doc(db, "branches", id);
+    return await deleteDoc(docRef);
+  }
+};
+
+export const subjectService = {
+  async getSubjects(): Promise<SubjectMaster[]> {
+    const subjectCol = collection(db, "subjects");
+    const q = query(subjectCol, orderBy("subjectName"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as SubjectMaster[];
+  },
+
+  async addSubject(data: Omit<SubjectMaster, 'id'>) {
+    const subjectCol = collection(db, "subjects");
+    return await addDoc(subjectCol, data);
+  },
+
+  async updateSubject(id: string, data: Partial<SubjectMaster>) {
+    const docRef = doc(db, "subjects", id);
+    return await updateDoc(docRef, data);
+  },
+
+  async deleteSubject(id: string) {
+    const docRef = doc(db, "subjects", id);
+    return await deleteDoc(docRef);
+  }
+};
+
+export const timeSlotService = {
+  async getTimeSlots(): Promise<TimeSlotMaster[]> {
+    const timeSlotCol = collection(db, "timeSlots");
+    const q = query(timeSlotCol, orderBy("startTime"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as TimeSlotMaster[];
+  },
+
+  async addTimeSlot(data: Omit<TimeSlotMaster, 'id'>) {
+    const timeSlotCol = collection(db, "timeSlots");
+    return await addDoc(timeSlotCol, data);
+  },
+
+  async updateTimeSlot(id: string, data: Partial<TimeSlotMaster>) {
+    const docRef = doc(db, "timeSlots", id);
+    return await updateDoc(docRef, data);
+  },
+
+  async deleteTimeSlot(id: string) {
+    const docRef = doc(db, "timeSlots", id);
     return await deleteDoc(docRef);
   }
 };

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { classService, sectionService, branchService } from '../../services/firebase/masterDataService';
+import { classService, sectionService, branchService, subjectService, timeSlotService } from '../../services/firebase/masterDataService';
 import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function SeedPage() {
@@ -27,6 +27,31 @@ export default function SeedPage() {
       const sections = ['A', 'B', 'C', 'D'];
       for (const section of sections) {
         await sectionService.addSection({ sectionId: section, sectionName: section });
+      }
+
+      // Seed Subjects
+      const subjects = ['Mathematics', 'Science', 'English', 'Social Studies', 'Computer Science', 'Art', 'PE'];
+      for (const subject of subjects) {
+        await subjectService.addSubject({ subjectId: subject.toLowerCase().replace(' ', '-'), subjectName: subject });
+      }
+
+      // Seed Time Slots (7:00 AM - 1:00 PM)
+      const slots = [
+        { start: '07:00', end: '08:00', label: '7:00 AM - 8:00 AM' },
+        { start: '08:00', end: '09:00', label: '8:00 AM - 9:00 AM' },
+        { start: '09:00', end: '10:00', label: '9:00 AM - 10:00 AM' },
+        { start: '10:00', end: '11:00', label: '10:00 AM - 11:00 AM' },
+        { start: '11:00', end: '12:00', label: '11:00 AM - 12:00 AM' },
+        { start: '12:00', end: '13:00', label: '12:00 PM - 01:00 PM' },
+      ];
+      for (let i = 0; i < slots.length; i++) {
+        const slot = slots[i];
+        await timeSlotService.addTimeSlot({
+          timeSlotId: `slot-${i + 1}`,
+          startTime: slot.start,
+          endTime: slot.end,
+          label: slot.label
+        });
       }
 
       setStatus('success');
