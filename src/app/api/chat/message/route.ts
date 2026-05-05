@@ -119,7 +119,28 @@ export async function POST(request: NextRequest) {
               title: conversationName ?? senderName,
               body: `${senderName}: ${previewText}`,
             },
-            data: { conversationId },
+            data: {
+              conversationId,
+              senderId,
+              senderName,
+              type: conversationType || "group",
+              click_action: `/chat?chatId=${conversationId}`,
+            },
+            android: {
+              notification: {
+                click_action: `/chat?chatId=${conversationId}`,
+              },
+            },
+            apns: {
+              payload: {
+                aps: {
+                  "mutable-content": 1,
+                },
+              },
+              fcm_options: {
+                image: imageUrl || undefined,
+              },
+            },
           });
         } else {
           // Direct chat — multicast to recipient tokens
@@ -140,7 +161,28 @@ export async function POST(request: NextRequest) {
                   title: senderName,
                   body: previewText,
                 },
-                data: { conversationId },
+                data: {
+                  conversationId,
+                  senderId,
+                  senderName,
+                  type: "direct",
+                  click_action: `/chat?chatId=${conversationId}`,
+                },
+                android: {
+                  notification: {
+                    click_action: `/chat?chatId=${conversationId}`,
+                  },
+                },
+                apns: {
+                  payload: {
+                    aps: {
+                      "mutable-content": 1,
+                    },
+                  },
+                  fcm_options: {
+                    image: imageUrl || undefined,
+                  },
+                },
               });
             }
           }
