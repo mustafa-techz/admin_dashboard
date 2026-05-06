@@ -1,9 +1,12 @@
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { Student } from '@/types/student';
 import { ClassMaster, SectionMaster, BranchMaster } from '@/types/masterData';
 import { classService, sectionService, branchService } from '@/services/firebase/masterDataService';
+
 
 interface StudentFormProps {
   initialData?: Partial<Student>;
@@ -12,31 +15,37 @@ interface StudentFormProps {
   isLoading?: boolean;
 }
 
-const validationSchema = Yup.object().shape({
-  fullName: Yup.string().required('Full Name is required'),
-  classId: Yup.string().required('Class is required'),
-  sectionId: Yup.string().required('Section is required'),
-  parentDetails: Yup.object().shape({
-    fatherName: Yup.string().required('Father Name is required'),
-    motherName: Yup.string(),
-    phone: Yup.string()
-      .matches(/^[0-9]+$/, 'Phone must be a valid number')
-      .min(10, 'Must be at least 10 digits')
-      .required('Phone is required'),
-    email: Yup.string().required('Email is required').email('Invalid email address').required('Email is required'),
-  }),
-  addressDetails: Yup.object().shape({
-    street: Yup.string().required('Street Address is required'),
-    city: Yup.string().required('City is required'),
-    state: Yup.string().required('State is required'),
-    pincode: Yup.string()
-      .matches(/^[0-9]{6}$/, 'Pincode must be exactly 6 digits')
-      .required('Pincode is required'),
-  }),
-  dateOfBirth: Yup.date().required('Date of Birth is required'),
-  bloodGroup: Yup.string().required('Blood Group is required'),
-  gender: Yup.string().required('Gender is required'),
-});
+const validationSchema = (isEditing: boolean) =>
+  Yup.object().shape({
+    fullName: Yup.string().required('Full Name is required'),
+    classId: Yup.string().required('Class is required'),
+    sectionId: Yup.string().required('Section is required'),
+    parentDetails: Yup.object().shape({
+      fatherName: Yup.string().required('Father Name is required'),
+      motherName: Yup.string(),
+      phone: Yup.string()
+        .matches(/^[0-9]+$/, 'Phone must be a valid number')
+        .min(10, 'Must be at least 10 digits')
+        .required('Phone is required'),
+      email: Yup.string().required('Email is required').email('Invalid email address').required('Email is required'),
+      password: isEditing
+        ? Yup.string().optional()
+        : Yup.string()
+            .required('Parent password is required')
+            .min(6, 'Password must be at least 6 characters'),
+    }),
+    addressDetails: Yup.object().shape({
+      street: Yup.string().required('Street Address is required'),
+      city: Yup.string().required('City is required'),
+      state: Yup.string().required('State is required'),
+      pincode: Yup.string()
+        .matches(/^[0-9]{6}$/, 'Pincode must be exactly 6 digits')
+        .required('Pincode is required'),
+    }),
+    dateOfBirth: Yup.date().required('Date of Birth is required'),
+    bloodGroup: Yup.string().required('Blood Group is required'),
+    gender: Yup.string().required('Gender is required'),
+  });
 
 const defaultValues = {
   rollNumber: '', // Auto-generated on backend
@@ -49,6 +58,7 @@ const defaultValues = {
     motherName: '',
     phone: '',
     email: '',
+    password: '',
   },
   addressDetails: {
     street: '',
@@ -65,6 +75,22 @@ const defaultValues = {
 
 export default function StudentForm({ initialData, onSubmit, onCancel, isLoading }: StudentFormProps) {
   const isEditing = !!initialData;
+  const [showPassword, setShowPassword] = useState(false);
+
+  /** Compute password strength 0-4 from length + character variety */
+  const getStrength = (pw: string): number => {
+    if (!pw) return 0;
+    let score = 0;
+    if (pw.length >= 6) score++;
+    if (pw.length >= 10) score++;
+    if (/[A-Z]/.test(pw)) score++;
+    if (/[0-9!@#$%^&*]/.test(pw)) score++;
+    return score;
+  };
+
+  const strengthLabel = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+  const strengthColor = ['', 'bg-red-500', 'bg-amber-400', 'bg-yellow-400', 'bg-green-500'];
+
 
   // Master Data Queries
   const { data: classes = [] } = useQuery<ClassMaster[]>({
@@ -106,7 +132,7 @@ export default function StudentForm({ initialData, onSubmit, onCancel, isLoading
 
         <Formik
           initialValues={(initialData as any) || defaultValues}
-          validationSchema={validationSchema}
+          validationSchema={validationSchema(isEditing)}
           onSubmit={handleSubmit}
         >
           {({ errors, touched, isValid, values }) => (
@@ -226,6 +252,84 @@ export default function StudentForm({ initialData, onSubmit, onCancel, isLoading
                   </div>
                 </div>
               </div>
+
+              {/* Parent Password — only shown on CREATE, never on edit */}
+              {!isEditing && (
+                <div className="space-y-4">
+                  <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground border-b border-border pb-2">
+                    Parent Login Credentials
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Field name="parentDetails.password">
+                      {({ field, meta }: { field: any; meta: any }) => {
+                        const strength = getStrength(field.value || '');
+                        return (
+                          <div>
+                            <label className="block text-sm font-bold mb-1">
+                              Parent Password *
+                            </label>
+                            <div className="relative">
+                              <input
+                                {...field}
+                                id="parentDetails.password"
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="Min 6 characters"
+                                autoComplete="new-password"
+                                className={[
+                                  'w-full px-3 py-2 pr-10 bg-secondary border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition',
+                                  meta.touched && meta.error ? 'border-red-400' : 'border-border',
+                                ].join(' ')}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword((p) => !p)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                tabIndex={-1}
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                              >
+                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                              </button>
+                            </div>
+
+                            {/* Strength bar */}
+                            {field.value && (
+                              <div className="mt-2 space-y-1">
+                                <div className="flex gap-1">
+                                  {[1, 2, 3, 4].map((level) => (
+                                    <div
+                                      key={level}
+                                      className={[
+                                        'h-1 flex-1 rounded-full transition-all duration-300',
+                                        strength >= level ? strengthColor[strength] : 'bg-muted',
+                                      ].join(' ')}
+                                    />
+                                  ))}
+                                </div>
+                                <p className={[
+                                  'text-[10px] font-bold',
+                                  strength <= 1 ? 'text-red-500' : strength === 2 ? 'text-amber-500' : strength === 3 ? 'text-yellow-600' : 'text-green-600',
+                                ].join(' ')}>
+                                  {strengthLabel[strength]}
+                                </p>
+                              </div>
+                            )}
+
+                            {meta.touched && meta.error && (
+                              <div className="text-red-500 text-xs mt-1 font-bold">{meta.error}</div>
+                            )}
+                          </div>
+                        );
+                      }}
+                    </Field>
+
+                    <div className="flex items-start pt-6">
+                      <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-700 leading-relaxed">
+                        <span className="font-black">🔒 Security note:</span> This password is used to create the parent&apos;s login account. It is&nbsp;<span className="font-black underline">never stored</span>&nbsp;in the database.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Address Info */}
               <div className="space-y-4">

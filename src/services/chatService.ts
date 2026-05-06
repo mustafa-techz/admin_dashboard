@@ -294,6 +294,7 @@ export const sendMessage = async (input: SendMessageInput): Promise<string> => {
     senderId,
     senderName,
     text: text ?? (imageUrl ? "📷 Image" : ""),
+    ...(imageUrl ? { imageUrl } : {}),
     participants,
     conversationType,
     conversationName,

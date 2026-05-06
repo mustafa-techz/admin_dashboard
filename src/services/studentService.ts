@@ -59,15 +59,20 @@ export const studentService = {
       return newStudentRef.id;
     });
 
+    // Strip the runtime-only password field before it reaches Firestore
+    // (it was already set on the in-memory student object by the form)
+    const { password: _pw, ...safeParentDetails } = student.parentDetails;
+
     try {
       await userService.createUser({
-        name: student.parentDetails.fatherName,
-        email: student.parentDetails.email,
-        password: student.parentDetails.email,
+        name: safeParentDetails.fatherName,
+        email: safeParentDetails.email,
+        // Use the explicitly provided password; fall back to email only as a last resort
+        password: _pw || safeParentDetails.email,
         role: 'parent'
       });
     } catch (error) {
-      console.error("Failed to create parent role:", error);
+      console.error("Failed to create parent user account:", error);
     }
 
     return studentId;

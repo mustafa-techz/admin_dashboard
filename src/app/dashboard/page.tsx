@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getDashboardStats } from '@/services/mockApi';
 import DashboardCard from '@/components/dashboard/DashboardCard';
 import ActivityFeed from '@/components/dashboard/ActivityFeed';
+import DashboardAnnouncements from '@/components/dashboard/DashboardAnnouncements';
 import StatCircle from '@/components/shared/StatCircle';
 import { Users, UserCheck, BookOpen, AlertCircle, Calendar, Activity as ActivityIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -21,8 +22,6 @@ export default function DashboardPage() {
     queryKey: ['dashboardStats'],
     queryFn: getDashboardStats,
   });
-  console.log("olesssss", role);
-  console.log("🚀 ~ DashboardPage ~ isLoading:", isLoading,)
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -56,6 +55,32 @@ export default function DashboardPage() {
             </button>
           </div>
         )}
+      </div>
+
+      <div className="lg:col-span-2">
+        <DashboardAnnouncements />
+      </div>
+
+      <div className="bg-card rounded-2xl border border-border shadow-soft p-8 flex flex-col md:flex-row items-center justify-around gap-8">
+        <StatCircle
+          value={stats?.attendanceToday.present || 0}
+          total={stats?.attendanceToday.total || 400}
+          label="Students Present"
+          subLabel="Last updated 10m ago"
+        />
+
+        <div className="flex-1 space-y-4 max-w-sm">
+          <h3 className="text-xl font-black tracking-tight">Daily Attendance</h3>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            The attendance rate for today is <span className="text-primary font-bold">83.5%</span>.
+            This is a <span className="text-green-600 font-bold">2.4% increase</span> compared to yesterday.
+          </p>
+          <div className="pt-2">
+            <button className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
+              View Detailed Report
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -113,34 +138,17 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          <div className="bg-card rounded-2xl border border-border shadow-soft p-8 flex flex-col md:flex-row items-center justify-around gap-8">
-            <StatCircle
-              value={stats?.attendanceToday.present || 0}
-              total={stats?.attendanceToday.total || 400}
-              label="Students Present"
-              subLabel="Last updated 10m ago"
-            />
-
-            <div className="flex-1 space-y-4 max-w-sm">
-              <h3 className="text-xl font-black tracking-tight">Daily Attendance</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                The attendance rate for today is <span className="text-primary font-bold">83.5%</span>.
-                This is a <span className="text-green-600 font-bold">2.4% increase</span> compared to yesterday.
-              </p>
-              <div className="pt-2">
-                <button className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
-                  View Detailed Report
-                </button>
+        <div className="lg:col-span-1">
+          {role === "admin" ? <ActivityFeed /> : (
+            <div className="bg-primary/5 rounded-2xl border border-primary/10 p-6 flex flex-col items-center justify-center text-center space-y-3 h-full">
+              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                <Calendar size={24} />
               </div>
+              <h4 className="text-sm font-bold">School Calendar</h4>
+              <p className="text-xs text-muted-foreground">Check out the upcoming school events and holidays in the announcements section.</p>
             </div>
-          </div>
+          )}
         </div>
-        {role === "admin" && (
-          <div className="lg:col-span-1">
-            <ActivityFeed />
-          </div>
-        )}
       </div>
     </div>
   );

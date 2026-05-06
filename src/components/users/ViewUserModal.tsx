@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { SerializedTimestamp, User } from '@/types/user';
-import { X, Copy, Check } from 'lucide-react';
+import { X, Copy, Check, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 
 interface ViewUserModalProps {
@@ -33,6 +33,12 @@ const formatCreatedAt = (value: User['createdAt']) => {
 
 export default function ViewUserModal({ user, isOpen, onClose }: ViewUserModalProps) {
   const [copied, setCopied] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+
+  // A fixed mask — the real password is NEVER fetched from the backend
+  const MASKED = '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022';
+  const VISIBLE_PLACEHOLDER = '(set at creation)';
+
 
   if (!isOpen || !user) return null;
 
@@ -96,6 +102,31 @@ export default function ViewUserModal({ user, isOpen, onClose }: ViewUserModalPr
                 </button>
               </div>
             </div>
+
+            {/* Masked password — parent role only */}
+            {user.role === 'parent' && (
+              <div className="p-4 bg-secondary/50 rounded-xl border border-border">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">
+                  Parent Password
+                </label>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold tracking-widest font-mono">
+                    {showPassword ? VISIBLE_PLACEHOLDER : MASKED}
+                  </span>
+                  <button
+                    onClick={() => setShowPassword((p) => !p)}
+                    className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground"
+                    title={showPassword ? 'Hide' : 'Reveal placeholder'}
+                    aria-label={showPassword ? 'Hide password' : 'Show password hint'}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Password is never stored — set at account creation.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

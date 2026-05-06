@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
     senderId,
     senderName,
     text,
+    imageUrl,
     participants,
     conversationType,
     conversationName,
@@ -128,7 +129,7 @@ export async function POST(request: NextRequest) {
             },
             android: {
               notification: {
-                click_action: `/chat?chatId=${conversationId}`,
+                clickAction: `/chat?chatId=${conversationId}`,
               },
             },
             apns: {
@@ -137,8 +138,8 @@ export async function POST(request: NextRequest) {
                   "mutable-content": 1,
                 },
               },
-              fcm_options: {
-                image: imageUrl || undefined,
+              fcmOptions: {
+                imageUrl: imageUrl || undefined,
               },
             },
           });
@@ -170,7 +171,7 @@ export async function POST(request: NextRequest) {
                 },
                 android: {
                   notification: {
-                    click_action: `/chat?chatId=${conversationId}`,
+                    clickAction: `/chat?chatId=${conversationId}`,
                   },
                 },
                 apns: {
@@ -179,8 +180,8 @@ export async function POST(request: NextRequest) {
                       "mutable-content": 1,
                     },
                   },
-                  fcm_options: {
-                    image: imageUrl || undefined,
+                  fcmOptions: {
+                    imageUrl: imageUrl || undefined,
                   },
                 },
               });

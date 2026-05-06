@@ -70,6 +70,7 @@ export default function Header() {
   const navLinks = [
     { label: 'Home', href: '/dashboard' },
     { label: 'Chat', href: '/chat' },
+    { label: 'Events', href: '/announcements' },
     { label: 'Users', href: '/users', roles: ['admin'] },
     { label: 'Teachers', href: '/teachers', roles: ['admin', 'sub-admin'] },
     { label: 'Students', href: '/students', roles: ['admin', 'sub-admin', 'teacher'] },
