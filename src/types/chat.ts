@@ -98,6 +98,7 @@ export interface MessageFanoutPayload {
   senderId: string;
   senderName: string;
   text: string;
+  imageUrl?: string;
   participants: string[];
   conversationType?: ConversationType;
   conversationName?: string;

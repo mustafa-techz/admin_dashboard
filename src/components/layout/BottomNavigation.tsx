@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuthStore } from '@/store/authStore';
-import { Home, Users, BookOpen, Calendar, User as UserIcon, MessageCircle } from 'lucide-react';
+import { Home, Users, BookOpen, Calendar, User as UserIcon, MessageCircle, Bell } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,7 @@ export default function BottomNavigation() {
     { label: 'Teachers', href: '/teachers', icon: Users, roles: ['admin', 'sub-admin'] },
     { label: 'Students', href: '/students', icon: BookOpen },
     { label: 'Chat', href: '/chat', icon: MessageCircle },
+    { label: 'Events', href: '/announcements', icon: Bell },
     { label: 'Attendance', href: '/attendance', icon: Calendar },
     { label: 'Profile', href: '/profile', icon: UserIcon },
   ];
