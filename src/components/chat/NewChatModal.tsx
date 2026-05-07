@@ -8,7 +8,7 @@ import {
   useCreateDirectChat,
   useCreateGroup,
 } from "@/hooks/useChat";
-import { searchUsers, ChatUser } from "@/services/chatService";
+import { searchUsers, ChatUser, buildUserLabel } from "@/services/chatService";
 import { ConversationType } from "@/types/chat";
 import { cn } from "@/lib/utils";
 
@@ -18,26 +18,6 @@ interface NewChatModalProps {
 
 type Tab = "direct" | "group" | "broadcast";
 
-const TAB_CONFIG: { key: Tab; label: string; icon: React.ReactNode; description: string }[] = [
-  {
-    key: "direct",
-    label: "Direct",
-    icon: <MessageCircle size={15} />,
-    description: "One-on-one conversation",
-  },
-  {
-    key: "group",
-    label: "Group",
-    icon: <Users size={15} />,
-    description: "Everyone can send messages",
-  },
-  {
-    key: "broadcast",
-    label: "Broadcast",
-    icon: <Radio size={15} />,
-    description: "Only you can send (homework channel)",
-  },
-];
 
 export default function NewChatModal({ onCreated }: NewChatModalProps) {
   const { user } = useAuthStore();
@@ -54,6 +34,37 @@ export default function NewChatModal({ onCreated }: NewChatModalProps) {
 
   const createDirect = useCreateDirectChat(user?.id);
   const createGroup = useCreateGroup(user?.id);
+
+  const TAB_CONFIG: {
+    key: Tab;
+    label: string;
+    icon: React.ReactNode;
+    description: string;
+  }[] = [
+      {
+        key: "direct",
+        label: "Direct",
+        icon: <MessageCircle size={15} />,
+        description: "One-on-one conversation",
+      },
+
+      ...(user?.role !== "parent"
+        ? [
+          {
+            key: "group" as Tab,
+            label: "Group",
+            icon: <Users size={15} />,
+            description: "Everyone can send messages",
+          },
+          {
+            key: "broadcast" as Tab,
+            label: "Broadcast",
+            icon: <Radio size={15} />,
+            description: "Only you can send (homework channel)",
+          },
+        ]
+        : []),
+    ];
 
   // Sync tab from store when modal opens
   useEffect(() => {
@@ -81,7 +92,7 @@ export default function NewChatModal({ onCreated }: NewChatModalProps) {
     debounceRef.current = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const results = await searchUsers(searchQuery, user?.id ?? "");
+        const results = await searchUsers(searchQuery, user?.id ?? "", user?.role);
         setSearchResults(results);
       } finally {
         setIsSearching(false);
@@ -114,6 +125,8 @@ export default function NewChatModal({ onCreated }: NewChatModalProps) {
         userAName: user.name,
         userBId: target.uid,
         userBName: target.name,
+        userARoleLabel: buildUserLabel({ uid: user.id, name: user.name, email: user.email, role: user.role }),
+        userBRoleLabel: buildUserLabel(target),
       });
       onCreated(id);
       closeNewChatModal();
@@ -266,9 +279,14 @@ export default function NewChatModal({ onCreated }: NewChatModalProps) {
                   {u.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{u.name}</p>
-                  <p className="text-xs text-muted-foreground capitalize truncate">
-                    {u.role} · {u.email}
+                  <p className="text-sm font-medium truncate">
+                    {u.name}
+                    <span className="text-xs text-muted-foreground font-normal ml-1">
+                      ({buildUserLabel(u)})
+                    </span>
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {u.email}
                   </p>
                 </div>
                 {isSelected(u) && (

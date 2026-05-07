@@ -35,7 +35,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <div className="half-moon-bg" />
       {pathname !== '/login' && <Header />}
 
-      <main className="flex-1 pb-20 md:pb-0 md:pt-16 relative z-10">
+      <main
+        className={`flex-1 pb-20 md:pb-0 relative z-10 ${pathname !== '/chat' ? 'md:pt-16' : ''
+          }`}
+      >
         {pathname === '/chat' ? (
           // Full-height, no padding — the chat layout fills the viewport
           <div className="h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)]">

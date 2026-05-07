@@ -30,8 +30,6 @@ const messaging = firebase.messaging();
 
 // Handle background messages
 messaging.onBackgroundMessage((payload) => {
-  console.log("[FCM] Received background message:", payload);
-
   const notificationTitle = payload.notification?.title || "New Message";
   const notificationOptions = {
     body: payload.notification?.body || "",
@@ -55,8 +53,6 @@ messaging.onBackgroundMessage((payload) => {
 
 // Handle notification clicks
 self.addEventListener("notificationclick", (event) => {
-  console.log("[FCM] Notification clicked:", event);
-
   event.notification.close();
 
   const conversationId = event.notification.data?.conversationId;
@@ -116,12 +112,10 @@ self.addEventListener("notificationclick", (event) => {
 
 // Handle service worker activation
 self.addEventListener("activate", (event) => {
-  console.log("[FCM] Service worker activated");
   event.waitUntil(self.clients.claim());
 });
 
 // Handle service worker installation
 self.addEventListener("install", (event) => {
-  console.log("[FCM] Service worker installed");
   event.waitUntil(self.skipWaiting());
 });

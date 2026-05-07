@@ -20,7 +20,7 @@ export default function ChatSidebar({ onSelectChat, activeChatId }: ChatSidebarP
 
   const { data: chats = [], isLoading, isError } = useChatList(user?.id);
 
-  const canCreate = role === "admin" || role === "teacher" || role === "sub-admin";
+
 
   const filtered = chats.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -44,31 +44,35 @@ export default function ChatSidebar({ onSelectChat, activeChatId }: ChatSidebarP
           </div>
 
           {/* New chat button — teachers / admins only */}
-          {canCreate && (
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => openNewChatModal("direct")}
-                title="New direct message"
-                className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-              >
-                <MessageCircle size={17} />
-              </button>
-              <button
-                onClick={() => openNewChatModal("group")}
-                title="New group"
-                className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-              >
-                <Users size={17} />
-              </button>
-              <button
-                onClick={() => openNewChatModal("broadcast")}
-                title="New broadcast"
-                className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 transition-colors"
-              >
-                <Radio size={17} />
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => openNewChatModal("direct")}
+              title="New direct message"
+              className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+            >
+              <MessageCircle size={17} />
+            </button>
+            {role !== "parent" && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => openNewChatModal("group")}
+                  title="New group"
+                  className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                >
+                  <Users size={17} />
+                </button>
+                <button
+                  onClick={() => openNewChatModal("broadcast")}
+                  title="New broadcast"
+                  className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 transition-colors"
+                >
+                  <Radio size={17} />
+                </button>
+              </div>
+            )}
+
+          </div>
+
         </div>
 
         {/* Search */}
@@ -127,7 +131,7 @@ export default function ChatSidebar({ onSelectChat, activeChatId }: ChatSidebarP
             <p className="text-sm font-medium text-muted-foreground">
               {search ? "No conversations match your search." : "No conversations yet."}
             </p>
-            {!search && canCreate && (
+            {!search && (
               <button
                 onClick={() => openNewChatModal("direct")}
                 className="text-xs text-primary font-semibold hover:underline"

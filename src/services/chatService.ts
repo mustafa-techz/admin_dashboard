@@ -106,7 +106,7 @@ export const subscribeToChatList = (
 export const getOrCreateDirectConversation = async (
   input: CreateDirectChatInput
 ): Promise<string> => {
-  const { userAId, userAName, userBId, userBName } = input;
+  const { userAId, userAName, userBId, userBName, userARoleLabel, userBRoleLabel } = input;
 
   // Deterministic ID so two users always share the same conversation doc.
   const conversationId = [userAId, userBId].sort().join("_");
@@ -130,7 +130,7 @@ export const getOrCreateDirectConversation = async (
     createdBy: userAId,
   });
 
-  // Seed userChats for user A (showing user B's name)
+  // Seed userChats for user A (showing user B's name + role label)
   batch.set(userChatDocRef(userAId, conversationId), {
     name: userBName,
     type: "direct",
@@ -139,9 +139,10 @@ export const getOrCreateDirectConversation = async (
     unreadCount: 0,
     lastSeenAt: null,
     avatarLetter: userBName.charAt(0).toUpperCase(),
+    ...(userBRoleLabel ? { roleLabel: userBRoleLabel } : {}),
   });
 
-  // Seed userChats for user B (showing user A's name)
+  // Seed userChats for user B (showing user A's name + role label)
   batch.set(userChatDocRef(userBId, conversationId), {
     name: userAName,
     type: "direct",
@@ -150,6 +151,7 @@ export const getOrCreateDirectConversation = async (
     unreadCount: 0,
     lastSeenAt: null,
     avatarLetter: userAName.charAt(0).toUpperCase(),
+    ...(userARoleLabel ? { roleLabel: userARoleLabel } : {}),
   });
 
   await batch.commit();
@@ -341,28 +343,81 @@ export interface ChatUser {
   name: string;
   email: string;
   role: string;
+  /** Teacher: class they are class teacher of, e.g. "10-A" */
+  classTeacherOf?: string;
+  /** Parent: child's roll number, e.g. "10A-023" */
+  studentRollNumber?: string;
 }
+
+/**
+ * Build a user-friendly label from metadata.
+ * e.g. "Shayna (10-A Class Teacher)" or "Suresh (10A-023)"
+ */
+export const buildUserLabel = (user: ChatUser): string => {
+  if (user.role === "teacher") {
+    return user.classTeacherOf
+      ? `${user.classTeacherOf} Class Teacher`
+      : "Teacher";
+  }
+  if (user.role === "parent" && user.studentRollNumber) {
+    return user.studentRollNumber;
+  }
+  if (user.role === "admin") return "Admin";
+  if (user.role === "sub-admin") return "Sub Admin";
+  return user.role;
+};
 
 export const searchUsers = async (
   searchQuery: string,
-  excludeUid: string
+  excludeUid: string,
+  currentUserRole?: string
 ): Promise<ChatUser[]> => {
-  if (!searchQuery.trim()) return [];
+  try {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return [];
 
-  // Firestore doesn't support full-text search; we fetch by name prefix.
-  const q = query(
-    collection(db, "users"),
-    where("name", ">=", searchQuery),
-    where("name", "<=", searchQuery + "\uf8ff"),
-    limit(20)
-  );
+    // Capitalize first letter for Firestore prefix match (names are stored Title Case)
+    const capitalizedQuery = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 
-  const snap = await getDocs(q);
-  console.log('snapsnap', { snap, q });
+    // Base query constraints — fetch a generous batch for client-side refinement
+    const constraints: any[] = [
+      where("name", ">=", capitalizedQuery),
+      where("name", "<=", capitalizedQuery + "\uf8ff"),
+      limit(30),
+    ];
 
-  return snap.docs
-    .map((d) => ({ uid: d.id, ...d.data() } as ChatUser))
-    .filter((u) => u.uid !== excludeUid);
+    /**
+     * 🔒 Parent restriction
+     * Parents can ONLY search teachers and admins.
+     * Existing functionality for admin/teacher remains unchanged.
+     */
+    if (currentUserRole === "parent") {
+      constraints.unshift(
+        where("role", "in", ["teacher", "admin"])
+      );
+    }
+
+    const q = query(
+      collection(db, "users"),
+      ...constraints
+    );
+
+    const snap = await getDocs(q);
+
+    // Client-side case-insensitive includes() filtering
+    const normalizedSearch = trimmed.toLowerCase();
+
+    return snap.docs
+      .map((d) => ({
+        uid: d.id,
+        ...d.data(),
+      }) as ChatUser)
+      .filter((u) => u.uid !== excludeUid)
+      .filter((u) => u.name.toLowerCase().includes(normalizedSearch));
+  } catch (error) {
+    console.error("Error searching users:", error);
+    throw error;
+  }
 };
 
 // ─── Get conversation metadata ────────────────────────────────────────────────
