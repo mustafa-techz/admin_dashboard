@@ -35,6 +35,10 @@ export interface CreateUserData {
   email: string;
   password?: string;
   role: UserRole;
+  /** Teacher only: e.g. "10-A" if class teacher */
+  classTeacherOf?: string;
+  /** Parent only: child's roll number e.g. "10A-023" */
+  studentRollNumber?: string;
 }
 
 export interface UpdateUserData {

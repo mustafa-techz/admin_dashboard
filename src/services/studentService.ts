@@ -28,6 +28,8 @@ export const studentService = {
     const classDocRef = doc(db, "classes", student.classId);
     const sectionDocRef = doc(db, "sections", student.sectionId);
 
+    let generatedRollNumber = "";
+
     const studentId = await runTransaction(db, async (transaction) => {
       const counterDoc = await transaction.get(counterDocRef);
       const classDoc = await transaction.get(classDocRef);
@@ -48,6 +50,7 @@ export const studentService = {
       transaction.set(counterDocRef, { lastRollNumber: newCount }, { merge: true });
 
       const rollNumber = `${className}${sectionName}-${newCount.toString().padStart(3, '0')}`;
+      generatedRollNumber = rollNumber;
 
       const newStudentRef = doc(collection(db, "students"));
       transaction.set(newStudentRef, {
@@ -69,7 +72,8 @@ export const studentService = {
         email: safeParentDetails.email,
         // Use the explicitly provided password; fall back to email only as a last resort
         password: _pw || safeParentDetails.email,
-        role: 'parent'
+        role: 'parent',
+        studentRollNumber: generatedRollNumber,
       });
     } catch (error) {
       console.error("Failed to create parent user account:", error);
@@ -81,7 +85,6 @@ export const studentService = {
   // Read
   async getStudents(): Promise<Student[]> {
     try {
-      console.log('testtttt333');
 
       const q = query(studentCollection, orderBy("createdAt", "desc"));
       const querySnapshot = await getDocs(q);
@@ -90,8 +93,6 @@ export const studentService = {
         id: doc.id,
         ...doc.data()
       })) as Student[];
-
-      console.log("students:", students);
 
       return students;
     } catch (err) {

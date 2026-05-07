@@ -189,7 +189,6 @@ export const attendanceService = {
     sessions: AttendanceSession[];
     lastDoc: QueryDocumentSnapshot<DocumentData> | null;
   }> {
-    console.log("🔍 [attendanceService.getSessions] Query params:", { classId, section, limitCount });
 
     let q = query(
       collection(db, 'attendance_sessions'),
@@ -212,7 +211,6 @@ export const attendanceService = {
 
     const snap = await getDocs(q);
     const sessions = snap.docs.map((d) => d.data() as AttendanceSession);
-    console.log("sessions==", sessions);
     return {
       sessions,
       lastDoc: snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null,
@@ -227,7 +225,6 @@ export const attendanceService = {
     section: string,
     fromDate: string
   ): Promise<AttendanceSession[]> {
-    console.log("🔍 [attendanceService.getSessionsForHeatmap] Query params:", { classId, section, fromDate });
     const q = query(
       collection(db, 'attendance_sessions'),
       where('classId', '==', classId),

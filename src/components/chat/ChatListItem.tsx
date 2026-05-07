@@ -60,6 +60,11 @@ export default function ChatListItem({
             )}
           >
             {chat.name}
+            {chat.type === "direct" && chat.roleLabel && (
+              <span className="text-[11px] font-normal text-muted-foreground ml-1">
+                ({chat.roleLabel})
+              </span>
+            )}
           </span>
           {timeLabel && (
             <span

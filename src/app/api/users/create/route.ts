@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       return authResult.response;
     }
 
-    const { name, email, password, role } = await req.json();
+    const { name, email, password, role, classTeacherOf, studentRollNumber } = await req.json();
 
     if (!name || !email || !password || !isUserRole(role)) {
       return NextResponse.json(
@@ -33,13 +33,26 @@ export async function POST(req: NextRequest) {
 
     await authAdmin.setCustomUserClaims(user.uid, { role });
 
-    await dbAdmin.collection("users").doc(user.uid).set({
+    // Build user document with optional lightweight metadata
+    const userData: Record<string, unknown> = {
       name,
       email,
       role,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
-    });
+    };
+
+    // Teacher: store classTeacherOf (e.g. "10-A") if assigned
+    if (role === "teacher" && classTeacherOf) {
+      userData.classTeacherOf = classTeacherOf;
+    }
+
+    // Parent: store student's roll number for chat label
+    if (role === "parent" && studentRollNumber) {
+      userData.studentRollNumber = studentRollNumber;
+    }
+
+    await dbAdmin.collection("users").doc(user.uid).set(userData);
 
     return NextResponse.json({ success: true, uid: user.uid });
   } catch (error) {

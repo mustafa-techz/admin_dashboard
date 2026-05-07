@@ -44,13 +44,23 @@ export const teacherService = {
       return newTeacherRef.id;
     });
 
-    // Create teacher role
+    // Create teacher user account with chat metadata
     try {
+      // Resolve classTeacher classId to a readable label (e.g. "10-A")
+      let classTeacherOf: string | undefined;
+      if (teacher.classTeacher) {
+        const classDoc = await getDoc(doc(db, "classes", teacher.classTeacher));
+        if (classDoc.exists()) {
+          classTeacherOf = classDoc.data()?.className || teacher.classTeacher;
+        }
+      }
+
       await userService.createUser({
         name: teacher.fullName,
         email: teacher.email,
         password: teacher.email,
-        role: 'teacher'
+        role: 'teacher',
+        classTeacherOf,
       });
     } catch (error) {
       console.error("Failed to create teacher role:", error);

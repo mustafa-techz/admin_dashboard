@@ -56,6 +56,8 @@ export interface UserChat {
   lastSeenAt: Timestamp | null;
   /** Avatar letter or image — first letter of name, pre-computed */
   avatarLetter: string;
+  /** Denormalized role label for chat list display, e.g. "10-A Class Teacher" or "10A-023" */
+  roleLabel?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -87,6 +89,10 @@ export interface CreateDirectChatInput {
   userAName: string;
   userBId: string;
   userBName: string;
+  /** Role label for user A (shown to user B), e.g. "10-A Class Teacher" */
+  userARoleLabel?: string;
+  /** Role label for user B (shown to user A), e.g. "10A-023" */
+  userBRoleLabel?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

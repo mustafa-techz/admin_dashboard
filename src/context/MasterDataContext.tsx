@@ -28,9 +28,6 @@ export function MasterDataProvider({ children }: { children: ReactNode }) {
         sectionService.getSections(),
         branchService.getBranches(),
       ]);
-      console.log('Classes:', classesData);
-      console.log('Sections:', sectionsData);
-      console.log('Branches:', branchesData);
       setClasses(classesData);
       setSections(sectionsData);
       setBranches(branchesData);
@@ -43,7 +40,6 @@ export function MasterDataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetchMasters();
-    console.log('fetchMasters called')
   }, []);
 
   return (

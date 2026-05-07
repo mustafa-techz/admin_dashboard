@@ -150,15 +150,6 @@ export default function StudentAttendanceHistoryPage() {
 
   const academicYearStart = format(subYears(new Date(), 1), 'yyyy-MM-dd');
 
-  // Diagnostic logging
-  if (student) {
-    console.log("🔍 [StudentAttendanceHistory] IDs from Student Doc:", {
-      id,
-      classId: student.classId,
-      sectionId: student.sectionId
-    });
-  }
-
   // Heatmap — full year sessions
   const { data: heatmapSessions = [], isLoading: isLoadingHeatmap } = useQuery({
     queryKey: ['attendance_sessions_heatmap', student?.classId, student?.sectionId],
@@ -208,8 +199,7 @@ export default function StudentAttendanceHistoryPage() {
 
   // Summary counts from heatmap sessions
   const summary = useMemo(() => {
-    const counts = { present: 0, absent: 0, leave: 0 };
-    console.log('heatmapSessions', heatmapSessions);
+    const counts = { present: 0, absent: 0, leave: 0 }
 
     heatmapSessions.forEach((s) => {
       const st = s.students?.[studentId] as AttendanceStatus | undefined;
