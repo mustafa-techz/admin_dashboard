@@ -150,5 +150,47 @@ service cloud.firestore {
     match /userChats/{userId}/conversations/{conversationId} {
       allow read, write: if isSignedIn() && request.auth.uid == userId;
     }
+
+    // ──────────────────────────────────────────────────────────────────
+    // Fee Management
+    // ──────────────────────────────────────────────────────────────────
+
+    // Fee structures – admin/sub-admin can manage, parents can read
+    match /feeStructures/{feeStructureId} {
+      allow read:  if isAdmin() || isParent();
+      allow write: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Fee installments – admin/sub-admin can manage, parents can read
+    match /feeInstallments/{feeInstallmentId} {
+      allow read:  if isAdmin() || isParent();
+      allow write: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Student fee assignments – aggregate docs
+    match /studentFeeAssignments/{assignmentId} {
+      allow read:  if isAdmin()
+                   || (isParent() && get(/databases/$(database)/documents/students/$(resource.data.studentId)).data.rollNumber == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.studentRollNumber);
+      allow write: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Student fee installments – per-installment tracking
+    match /studentFeeInstallments/{sfiId} {
+      allow read:  if isAdmin()
+                   || (isParent() && get(/databases/$(database)/documents/students/$(resource.data.studentId)).data.rollNumber == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.studentRollNumber);
+      allow write: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Payments – payment records
+    match /payments/{paymentId} {
+      allow read:  if isAdmin()
+                   || (isParent() && get(/databases/$(database)/documents/students/$(resource.data.studentId)).data.rollNumber == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.studentRollNumber);
+      allow create: if isAdmin();
+      allow delete: if isAdmin();
+    }
   }
 }

@@ -61,7 +61,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       try {
-        const role = await getUserRole(currentUser)
+        const userSnapshot = await getDoc(doc(db, "users", currentUser.uid))
+        const userData = userSnapshot.data()
+        
+        let role = normalizeUserRole(userData?.role)
+        if (!role) {
+          const tokenResult = await currentUser.getIdTokenResult()
+          role = normalizeUserRole(tokenResult.claims.role)
+        }
+        
         const token = await currentUser.getIdToken()
 
         if (role) {
@@ -71,6 +79,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               name: currentUser.displayName || currentUser.email || "User",
               email: currentUser.email || "",
               role,
+              studentRollNumber: userData?.studentRollNumber,
             },
             role
           )
