@@ -11,6 +11,7 @@ import {
   runTransaction,
   limit,
   startAfter,
+  where,
   DocumentData,
   QueryDocumentSnapshot
 } from "firebase/firestore";
@@ -135,6 +136,28 @@ export const studentService = {
       } as unknown as Student;
     }
     return null;
+  },
+
+  // Get Student by Roll Number
+  async getStudentByRollNumber(rollNumber: string): Promise<Student | null> {
+    try {
+      const q = query(studentCollection, where("rollNumber", "==", rollNumber), limit(1));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        const docSnap = querySnapshot.docs[0];
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          ...data,
+          createdAt: data.createdAt?.toDate()?.toISOString(),
+        } as unknown as Student;
+      }
+      return null;
+    } catch (err) {
+      console.error("Error getting student by roll number:", err);
+      return null;
+    }
   },
 
   // Update

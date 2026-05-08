@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogIn, GraduationCap } from 'lucide-react';
 import { loginUser } from '@/services/auth.service';
+import { ForgotPasswordModal } from '@/components/auth/ForgotPasswordModal';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -54,9 +56,18 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground">
-              Password
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-foreground">
+                Password
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsForgotPasswordOpen(true)}
+                className="text-sm font-medium text-primary hover:text-primary/80 transition-colors focus:outline-none focus:underline"
+              >
+                Forgot Password?
+              </button>
+            </div>
             <input
               type="password"
               placeholder="••••••••"
@@ -90,6 +101,12 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+      
+      <ForgotPasswordModal 
+        isOpen={isForgotPasswordOpen} 
+        onClose={() => setIsForgotPasswordOpen(false)} 
+        defaultEmail={email} 
+      />
     </div>
   );
 }

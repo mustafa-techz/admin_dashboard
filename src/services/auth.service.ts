@@ -3,6 +3,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   UserCredential
 } from "firebase/auth";
 
@@ -25,4 +26,11 @@ export const registerUser = async (email: string, password: string): Promise<Use
  */
 export const logoutUser = async (): Promise<void> => {
   return signOut(auth);
+};
+
+/**
+ * Send password reset email
+ */
+export const resetPassword = async (email: string): Promise<void> => {
+  return sendPasswordResetEmail(auth, email);
 };

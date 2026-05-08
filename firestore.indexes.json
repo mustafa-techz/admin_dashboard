@@ -47,6 +47,56 @@
       "fields": [
         { "fieldPath": "createdAt", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "feeStructures",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "branchId", "order": "ASCENDING" },
+        { "fieldPath": "status",   "order": "ASCENDING" },
+        { "fieldPath": "createdAt","order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "feeInstallments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "feeStructureId", "order": "ASCENDING" },
+        { "fieldPath": "order",          "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "studentFeeAssignments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "branchId",       "order": "ASCENDING" },
+        { "fieldPath": "feeStructureId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "studentFeeInstallments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "studentId",      "order": "ASCENDING" },
+        { "fieldPath": "feeStructureId", "order": "ASCENDING" },
+        { "fieldPath": "order",          "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "studentFeeInstallmentId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt",               "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "studentId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
