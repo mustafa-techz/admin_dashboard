@@ -52,7 +52,6 @@ export const DashboardReminderCard: React.FC<DashboardReminderCardProps> = ({
   if (reminder.type === 'FEE' && reminder.metadata?.dueDate) {
     isFeeWarning = true;
     const due = new Date(reminder.metadata.dueDate);
-    console.trace("🚀 ~ DashboardReminderCard ~ reminder:", reminder.scheduledAt, scheduledDate)
     const today = new Date();
     // Normalize to midnight for accurate day difference
     due.setHours(0, 0, 0, 0);
