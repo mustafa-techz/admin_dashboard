@@ -76,6 +76,8 @@ export default function Header() {
     { label: 'Students', href: '/students', roles: ['admin', 'sub-admin', 'teacher'] },
     { label: 'Attendance', href: '/attendance', roles: ['admin', 'sub-admin', 'teacher'] },
     { label: 'Fees', href: '/fees', roles: ['admin', 'sub-admin', 'parent'] },
+    { label: 'Timetable', href: '/timetable', roles: ['admin', 'sub-admin', 'teacher', 'parent'] },
+    { label: 'Exams', href: '/exams', roles: ['admin', 'sub-admin', 'teacher', 'parent'] },
   ];
 
 
