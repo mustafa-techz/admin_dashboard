@@ -129,7 +129,7 @@ const AnnouncementCard = memo(({ event, index }: { event: SchoolEvent; index: nu
             </div>
             <div className="flex items-center gap-1.5" title={event.createdByName}>
               <User size={12} className="text-primary" />
-              <span className="truncate max-w-[100px]">CB : {event.createdByName}</span>
+              <span className="truncate max-w-[100px]">By: {event.createdByName}</span>
             </div>
           </div>
         </div>

@@ -13,6 +13,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/firebase/firestore';
+import { generateReminder, resolveRemindersForInstallment } from './reminderService';
 import type {
   FeeStructure,
   FeeStructureFormData,
@@ -151,9 +152,14 @@ export const feeService = {
     studentId: string,
     studentName: string,
     feeStructure: FeeStructure,
-    installments: FeeInstallment[]
+    installments: FeeInstallment[],
   ): Promise<string> {
     try {
+      const { studentService } = await import('./studentService');
+      const student = await studentService.getStudentById(studentId);
+      if (!student) throw new Error('Student not found');
+      const parentUserId = (student as any).parentDetails?.userId || '';
+
       const batch = writeBatch(db);
 
       // Aggregate assignment doc
@@ -161,6 +167,7 @@ export const feeService = {
       batch.set(assignmentRef, {
         studentId,
         studentName,
+        userId: parentUserId,
         feeStructureId: feeStructure.id,
         branchId: feeStructure.branchId,
         totalAmount: feeStructure.totalAmount,
@@ -172,10 +179,13 @@ export const feeService = {
       });
 
       // Per-installment tracking docs
+      const sfiRefs: { inst: FeeInstallment, sfiId: string }[] = [];
       installments.forEach((inst) => {
         const sfiRef = doc(studentFeeInstallmentsCol);
+        sfiRefs.push({ inst, sfiId: sfiRef.id });
         batch.set(sfiRef, {
           studentId,
+          userId: parentUserId,
           feeStructureId: feeStructure.id,
           feeInstallmentId: inst.id,
           installmentName: inst.installmentName,
@@ -190,6 +200,38 @@ export const feeService = {
       });
 
       await batch.commit();
+
+      // Reminder Generation Logic
+      try {
+        // Sequential rule: only generate reminder for the first unpaid installment
+        const firstInst = installments.sort((a, b) => a.order - b.order)[0];
+        const sfiForFirst = sfiRefs.find(r => r.inst.id === firstInst.id);
+
+        if (firstInst && sfiForFirst && parentUserId) {
+          const dueDate = new Date(firstInst.dueDate).getTime();
+          // Generate the 7-day push notification
+          await generateReminder({
+            type: 'FEE',
+            title: `Fee Reminder: ${firstInst.installmentName}`,
+            message: `Your fee of ₹${firstInst.amount} is due on ${new Date(firstInst.dueDate).toLocaleDateString()}.`,
+            targetRole: 'PARENT',
+            targetUserIds: [parentUserId],
+            branchId: feeStructure.branchId,
+            priority: 'HIGH',
+            deliveryChannels: ['PUSH', 'DASHBOARD'],
+            scheduledAt: dueDate - 7 * 24 * 60 * 60 * 1000,
+            status: 'PENDING',
+            metadata: {
+              studentFeeInstallmentId: sfiForFirst.sfiId,
+              dueDate: firstInst.dueDate,
+              amount: firstInst.amount
+            }
+          });
+        }
+      } catch (err) {
+        console.error('Failed to generate reminders for fee assignment', err);
+      }
+
       return assignmentRef.id;
     } catch (error) {
       console.error('Error assigning fee to student:', error);
@@ -201,9 +243,9 @@ export const feeService = {
    * Bulk-assign fee structure to multiple students.
    */
   async assignFeeToStudents(
-    students: Array<{ id: string; fullName: string }>,
+    students: Array<{ id: string; fullName: string, userId: string }>,
     feeStructure: FeeStructure,
-    installments: FeeInstallment[]
+    installments: FeeInstallment[],
   ): Promise<void> {
     try {
       // Firestore batches max 500 ops. Chunk if needed.
@@ -216,6 +258,7 @@ export const feeService = {
         batch.set(assignmentRef, {
           studentId: student.id,
           studentName: student.fullName,
+          userId: student.userId,
           feeStructureId: feeStructure.id,
           branchId: feeStructure.branchId,
           totalAmount: feeStructure.totalAmount,
@@ -227,10 +270,13 @@ export const feeService = {
         });
         opCount++;
 
+        const sfiRefsForStudent: { inst: FeeInstallment, sfiId: string }[] = [];
         for (const inst of installments) {
           const sfiRef = doc(studentFeeInstallmentsCol);
+          sfiRefsForStudent.push({ inst, sfiId: sfiRef.id });
           batch.set(sfiRef, {
             studentId: student.id,
+            userId: student.userId,
             feeStructureId: feeStructure.id,
             feeInstallmentId: inst.id,
             installmentName: inst.installmentName,
@@ -250,10 +296,44 @@ export const feeService = {
             opCount = 0;
           }
         }
+        (student as any).sfiRefs = sfiRefsForStudent;
       }
 
       if (opCount > 0) {
         await batch.commit();
+      }
+
+      // Generate reminders for the first active installment only (Sequential Rule)
+      try {
+        for (const student of (students as any[])) {
+          if (!student.sfiRefs || !student.userId) continue;
+
+          const sortedSFIs = (student.sfiRefs as any[]).sort((a, b) => a.inst.order - b.inst.order);
+          const first = sortedSFIs[0];
+
+          if (first) {
+            const dueDate = new Date(first.inst.dueDate).getTime();
+            await generateReminder({
+              type: 'FEE',
+              title: `Fee Due: ${first.inst.installmentName}`,
+              message: `Your fee installment of ₹${first.inst.amount} is due on ${new Date(first.inst.dueDate).toLocaleDateString()}.`,
+              targetRole: 'PARENT',
+              targetUserIds: [student.userId],
+              branchId: feeStructure.branchId,
+              priority: 'HIGH',
+              deliveryChannels: ['PUSH', 'DASHBOARD'],
+              scheduledAt: dueDate - 7 * 24 * 60 * 60 * 1000,
+              status: 'PENDING',
+              metadata: {
+                studentFeeInstallmentId: first.sfiId,
+                dueDate: first.inst.dueDate,
+                amount: first.inst.amount
+              },
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to bulk generate reminders', err);
       }
     } catch (error) {
       console.error('Error assigning fee to multiple students:', error);
@@ -328,16 +408,43 @@ export const feeService = {
       const q = query(
         studentFeeInstallmentsCol,
         where('studentId', '==', studentId),
-        where('feeStructureId', '==', feeStructureId),
-        orderBy('order', 'asc')
+        where('feeStructureId', '==', feeStructureId)
       );
       const snapshot = await getDocs(q);
-      return snapshot.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      })) as StudentFeeInstallment[];
+      // Sort in memory to avoid requiring a composite index that breaks loading
+      return snapshot.docs
+        .map((d) => ({
+          id: d.id,
+          ...d.data(),
+        }))
+        .sort((a: any, b: any) => (a.order || 0) - (b.order || 0)) as StudentFeeInstallment[];
     } catch (error) {
       console.error('Error getting student fee installments:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get all pending fee installments for a student.
+   * Useful for dynamically generating fee reminders on the dashboard.
+   */
+  async getAllPendingStudentFeeInstallments(studentId: string): Promise<StudentFeeInstallment[]> {
+    try {
+      const q = query(
+        studentFeeInstallmentsCol,
+        where('studentId', '==', studentId),
+        where('status', 'in', ['pending', 'partial'])
+      );
+      const snapshot = await getDocs(q);
+      // Sort in memory by due date to avoid index requirements
+      return snapshot.docs
+        .map((d) => ({
+          id: d.id,
+          ...d.data(),
+        }))
+        .sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()) as StudentFeeInstallment[];
+    } catch (error) {
+      console.error('Error getting pending student fee installments:', error);
       throw error;
     }
   },
@@ -429,6 +536,46 @@ export const feeService = {
       });
 
       await batch.commit();
+
+      // Automatically hide/remove related reminders if fully paid
+      if (newInstStatus === 'paid') {
+        try {
+          await resolveRemindersForInstallment(paymentData.studentFeeInstallmentId);
+
+          // Sequential Logic: Trigger reminder for the NEXT unpaid installment
+          const { studentService } = await import('./studentService');
+          const student = await studentService.getStudentById(paymentData.studentId);
+          if (student) {
+            const parentUserId = (student as any).parentDetails?.userId;
+            const nextPending = await this.getAllPendingStudentFeeInstallments(paymentData.studentId);
+            const next = nextPending[0]; // Already sorted by dueDate
+
+            if (next && parentUserId) {
+              const dueDate = new Date(next.dueDate).getTime();
+              await generateReminder({
+                type: 'FEE',
+                title: `Next Fee Due: ${next.installmentName}`,
+                message: `Your next fee installment of ₹${next.amountPending} is due on ${new Date(next.dueDate).toLocaleDateString()}.`,
+                targetRole: 'PARENT',
+                targetUserIds: [parentUserId],
+                branchId: next.branchId,
+                priority: 'HIGH',
+                deliveryChannels: ['PUSH', 'DASHBOARD'],
+                scheduledAt: dueDate - 7 * 24 * 60 * 60 * 1000,
+                status: 'PENDING',
+                metadata: {
+                  studentFeeInstallmentId: next.id,
+                  dueDate: next.dueDate,
+                  amount: next.amountPending
+                },
+              });
+            }
+          }
+        } catch (err) {
+          console.error('Failed to resolve or trigger next reminder:', err);
+        }
+      }
+
       return paymentRef.id;
     } catch (error) {
       console.error('Error recording payment:', error);
