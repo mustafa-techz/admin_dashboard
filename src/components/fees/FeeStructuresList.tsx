@@ -11,6 +11,7 @@ import type { FeeStructure } from '@/types/fees';
 import { IndianRupee, Users, Clock, ChevronRight, Check, Loader2, UserPlus, Trash2 } from 'lucide-react';
 import ConfirmationModal from '@/components/shared/ConfirmationModal';
 
+
 export default function FeeStructuresList() {
   const [selectedStructure, setSelectedStructure] = useState<FeeStructure | null>(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -27,8 +28,11 @@ export default function FeeStructuresList() {
 
   const branchId = selectedBranch?.id ?? '';
   const { data: feeStructures = [], isLoading } = useFeeStructures(branchId);
-  const { data: assignments = [] } = useBranchFeeAssignments(branchId, selectedStructure?.id);
-  
+
+  // Always fetch all branch assignments to show summary stats in the grid correctly
+  // and to know which structures have assignments (for delete button visibility)
+  const { data: assignments = [] } = useBranchFeeAssignments(branchId);
+
   const deleteMutation = useDeleteFeeStructure();
 
   const handleDelete = () => {
@@ -75,17 +79,17 @@ export default function FeeStructuresList() {
           const structAssignments = assignments.filter(
             (a) => a.feeStructureId === structure.id
           );
+
           const totalCollected = structAssignments.reduce((s, a) => s + a.totalPaid, 0);
           const totalPending = structAssignments.reduce((s, a) => s + a.totalPending, 0);
           const isSelected = selectedStructure?.id === structure.id;
 
           return (
-            <button
-              type="button"
+            <div
               key={structure.id}
               onClick={() => setSelectedStructure(isSelected ? null : structure)}
               className={cn(
-                'text-left bg-card rounded-2xl border-2 shadow-soft p-5 transition-all duration-200 hover:shadow-md group',
+                'text-left bg-card rounded-2xl border-2 shadow-soft p-5 transition-all duration-200 hover:shadow-md group cursor-pointer',
                 isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'
               )}
             >
@@ -95,18 +99,17 @@ export default function FeeStructuresList() {
                   <p className="text-xs text-muted-foreground mt-0.5">{structure.academicYear}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {structAssignments.length === 0 && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setStructureToDelete(structure.id);
-                      }}
-                      className="p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setStructureToDelete(structure.id); // Always works now
+                    }}
+                    className="p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+
                   <ChevronRight
                     size={20}
                     className={cn(
@@ -139,7 +142,7 @@ export default function FeeStructuresList() {
                 <Clock size={12} />
                 <span>{structure.installmentCount} installments</span>
               </div>
-            </button>
+            </div>
           );
         })}
       </div>
@@ -254,6 +257,7 @@ function AssignFeeModal({
   const { data: installments = [] } = useFeeInstallments(feeStructure.id);
   const assignMutation = useAssignFeeToStudents();
 
+
   const filteredStudents = useMemo(() => {
     const query = search.toLowerCase();
     return students.filter(
@@ -283,7 +287,7 @@ function AssignFeeModal({
   const handleAssign = async () => {
     const selectedList = students
       .filter((s) => selectedStudents.has(s.id))
-      .map((s) => ({ id: s.id, fullName: s.fullName }));
+      .map((s) => ({ id: s.id, fullName: s.fullName, userId: s.parentDetails?.userId }));
 
     await assignMutation.mutateAsync({
       students: selectedList,

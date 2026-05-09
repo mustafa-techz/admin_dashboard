@@ -22,6 +22,7 @@ export const feeKeys = {
     [...feeKeys.all, 'branchAssignments', branchId, feeStructureId ?? 'all'] as const,
   studentInstallments: (studentId: string, feeStructureId: string) =>
     [...feeKeys.all, 'studentInstallments', studentId, feeStructureId] as const,
+  pendingInstallments: (studentId: string) => [...feeKeys.all, 'pendingInstallments', studentId] as const,
   paymentHistory: (sfiId: string) => [...feeKeys.all, 'payments', sfiId] as const,
   studentPayments: (studentId: string) => [...feeKeys.all, 'studentPayments', studentId] as const,
 };
@@ -107,7 +108,7 @@ export function useAssignFeeToStudents() {
       feeStructure,
       installments,
     }: {
-      students: Array<{ id: string; fullName: string }>;
+      students: Array<{ id: string; fullName: string; userId: string }>;
       feeStructure: FeeStructure;
       installments: FeeInstallment[];
     }) => feeService.assignFeeToStudents(students, feeStructure, installments),
@@ -145,6 +146,9 @@ export function useRecordPayment() {
       });
       queryClient.invalidateQueries({
         queryKey: feeKeys.studentAssignments(variables.studentId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: feeKeys.pendingInstallments(variables.studentId),
       });
       queryClient.invalidateQueries({
         queryKey: feeKeys.paymentHistory(variables.studentFeeInstallmentId),
@@ -195,5 +199,13 @@ export function useDeleteStudentFeeAssignment() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: feeKeys.all });
     },
+  });
+}
+
+export function usePendingFeeInstallments(studentId: string) {
+  return useQuery({
+    queryKey: feeKeys.pendingInstallments(studentId),
+    queryFn: () => feeService.getAllPendingStudentFeeInstallments(studentId),
+    enabled: !!studentId,
   });
 }

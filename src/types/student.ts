@@ -1,8 +1,12 @@
 export interface ParentDetails {
   fatherName: string;
+  fatherOccupation: string;
   motherName: string;
+  motherOccupation: string;
   phone: string;
   email: string;
+  address: string;
+  userId?: string;
   /** Runtime-only — used for Firebase Auth creation. NEVER persisted to Firestore. */
   password?: string;
 }

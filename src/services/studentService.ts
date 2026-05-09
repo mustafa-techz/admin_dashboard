@@ -24,63 +24,130 @@ const studentCollection = collection(db, "students");
 export const studentService = {
   // Create with Sequential Roll Number
   async addStudent(student: Omit<Student, 'id' | 'createdAt'>) {
-    const classKey = `${student.classId}${student.sectionId}`;
-    const counterDocRef = doc(db, "counters", classKey);
-    const classDocRef = doc(db, "classes", student.classId);
-    const sectionDocRef = doc(db, "sections", student.sectionId);
-
-    let generatedRollNumber = "";
-
-    const studentId = await runTransaction(db, async (transaction) => {
-      const counterDoc = await transaction.get(counterDocRef);
-      const classDoc = await transaction.get(classDocRef);
-      const sectionDoc = await transaction.get(sectionDocRef);
-
-      if (!classDoc.exists() || !sectionDoc.exists()) {
-        throw new Error("Class or Section not found");
-      }
-
-      const className = classDoc.data()?.className || '';
-      const sectionName = sectionDoc.data()?.sectionName || '';
-
-      let newCount = 1;
-      if (counterDoc.exists()) {
-        newCount = (counterDoc.data()?.lastRollNumber || 0) + 1;
-      }
-
-      transaction.set(counterDocRef, { lastRollNumber: newCount }, { merge: true });
-
-      const rollNumber = `${className}${sectionName}-${newCount.toString().padStart(3, '0')}`;
-      generatedRollNumber = rollNumber;
-
-      const newStudentRef = doc(collection(db, "students"));
-      transaction.set(newStudentRef, {
-        ...student,
-        rollNumber,
-        createdAt: serverTimestamp(),
-      });
-
-      return newStudentRef.id;
-    });
-
-    // Strip the runtime-only password field before it reaches Firestore
-    // (it was already set on the in-memory student object by the form)
-    const { password: _pw, ...safeParentDetails } = student.parentDetails;
-
     try {
-      await userService.createUser({
+      const classKey = `${student.classId}${student.sectionId}`;
+
+      const counterDocRef = doc(db, "counters", classKey);
+      const classDocRef = doc(db, "classes", student.classId);
+      const sectionDocRef = doc(db, "sections", student.sectionId);
+
+      // Remove password from object before Firestore save
+      const { password, ...safeParentDetails } = student.parentDetails;
+
+      /**
+       * STEP 1
+       * Create parent auth user FIRST
+       * This prevents orphan student docs
+       */
+      const createdUser = await userService.createUser({
         name: safeParentDetails.fatherName,
         email: safeParentDetails.email,
-        // Use the explicitly provided password; fall back to email only as a last resort
-        password: _pw || safeParentDetails.email,
+        password: password || safeParentDetails.email,
         role: 'parent',
-        studentRollNumber: generatedRollNumber,
       });
-    } catch (error) {
-      console.error("Failed to create parent user account:", error);
-    }
 
-    return studentId;
+      if (!createdUser?.uid) {
+        throw new Error("Failed to create parent account");
+      }
+
+      let generatedRollNumber = "";
+
+      /**
+       * STEP 2
+       * Create student only AFTER auth success
+       */
+      const studentId = await runTransaction(db, async (transaction) => {
+        const counterDoc = await transaction.get(counterDocRef);
+        const classDoc = await transaction.get(classDocRef);
+        const sectionDoc = await transaction.get(sectionDocRef);
+
+        if (!classDoc.exists() || !sectionDoc.exists()) {
+          throw new Error("Class or Section not found");
+        }
+
+        const className = classDoc.data()?.className || '';
+        const sectionName = sectionDoc.data()?.sectionName || '';
+
+        let newCount = 1;
+
+        if (counterDoc.exists()) {
+          newCount = (counterDoc.data()?.lastRollNumber || 0) + 1;
+        }
+
+        transaction.set(
+          counterDocRef,
+          { lastRollNumber: newCount },
+          { merge: true }
+        );
+
+        const rollNumber = `${className}${sectionName}-${newCount
+          .toString()
+          .padStart(3, '0')}`;
+
+        generatedRollNumber = rollNumber;
+
+        const newStudentRef = doc(collection(db, "students"));
+
+        transaction.set(newStudentRef, {
+          ...student,
+
+          // NEVER store password
+          parentDetails: {
+            ...safeParentDetails,
+
+            /**
+             * IMPORTANT
+             * Save Firebase Auth UID
+             * This will be used for:
+             * - reminders
+             * - notifications
+             * - chats
+             * - fees
+             * - attendance
+             */
+            userId: createdUser.uid,
+          },
+
+          rollNumber,
+          createdAt: serverTimestamp(),
+        });
+
+        return newStudentRef.id;
+      });
+
+      /**
+       * OPTIONAL:
+       * Update user with roll number if needed
+       */
+      try {
+        await userService.updateUser({
+          uid: createdUser.uid,
+          studentRollNumber: generatedRollNumber,
+        });
+      } catch (updateError) {
+        console.warn(
+          "Failed to update user with roll number:",
+          updateError
+        );
+      }
+
+      return studentId;
+
+    } catch (error: any) {
+      console.error("🔥 ADD STUDENT ERROR:", error);
+
+      /**
+       * Better duplicate email handling
+       */
+      if (
+        error?.message?.includes("email") ||
+        error?.message?.includes("already")
+      ) {
+        throw new Error("Parent email already exists");
+      }
+
+      throw error;
+    }
   },
 
   // Read
@@ -143,7 +210,7 @@ export const studentService = {
     try {
       const q = query(studentCollection, where("rollNumber", "==", rollNumber), limit(1));
       const querySnapshot = await getDocs(q);
-      
+
       if (!querySnapshot.empty) {
         const docSnap = querySnapshot.docs[0];
         const data = docSnap.data();
@@ -156,6 +223,28 @@ export const studentService = {
       return null;
     } catch (err) {
       console.error("Error getting student by roll number:", err);
+      return null;
+    }
+  },
+
+  // Get Student by Parent User ID
+  async getStudentByParentUserId(userId: string): Promise<Student | null> {
+    try {
+      const q = query(studentCollection, where("parentDetails.userId", "==", userId), limit(1));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const docSnap = querySnapshot.docs[0];
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          ...data,
+          createdAt: data.createdAt?.toDate()?.toISOString(),
+        } as unknown as Student;
+      }
+      return null;
+    } catch (err) {
+      console.error("Error getting student by parent userId:", err);
       return null;
     }
   },
