@@ -7,6 +7,7 @@ import {
   useStudentFeeInstallments,
 } from '@/hooks/useFees';
 import { useQuery } from '@tanstack/react-query';
+import { useBranchStore } from '@/store/branchStore';
 import { formatINR } from '@/lib/feeUtils';
 import { getCountdownInfo } from '@/lib/feeUtils';
 import { cn } from '@/lib/utils';
@@ -271,16 +272,9 @@ export default function AdminStudentFeeOverview() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedFeeId, setSelectedFeeId] = useState<string>('all');
 
-  const { data: selectedBranch } = useQuery({
-    queryKey: ['selectedBranch'],
-    queryFn: () => {
-      const saved = localStorage.getItem('selectedBranch');
-      return saved ? JSON.parse(saved) : null;
-    },
-    initialData: null,
-  });
+  const { selectedBranchId } = useBranchStore();
 
-  const branchId = selectedBranch?.id ?? '';
+  const branchId = selectedBranchId;
   const { data: feeStructures = [] } = useFeeStructures(branchId);
   const { data: allAssignments = [], isLoading } = useBranchFeeAssignments(branchId);
 

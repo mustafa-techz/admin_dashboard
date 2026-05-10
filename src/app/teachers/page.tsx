@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { teacherService } from '@/services/teacherService';
 import { classService } from '@/services/firebase/masterDataService';
+import { useBranchStore } from '@/store/branchStore';
 import DataTable from '@/components/tables/DataTable';
 import FilterBar from '@/components/tables/FilterBar';
 import { Teacher } from '@/types/teacher';
@@ -15,6 +16,7 @@ import ConfirmationModal from '@/components/shared/ConfirmationModal';
 export default function TeachersPage() {
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState('');
+  const { selectedBranchId } = useBranchStore();
   const queryClient = useQueryClient();
 
   // Master Data Queries
@@ -37,8 +39,10 @@ export default function TeachersPage() {
   const [pendingSubmitData, setPendingSubmitData] = useState<any>(null);
 
   const { data: teachers = [], isLoading: isLoadingTeachers } = useQuery<Teacher[]>({
-    queryKey: ['teachers'],
-    queryFn: () => teacherService.getTeachers(),
+    queryKey: ['teachers', selectedBranchId],
+    queryFn: () => teacherService.getTeachers(selectedBranchId || undefined),
+    enabled: !!selectedBranchId,
+    staleTime: 3 * 60 * 1000,
   });
 
   const createMutation = useMutation({
@@ -78,7 +82,7 @@ export default function TeachersPage() {
 
     const matchesClass = !classFilter || 
       teacher.classTeacher === classFilter || 
-      teacher.classIds.includes(classFilter);
+      (teacher.classIds && teacher.classIds.includes(classFilter));
 
     return matchesSearch && matchesClass;
   }) || [];

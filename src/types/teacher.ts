@@ -8,6 +8,8 @@ export interface Teacher {
   addressDetails: AddressDetails;
   dateOfBirth: string;
   branchId: string;
+  /** Multi-branch assignment (new — takes priority over branchId when set) */
+  branchIds?: string[];
   status: 'active' | 'inactive';
   gender: string;
   joiningDate: string;

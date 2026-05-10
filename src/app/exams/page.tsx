@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
-import { useQuery } from '@tanstack/react-query';
+import { useBranchStore } from '@/store/branchStore';
 import AssessmentForm from '@/components/exams/AssessmentForm';
 import AssessmentList from '@/components/exams/AssessmentList';
 import MarksEntry from '@/components/exams/MarksEntry';
@@ -22,18 +22,10 @@ const ADMIN_TABS: { key: AdminTab; label: string; icon: React.ReactNode }[] = [
 
 export default function ExamsPage() {
   const { role } = useAuthStore();
+  const { selectedBranchId } = useBranchStore();
   const [activeTab, setActiveTab] = useState<AdminTab>('list');
 
-  const { data: selectedBranch } = useQuery({
-    queryKey: ['selectedBranch'],
-    queryFn: () => {
-      const saved = localStorage.getItem('selectedBranch');
-      return saved ? JSON.parse(saved) : null;
-    },
-    initialData: null,
-  });
-
-  const branchId = selectedBranch?.id ?? '';
+  const branchId = selectedBranchId;
   
   const examQueryKeys = useMemo(() => [['assessments'], ['studentByParent']], []);
   const adminExamQueryKeys = useMemo(() => [['assessments']], []);

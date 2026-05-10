@@ -35,6 +35,7 @@ function docToEvent(snap: QueryDocumentSnapshot<DocumentData>): SchoolEvent {
     description: data.description,
     type: data.type,
     scope: data.scope,
+    branchId: data.branchId ?? null,
     classId: data.classId ?? null,
     sectionId: data.sectionId ?? null,
     startAt: data.startAt as Timestamp,
@@ -62,39 +63,29 @@ export const eventService = {
       const now = Timestamp.now();
       const pageSize = filter.limit ?? 15;
 
-      let q = query(
-        eventsRef,
+      // Build base constraints
+      const constraints: any[] = [
         where('publishedToParents', '==', true),
         where('isDeleted', '==', false),
         where('endAt', '>=', now),
         orderBy('endAt'),
         orderBy('startAt'),
-        limit(pageSize)
-      );
+        limit(pageSize),
+      ];
 
-      if (filter.sectionId) {
-        q = query(
-          eventsRef,
-          where('sectionId', '==', filter.sectionId),
-          where('publishedToParents', '==', true),
-          where('isDeleted', '==', false),
-          where('endAt', '>=', now),
-          orderBy('endAt'),
-          orderBy('startAt'),
-          limit(pageSize)
-        );
-      } else if (filter.classId) {
-        q = query(
-          eventsRef,
-          where('classId', '==', filter.classId),
-          where('publishedToParents', '==', true),
-          where('isDeleted', '==', false),
-          where('endAt', '>=', now),
-          orderBy('endAt'),
-          orderBy('startAt'),
-          limit(pageSize)
-        );
+      // Branch scoping
+      if (filter.branchId) {
+        constraints.unshift(where('branchId', '==', filter.branchId));
       }
+
+      // Class/section scoping
+      if (filter.sectionId) {
+        constraints.unshift(where('sectionId', '==', filter.sectionId));
+      } else if (filter.classId) {
+        constraints.unshift(where('classId', '==', filter.classId));
+      }
+
+      let q = query(eventsRef, ...constraints);
 
       if (lastDoc) {
         q = query(q, startAfter(lastDoc));
@@ -123,25 +114,24 @@ export const eventService = {
    * However, to satisfy the user's requirement of "endAt >= now" AND "orderBy(startAt)",
    * we'll prioritize the nearest start times.
    */
-  async getUpcomingAnnouncements(limitCount = 3): Promise<SchoolEvent[]> {
+  async getUpcomingAnnouncements(limitCount = 3, branchId?: string): Promise<SchoolEvent[]> {
     try {
       const now = Timestamp.now();
       
-      // We use endAt >= now to ensure we don't show expired events.
-      // To satisfy Firestore rules, we must orderBy(endAt) first if we have an inequality on it.
-      // But the user specifically wants orderBy(startAt). 
-      // To achieve both in Firestore, we use a composite query or accept the limitation.
-      // Given the "nearest upcoming" requirement, we'll use:
-      const q = query(
-        eventsRef,
+      const constraints: any[] = [
         where('publishedToParents', '==', true),
         where('isDeleted', '==', false),
         where('endAt', '>=', now),
         orderBy('endAt'), 
         orderBy('startAt'),
-        limit(limitCount)
-      );
+        limit(limitCount),
+      ];
 
+      if (branchId) {
+        constraints.unshift(where('branchId', '==', branchId));
+      }
+
+      const q = query(eventsRef, ...constraints);
       const snapshot = await getDocs(q);
       return snapshot.docs.map(docToEvent);
 
@@ -154,15 +144,19 @@ export const eventService = {
   /**
    * Admin/Teacher: fetch all events
    */
-  async getAllEvents(limitCount = 50): Promise<SchoolEvent[]> {
+  async getAllEvents(limitCount = 50, branchId?: string): Promise<SchoolEvent[]> {
     try {
-      const q = query(
-        eventsRef,
+      const constraints: any[] = [
         where('isDeleted', '==', false),
         orderBy('createdAt', 'desc'),
-        limit(limitCount)
-      );
+        limit(limitCount),
+      ];
 
+      if (branchId) {
+        constraints.unshift(where('branchId', '==', branchId));
+      }
+
+      const q = query(eventsRef, ...constraints);
       const snapshot = await getDocs(q);
       return snapshot.docs.map(docToEvent);
 

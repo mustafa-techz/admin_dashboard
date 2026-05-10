@@ -2,18 +2,20 @@
 
 import AnnouncementList from '@/components/announcements/AnnouncementList';
 import { useAuthStore } from '@/store/authStore';
+import { useBranchStore } from '@/store/branchStore';
 
 /**
  * /announcements — main announcements page.
  *
  * For parents: automatically scoped to their child's classId/sectionId.
- * For admin/teacher: shows all events including drafts.
+ * For admin/teacher: shows all events including drafts, scoped by selected branch.
  *
  * The filter below is a stub — in production, connect the classId/sectionId
  * from the parent's student profile (e.g. from Firestore or Zustand store).
  */
 export default function AnnouncementsPage() {
   const { role } = useAuthStore();
+  const { selectedBranchId } = useBranchStore();
 
   // For parents: ideally fetch their child's classId/sectionId from their profile.
   // Here we pass no filter (shows school-wide events) as a safe default.
@@ -21,6 +23,7 @@ export default function AnnouncementsPage() {
   const parentFilter =
     role === 'parent'
       ? {
+          branchId: selectedBranchId || undefined,
           // classId: parentProfile?.classId,
           // sectionId: parentProfile?.sectionId,
           limit: 15,

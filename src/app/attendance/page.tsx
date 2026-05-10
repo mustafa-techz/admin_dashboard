@@ -5,6 +5,9 @@ import { useInfiniteQuery, useQuery, useMutation } from '@tanstack/react-query';
 import { studentService } from '@/services/studentService';
 import { attendanceService } from '@/services/attendanceService';
 import { useAttendanceDraftStore } from '@/store/attendanceDraftStore';
+import { useAuthStore } from '@/store/authStore';
+import { useBranchStore } from '@/store/branchStore';
+import { getAuthorizedClassIds } from '@/lib/teacherScope';
 import { AttendanceStatus } from '@/types/attendance';
 import {
   Check,
@@ -34,6 +37,12 @@ export default function AttendancePage() {
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [selectedSectionId, setSelectedSectionId] = useState<string>('');
 
+  const { user, role } = useAuthStore();
+  const { selectedBranchId } = useBranchStore();
+  const authorizedClassIds = getAuthorizedClassIds(
+    user ? { role: user.role, classIds: user.classIds } : null
+  );
+
   const currentDate = new Date().toISOString().split('T')[0];
 
   // ── Zustand draft store ───────────────────────────────────────────────
@@ -41,11 +50,17 @@ export default function AttendancePage() {
     useAttendanceDraftStore();
 
   // ── Master Data ───────────────────────────────────────────────────────
-  const { data: classes = [] } = useQuery({
+  const { data: allClasses = [] } = useQuery({
     queryKey: ['classes'],
     queryFn: () => classService.getClasses(),
     staleTime: 5 * 60 * 1000,
   });
+
+  // Filter classes for teacher scope
+  const classes = useMemo(() => {
+    if (!authorizedClassIds) return allClasses;
+    return allClasses.filter((c) => authorizedClassIds.includes(c.id));
+  }, [allClasses, authorizedClassIds]);
 
   const { data: sections = [] } = useQuery({
     queryKey: ['sections'],
@@ -61,11 +76,17 @@ export default function AttendancePage() {
     isFetchingNextPage,
     isLoading: isLoadingStudents,
   } = useInfiniteQuery({
-    queryKey: ['students', 'infinite'],
+    queryKey: ['students', 'infinite', selectedBranchId, authorizedClassIds],
     queryFn: ({ pageParam = null }) =>
-      studentService.getStudentsPaginated(100, pageParam),
+      studentService.getStudentsPaginated(
+        selectedBranchId || undefined,
+        100,
+        pageParam,
+        authorizedClassIds
+      ),
     getNextPageParam: (lastPage) => lastPage.lastDoc ?? undefined,
     initialPageParam: null as any,
+    enabled: !!selectedBranchId,
   });
 
   const students = useMemo(

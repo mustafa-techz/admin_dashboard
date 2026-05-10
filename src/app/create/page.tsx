@@ -35,17 +35,17 @@ export default function CreatePage() {
 
   // Mutations
   const classMutation = useMutation({
-    mutationFn: (data: any) => modalState.mode === 'add' ? classService.addClass(data) : classService.updateClass(modalState.initialData.id, data),
+    mutationFn: async (data: any) => { modalState.mode === 'add' ? await classService.addClass(data) : await classService.updateClass(modalState.initialData.id, data); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['classes'] }); closeModal(); },
   });
 
   const sectionMutation = useMutation({
-    mutationFn: (data: any) => modalState.mode === 'add' ? sectionService.addSection(data) : sectionService.updateSection(modalState.initialData.id, data),
+    mutationFn: async (data: any) => { modalState.mode === 'add' ? await sectionService.addSection(data) : await sectionService.updateSection(modalState.initialData.id, data); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['sections'] }); closeModal(); },
   });
 
   const branchMutation = useMutation({
-    mutationFn: (data: any) => modalState.mode === 'add' ? branchService.addBranch(data) : branchService.updateBranch(modalState.initialData.id, data),
+    mutationFn: async (data: any) => { modalState.mode === 'add' ? await branchService.addBranch(data) : await branchService.updateBranch(modalState.initialData.id, data); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['branches'] }); closeModal(); },
   });
 

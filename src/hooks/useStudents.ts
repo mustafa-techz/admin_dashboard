@@ -1,14 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { studentService } from "../services/studentService";
+import { useBranchStore } from "@/store/branchStore";
+import { useAuthStore } from "@/store/authStore";
+import { getAuthorizedClassIds } from "@/lib/teacherScope";
 import { Student } from "../types/student";
 
 export const useStudents = () => {
   const queryClient = useQueryClient();
+  const { selectedBranchId } = useBranchStore();
+  const { user, role } = useAuthStore();
 
-  // Query: Get all students
+  // Determine teacher-scoped classIds (undefined for admin/sub-admin)
+  const classIds = getAuthorizedClassIds(
+    user ? { role: user.role, classIds: user.classIds } : null
+  );
+
+  // Query: Get all students (branch + class scoped)
   const studentsQuery = useQuery({
-    queryKey: ['students'],
-    queryFn: () => studentService.getStudents(),
+    queryKey: ['students', selectedBranchId, classIds],
+    queryFn: () => studentService.getStudents(
+      selectedBranchId || undefined,
+      classIds
+    ),
+    enabled: !!selectedBranchId,
+    staleTime: 3 * 60 * 1000,
   });
 
   // Mutation: Add student

@@ -152,11 +152,20 @@ export const studentService = {
   },
 
   // Read
-  async getStudents(): Promise<Student[]> {
+  async getStudents(branchId?: string, classIds?: string[]): Promise<Student[]> {
     return executeFirebaseOp(async () => {
-      const q = query(studentCollection, orderBy("createdAt", "desc"));
-      const querySnapshot = await getDocs(q);
+      let q = query(studentCollection, orderBy("createdAt", "desc"));
+      
+      if (branchId) {
+        q = query(q, where("branchId", "==", branchId));
+      }
+      
+      if (classIds && classIds.length > 0) {
+        // Firestore 'in' operator supports up to 30 items
+        q = query(q, where("classId", "in", classIds.slice(0, 30)));
+      }
 
+      const querySnapshot = await getDocs(q);
       const students = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -167,12 +176,25 @@ export const studentService = {
   },
 
   // Read Paginated for 2000+ Students Virtualization
-  async getStudentsPaginated(limitCount = 100, lastDoc?: QueryDocumentSnapshot<DocumentData> | null): Promise<{ students: Student[], lastDoc: QueryDocumentSnapshot<DocumentData> | null }> {
+  async getStudentsPaginated(
+    branchId?: string,
+    limitCount = 100, 
+    lastDoc?: QueryDocumentSnapshot<DocumentData> | null,
+    classIds?: string[]
+  ): Promise<{ students: Student[], lastDoc: QueryDocumentSnapshot<DocumentData> | null }> {
     return executeFirebaseOp(async () => {
       let q = query(studentCollection, orderBy("createdAt", "desc"), limit(limitCount));
+      
+      if (branchId) {
+        q = query(q, where("branchId", "==", branchId));
+      }
+      
+      if (classIds && classIds.length > 0) {
+        q = query(q, where("classId", "in", classIds.slice(0, 30)));
+      }
 
       if (lastDoc) {
-        q = query(studentCollection, orderBy("createdAt", "desc"), startAfter(lastDoc), limit(limitCount));
+        q = query(q, startAfter(lastDoc));
       }
 
       const querySnapshot = await getDocs(q);

@@ -141,7 +141,7 @@ export default function TimetableList({ branchId }: { branchId: string }) {
 
               <div className="mt-3 flex flex-col gap-1 text-xs text-muted-foreground">
                 <p suppressHydrationWarning>Created: {new Date(tt.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                <p>Created By: {getCreatorDetails(tt.createdBy, tt.userRole, tt.userName)}</p>
+                <p>Created By: {getCreatorDetails(tt.createdBy, tt.userRole || '', tt.userName || '')}</p>
               </div>
             </div>
           );

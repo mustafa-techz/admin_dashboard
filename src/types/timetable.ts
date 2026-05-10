@@ -21,6 +21,10 @@ export interface Timetable {
   branchId: string;
   status: TimetableStatus;
   createdBy: string;
+  /** Display name of the creator */
+  userName?: string;
+  /** Role of the creator (admin, teacher, etc.) */
+  userRole?: string;
   createdAt: string;
   updatedAt: string;
 }

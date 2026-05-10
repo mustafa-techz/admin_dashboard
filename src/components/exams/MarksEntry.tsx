@@ -111,8 +111,9 @@ export default function MarksEntry({ branchId }: { branchId: string }) {
 
   // Get students for the selected assessment's class/section
   const { data: allStudents = [] } = useQuery({
-    queryKey: ['students'],
-    queryFn: () => studentService.getStudents(),
+    queryKey: ['students', branchId],
+    queryFn: () => studentService.getStudents(branchId || undefined),
+    enabled: !!branchId,
     staleTime: 5 * 60 * 1000,
   });
 

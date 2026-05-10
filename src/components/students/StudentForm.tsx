@@ -6,6 +6,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { Student } from '@/types/student';
 import { ClassMaster, SectionMaster, BranchMaster } from '@/types/masterData';
 import { classService, sectionService, branchService } from '@/services/firebase/masterDataService';
+import { useBranchStore } from '@/store/branchStore';
 
 
 interface StudentFormProps {
@@ -105,19 +106,12 @@ export default function StudentForm({ initialData, onSubmit, onCancel, isLoading
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: selectedBranch } = useQuery<BranchMaster | null>({
-    queryKey: ['selectedBranch'],
-    queryFn: () => {
-      const saved = localStorage.getItem('selectedBranch');
-      return saved ? JSON.parse(saved) : null;
-    },
-    enabled: false, // We only need the cached value
-  });
+  const { selectedBranchId } = useBranchStore();
 
   const handleSubmit = (values: typeof defaultValues) => {
     const finalValues = {
       ...values,
-      branchId: isEditing ? values.branchId : (selectedBranch?.id || values.branchId)
+      branchId: isEditing ? values.branchId : (selectedBranchId || values.branchId)
     };
     onSubmit(finalValues);
   };

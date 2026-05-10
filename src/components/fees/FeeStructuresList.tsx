@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { branchService } from '@/services/firebase/masterDataService';
+import { useBranchStore } from '@/store/branchStore';
 import { useFeeStructures, useBranchFeeAssignments, useFeeInstallments, useAssignFeeToStudents, useDeleteFeeStructure } from '@/hooks/useFees';
 import { studentService } from '@/services/studentService';
 import { formatINR } from '@/lib/feeUtils';
@@ -17,16 +17,9 @@ export default function FeeStructuresList() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [structureToDelete, setStructureToDelete] = useState<string | null>(null);
 
-  const { data: selectedBranch } = useQuery({
-    queryKey: ['selectedBranch'],
-    queryFn: () => {
-      const saved = localStorage.getItem('selectedBranch');
-      return saved ? JSON.parse(saved) : null;
-    },
-    initialData: null,
-  });
+  const { selectedBranchId } = useBranchStore();
 
-  const branchId = selectedBranch?.id ?? '';
+  const branchId = selectedBranchId;
   const { data: feeStructures = [], isLoading } = useFeeStructures(branchId);
 
   // Always fetch all branch assignments to show summary stats in the grid correctly
@@ -287,7 +280,7 @@ function AssignFeeModal({
   const handleAssign = async () => {
     const selectedList = students
       .filter((s) => selectedStudents.has(s.id))
-      .map((s) => ({ id: s.id, fullName: s.fullName, userId: s.parentDetails?.userId }));
+      .map((s) => ({ id: s.id, fullName: s.fullName, userId: s.parentDetails?.userId || '' }));
 
     await assignMutation.mutateAsync({
       students: selectedList,
