@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   useAssessments,
@@ -20,6 +20,74 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { Student } from '@/types/student';
+
+const MarkRow = React.memo(function MarkRow({
+  student,
+  idx,
+  maxMarks,
+  marks,
+  isAbsent,
+  onUpdateMark,
+  onToggleAbsent,
+}: {
+  student: Student;
+  idx: number;
+  maxMarks: number;
+  marks: string;
+  isAbsent: boolean;
+  onUpdateMark: (id: string, value: string) => void;
+  onToggleAbsent: (id: string) => void;
+}) {
+  const marksNum = marks === '' ? 0 : Number(marks);
+
+  return (
+    <tr
+      className={cn(
+        'border-b border-border/50 transition-colors',
+        isAbsent ? 'bg-red-50/50' : 'hover:bg-muted/30'
+      )}
+    >
+      <td className="py-2.5 text-muted-foreground">{idx + 1}</td>
+      <td className="py-2.5 font-mono text-xs">{student.rollNumber}</td>
+      <td className="py-2.5 font-medium">{student.fullName}</td>
+      <td className="py-2.5 text-center">
+        <input
+          type="number"
+          min={0}
+          max={maxMarks}
+          value={isAbsent ? '0' : marks}
+          placeholder="Enter marks"
+          disabled={isAbsent}
+          onChange={(e) => onUpdateMark(student.id, e.target.value)}
+          className={cn(
+            'w-24 px-3 py-1.5 rounded-lg border text-sm text-center font-bold focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all',
+            isAbsent
+              ? 'bg-muted text-muted-foreground border-border cursor-not-allowed'
+              : marksNum > maxMarks
+              ? 'border-red-400 bg-red-50 text-red-700'
+              : 'border-border bg-background'
+          )}
+        />
+      </td>
+      <td className="py-2.5 text-center">
+        <button
+          type="button"
+          onClick={() => onToggleAbsent(student.id)}
+          className={cn(
+            'h-5 w-5 rounded-md border-2 flex items-center justify-center transition-all mx-auto',
+            isAbsent
+              ? 'bg-red-500 border-red-500'
+              : 'border-border hover:border-red-300'
+          )}
+        >
+          {isAbsent && <Check size={12} className="text-white" />}
+        </button>
+      </td>
+    </tr>
+  );
+});
+
 
 export default function MarksEntry({ branchId }: { branchId: string }) {
   const { user } = useAuthStore();
@@ -270,56 +338,20 @@ export default function MarksEntry({ branchId }: { branchId: string }) {
                   const existing = existingMarks.find((m) => m.studentId === student.id);
                   const entry = marksMap[student.id];
                   
-                  // Use local override if present, else fallback to existing database mark
                   const isAbsent = entry ? entry.isAbsent : (existing?.isAbsent || false);
                   const marks = entry ? entry.marks : (existing?.marks.toString() || '');
-                  const marksNum = marks === '' ? 0 : Number(marks);
 
                   return (
-                    <tr
+                    <MarkRow
                       key={student.id}
-                      className={cn(
-                        'border-b border-border/50 transition-colors',
-                        isAbsent ? 'bg-red-50/50' : 'hover:bg-muted/30'
-                      )}
-                    >
-                      <td className="py-2.5 text-muted-foreground">{idx + 1}</td>
-                      <td className="py-2.5 font-mono text-xs">{student.rollNumber}</td>
-                      <td className="py-2.5 font-medium">{student.fullName}</td>
-                      <td className="py-2.5 text-center">
-                        <input
-                          type="number"
-                          min={0}
-                          max={selectedSlot.maxMarks}
-                          value={isAbsent ? '0' : marks}
-                          placeholder="Enter marks"
-                          disabled={isAbsent}
-                          onChange={(e) => updateMark(student.id, e.target.value)}
-                          className={cn(
-                            'w-24 px-3 py-1.5 rounded-lg border text-sm text-center font-bold focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all',
-                            isAbsent
-                              ? 'bg-muted text-muted-foreground border-border cursor-not-allowed'
-                              : marksNum > selectedSlot.maxMarks
-                              ? 'border-red-400 bg-red-50 text-red-700'
-                              : 'border-border bg-background'
-                          )}
-                        />
-                      </td>
-                      <td className="py-2.5 text-center">
-                        <button
-                          type="button"
-                          onClick={() => toggleAbsent(student.id)}
-                          className={cn(
-                            'h-5 w-5 rounded-md border-2 flex items-center justify-center transition-all mx-auto',
-                            isAbsent
-                              ? 'bg-red-500 border-red-500'
-                              : 'border-border hover:border-red-300'
-                          )}
-                        >
-                          {isAbsent && <Check size={12} className="text-white" />}
-                        </button>
-                      </td>
-                    </tr>
+                      student={student}
+                      idx={idx}
+                      maxMarks={selectedSlot.maxMarks}
+                      marks={marks}
+                      isAbsent={isAbsent}
+                      onUpdateMark={updateMark}
+                      onToggleAbsent={toggleAbsent}
+                    />
                   );
                 })}
               </tbody>

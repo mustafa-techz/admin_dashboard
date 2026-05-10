@@ -13,6 +13,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/firebase/firestore';
+import { executeFirebaseOp } from '@/lib/api-errors';
 import { studentService } from './studentService';
 import type {
   Timetable,
@@ -54,7 +55,7 @@ export const timetableService = {
     userRole: string,
     userName: string
   ): Promise<string> {
-    try {
+    return executeFirebaseOp(async () => {
       const batch = writeBatch(db);
       const timetableRef = doc(timetablesCol);
 
@@ -90,17 +91,14 @@ export const timetableService = {
 
       await batch.commit();
       return timetableRef.id;
-    } catch (error) {
-      console.error('Error creating timetable:', error);
-      throw error;
-    }
+    }, 'createTimetable');
   },
 
   /**
    * Get timetables for a branch filtered by status.
    */
   async getTimetables(branchId: string, status?: TimetableStatus): Promise<Timetable[]> {
-    try {
+    return executeFirebaseOp(async () => {
       let q;
       if (status) {
         q = query(timetablesCol, where('branchId', '==', branchId), where('status', '==', status));
@@ -117,17 +115,14 @@ export const timetableService = {
           updatedAt: tsToISO(d.data().updatedAt),
         }))
         .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) as Timetable[];
-    } catch (error) {
-      console.error('Error getting timetables:', error);
-      throw error;
-    }
+    }, 'getTimetables');
   },
 
   /**
    * Get timetables for a specific class/section (parent view).
    */
   async getPublishedTimetables(classId: string, sectionId: string): Promise<Timetable[]> {
-    try {
+    return executeFirebaseOp(async () => {
       const q = query(
         timetablesCol,
         where('classId', '==', classId),
@@ -141,17 +136,14 @@ export const timetableService = {
         createdAt: tsToISO(d.data().createdAt),
         updatedAt: tsToISO(d.data().updatedAt),
       })) as Timetable[];
-    } catch (error) {
-      console.error('Error getting published timetables:', error);
-      throw error;
-    }
+    }, 'getPublishedTimetables');
   },
 
   /**
    * Get a single timetable by ID.
    */
   async getTimetableById(id: string): Promise<Timetable | null> {
-    try {
+    return executeFirebaseOp(async () => {
       const docSnap = await getDoc(doc(timetablesCol, id));
       if (!docSnap.exists()) return null;
       return {
@@ -160,17 +152,14 @@ export const timetableService = {
         createdAt: tsToISO(docSnap.data().createdAt),
         updatedAt: tsToISO(docSnap.data().updatedAt),
       } as Timetable;
-    } catch (error) {
-      console.error('Error getting timetable:', error);
-      throw error;
-    }
+    }, 'getTimetableById');
   },
 
   /**
    * Get all slots for a timetable.
    */
   async getSlots(timetableId: string): Promise<TimetableSlot[]> {
-    try {
+    return executeFirebaseOp(async () => {
       const snapshot = await getDocs(slotsCol(timetableId));
       return snapshot.docs
         .map((d) => ({
@@ -178,25 +167,19 @@ export const timetableService = {
           ...d.data(),
         }))
         .sort((a: any, b: any) => (a.order || 0) - (b.order || 0)) as TimetableSlot[];
-    } catch (error) {
-      console.error('Error getting timetable slots:', error);
-      throw error;
-    }
+    }, 'getSlots');
   },
 
   /**
    * Update timetable metadata.
    */
   async updateTimetable(id: string, data: Partial<TimetableFormData>): Promise<void> {
-    try {
+    return executeFirebaseOp(async () => {
       await updateDoc(doc(timetablesCol, id), {
         ...data,
         updatedAt: serverTimestamp(),
       });
-    } catch (error) {
-      console.error('Error updating timetable:', error);
-      throw error;
-    }
+    }, 'updateTimetable');
   },
 
   /**
@@ -204,7 +187,7 @@ export const timetableService = {
    * Deletes existing slots and writes new ones in a batch.
    */
   async saveSlots(timetableId: string, slots: TimetableSlotFormData[]): Promise<void> {
-    try {
+    return executeFirebaseOp(async () => {
       const batch = writeBatch(db);
 
       // Delete existing slots
@@ -232,10 +215,7 @@ export const timetableService = {
       });
 
       await batch.commit();
-    } catch (error) {
-      console.error('Error saving timetable slots:', error);
-      throw error;
-    }
+    }, 'saveSlots');
   },
 
   /**
@@ -243,7 +223,7 @@ export const timetableService = {
    * After publish, sends reminder notifications to all parents in the class/section.
    */
   async publishTimetable(id: string): Promise<void> {
-    try {
+    return executeFirebaseOp(async () => {
       const timetable = await this.getTimetableById(id);
       if (!timetable) throw new Error('Timetable not found');
       if (timetable.status === 'published') return; // Already published
@@ -303,47 +283,38 @@ export const timetableService = {
         console.error('Failed to send timetable publish reminders:', reminderErr);
         // Don't throw — publish succeeded, reminders are best-effort
       }
-    } catch (error) {
-      console.error('Error publishing timetable:', error);
-      throw error;
-    }
+    }, 'publishTimetable');
   },
 
   /**
    * Unpublish a timetable (published → draft).
    */
   async unpublishTimetable(id: string): Promise<void> {
-    try {
+    return executeFirebaseOp(async () => {
       await updateDoc(doc(timetablesCol, id), {
         status: 'draft' as TimetableStatus,
         updatedAt: serverTimestamp(),
       });
-    } catch (error) {
-      console.error('Error unpublishing timetable:', error);
-      throw error;
-    }
+    }, 'unpublishTimetable');
   },
 
   /**
    * Archive a timetable.
    */
   async archiveTimetable(id: string): Promise<void> {
-    try {
+    return executeFirebaseOp(async () => {
       await updateDoc(doc(timetablesCol, id), {
         status: 'archived' as TimetableStatus,
         updatedAt: serverTimestamp(),
       });
-    } catch (error) {
-      console.error('Error archiving timetable:', error);
-      throw error;
-    }
+    }, 'archiveTimetable');
   },
 
   /**
    * Delete a timetable and all its slots.
    */
   async deleteTimetable(id: string): Promise<void> {
-    try {
+    return executeFirebaseOp(async () => {
       const batch = writeBatch(db);
 
       // Delete all slots
@@ -354,9 +325,6 @@ export const timetableService = {
       batch.delete(doc(timetablesCol, id));
 
       await batch.commit();
-    } catch (error) {
-      console.error('Error deleting timetable:', error);
-      throw error;
-    }
+    }, 'deleteTimetable');
   },
 };

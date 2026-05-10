@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "@/components/shared/QueryProvider";
 import AppLayout from "@/components/layout/AppLayout";
+import ErrorBoundary from "@/components/shared/ErrorBoundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,9 +32,11 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider>
           <QueryProvider>
-            <AppLayout>
-              {children}
-            </AppLayout>
+            <ErrorBoundary>
+              <AppLayout>
+                {children}
+              </AppLayout>
+            </ErrorBoundary>
           </QueryProvider>
         </AuthProvider>
       </body>

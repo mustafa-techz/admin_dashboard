@@ -11,6 +11,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import React from 'react';
+
 interface FilterBarProps {
   onSearch: (value: string) => void;
   onFilterChange?: (classId: string) => void;
@@ -19,7 +21,7 @@ interface FilterBarProps {
   placeholder?: string;
 }
 
-export default function FilterBar({
+const FilterBar = React.memo(function FilterBar({
   onSearch,
   onFilterChange,
   onAddClick,
@@ -75,4 +77,6 @@ export default function FilterBar({
       </div>
     </div>
   );
-}
+});
+
+export default FilterBar;

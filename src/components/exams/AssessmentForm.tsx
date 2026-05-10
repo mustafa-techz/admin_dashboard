@@ -103,7 +103,7 @@ export default function AssessmentForm({ branchId, onSuccess }: { branchId: stri
     onSuccess?.();
   };
   useEffect(() => {
-console.log("Assessment Detailssssssss",schedule)
+
   },[])
 
   return (

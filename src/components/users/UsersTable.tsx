@@ -4,6 +4,8 @@ import { User } from '@/types/user';
 import DataTable from '@/components/tables/DataTable';
 import { Edit, Eye, Trash2 } from 'lucide-react';
 
+import React from 'react';
+
 interface UsersTableProps {
   users: User[];
   onView: (user: User) => void;
@@ -17,7 +19,7 @@ type UserTableRow = User & {
   sr: number;
 };
 
-export default function UsersTable({ users, onView, onEdit, onDelete, isLoading }: UsersTableProps) {
+const UsersTable = React.memo(function UsersTable({ users, onView, onEdit, onDelete, isLoading }: UsersTableProps) {
   const transformData: UserTableRow[] = users.map((user, index) => ({
     ...user,
     id: user.uid,
@@ -84,4 +86,6 @@ export default function UsersTable({ users, onView, onEdit, onDelete, isLoading 
   ];
 
   return <DataTable columns={columns} data={transformData} isLoading={isLoading} />;
-}
+});
+
+export default UsersTable;

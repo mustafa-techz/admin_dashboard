@@ -11,6 +11,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from "@/firebase/firestore";
+import { executeFirebaseOp } from '@/lib/api-errors';
 import { Reminder, CreateReminderDTO, ReminderStatus } from '@/types/reminder';
 
 const REMINDERS_COLLECTION = 'reminders';
@@ -23,7 +24,7 @@ export const fetchUserDashboardReminders = async (
   userId: string,
   maxResults: number = 5
 ): Promise<Reminder[]> => {
-  try {
+  return executeFirebaseOp(async () => {
     const remindersRef = collection(db, REMINDERS_COLLECTION);
 
     // Query: targetUserIds contains userId, status is PENDING or READ, ordered by scheduledAt
@@ -41,10 +42,7 @@ export const fetchUserDashboardReminders = async (
       id: doc.id,
       ...doc.data(),
     })) as Reminder[];
-  } catch (error) {
-    console.error('Error fetching dashboard reminders:', error);
-    return [];
-  }
+  }, 'fetchUserDashboardReminders');
 };
 
 /**
@@ -54,15 +52,13 @@ export const updateReminderStatus = async (
   reminderId: string,
   status: ReminderStatus
 ): Promise<void> => {
-  try {
+  return executeFirebaseOp(async () => {
     const reminderRef = doc(db, REMINDERS_COLLECTION, reminderId);
     await updateDoc(reminderRef, {
       status,
       updatedAt: serverTimestamp(),
     });
-  } catch (error) {
-    console.error('Error updating reminder status:', error);
-  }
+  }, 'updateReminderStatus');
 };
 
 /**
@@ -70,7 +66,7 @@ export const updateReminderStatus = async (
  * Used when a fee installment is paid to automatically hide related reminders.
  */
 export const resolveRemindersForInstallment = async (studentFeeInstallmentId: string): Promise<void> => {
-  try {
+  return executeFirebaseOp(async () => {
     const remindersRef = collection(db, REMINDERS_COLLECTION);
     const q = query(
       remindersRef,
@@ -89,9 +85,7 @@ export const resolveRemindersForInstallment = async (studentFeeInstallmentId: st
       })
     );
     await Promise.all(promises);
-  } catch (error) {
-    console.error('Error resolving reminders for installment:', error);
-  }
+  }, 'resolveRemindersForInstallment');
 };
 
 /**
@@ -101,15 +95,12 @@ export const resolveRemindersForInstallment = async (studentFeeInstallmentId: st
  * generation flows from the admin dashboard.
  */
 export const generateReminder = async (data: CreateReminderDTO): Promise<string> => {
-  try {
+  return executeFirebaseOp(async () => {
     const remindersRef = collection(db, REMINDERS_COLLECTION);
     const docRef = await addDoc(remindersRef, {
       ...data,
       createdAt: serverTimestamp(),
     });
     return docRef.id;
-  } catch (error) {
-    console.error('Error generating reminder:', error);
-    throw error;
-  }
+  }, 'generateReminder');
 };

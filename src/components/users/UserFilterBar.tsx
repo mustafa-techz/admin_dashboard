@@ -10,6 +10,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import React from 'react';
+
 interface UserFilterBarProps {
   onSearch: (value: string) => void;
   onRoleChange?: (role: UserRole | "" | "all_roles") => void;
@@ -18,7 +20,7 @@ interface UserFilterBarProps {
   placeholder?: string;
 }
 
-export default function UserFilterBar({
+const UserFilterBar = React.memo(function UserFilterBar({
   onSearch,
   onRoleChange,
   onAddClick,
@@ -68,4 +70,6 @@ export default function UserFilterBar({
       </div>
     </div>
   );
-}
+});
+
+export default UserFilterBar;
