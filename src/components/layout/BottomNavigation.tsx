@@ -1,36 +1,44 @@
 'use client';
 
 import { useAuthStore } from '@/store/authStore';
-import { Home, Users, BookOpen, Calendar, User as UserIcon, MessageCircle, Bell, IndianRupee, CalendarDays, ClipboardList } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { NAVIGATION_CONFIG } from '@/config/navigation';
 
 export default function BottomNavigation() {
   const { role } = useAuthStore();
   const pathname = usePathname();
 
-  const navLinks = [
-    { label: 'Home', href: '/dashboard', icon: Home },
-    { label: 'Users', href: '/users', icon: Users, roles: ['admin'] },
-    { label: 'Teachers', href: '/teachers', icon: Users, roles: ['admin', 'sub-admin'] },
-    { label: 'Students', href: '/students', icon: BookOpen },
-    { label: 'Chat', href: '/chat', icon: MessageCircle },
-    { label: 'Events', href: '/announcements', icon: Bell },
-    { label: 'Attendance', href: '/attendance', icon: Calendar },
-    { label: 'Fees', href: '/fees', icon: IndianRupee, roles: ['admin', 'sub-admin', 'parent'] },
-    { label: 'Timetable', href: '/timetable', icon: CalendarDays, roles: ['admin', 'sub-admin', 'teacher', 'parent'] },
-    { label: 'Exams', href: '/exams', icon: ClipboardList, roles: ['admin', 'sub-admin', 'teacher', 'parent'] },
-    { label: 'Profile', href: '/profile', icon: UserIcon },
-  ];
+  const navLinks = role && NAVIGATION_CONFIG.bottomNav[role] 
+    ? NAVIGATION_CONFIG.bottomNav[role] 
+    : [];
 
-  const filteredLinks = navLinks.filter(link => !link.roles || (role && link.roles.includes(role)));
+  if (!role) return null;
+
+  const isActiveRoute = (linkHref: string) => {
+    if (pathname === linkHref) return true;
+    
+    // Check if the current route belongs to a group
+    const groupKey = linkHref.replace('/', '') as keyof typeof NAVIGATION_CONFIG.groups;
+    if (NAVIGATION_CONFIG.groups[groupKey]) {
+      return NAVIGATION_CONFIG.groups[groupKey].some(item => pathname.startsWith(item.href));
+    }
+    
+    // Fallback for direct children (e.g., /chat/123 matching /chat)
+    if (linkHref !== '/' && pathname.startsWith(linkHref)) return true;
+    
+    return false;
+  };
 
   return (
-    <nav className="fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t md:hidden shadow-lg-up">
-      <div className="grid h-full max-w-lg grid-cols-5 mx-auto font-medium">
-        {filteredLinks.map((link) => {
-          const isActive = pathname === link.href;
+    <nav className="fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t md:hidden shadow-lg-up pb-safe">
+      <div 
+        className="grid h-full w-full mx-auto font-medium"
+        style={{ gridTemplateColumns: `repeat(${navLinks.length}, 1fr)` }}
+      >
+        {navLinks.map((link) => {
+          const isActive = isActiveRoute(link.href);
           const Icon = link.icon;
 
           return (
@@ -38,13 +46,15 @@ export default function BottomNavigation() {
               key={link.href}
               href={link.href}
               className={cn(
-                "inline-flex flex-col items-center justify-center px-5 hover:bg-muted group transition-all",
+                "relative flex flex-col items-center justify-center hover:bg-muted/50 group transition-all",
                 isActive ? "text-primary" : "text-muted-foreground"
               )}
             >
-              <Icon size={24} className={cn("mb-1", isActive && "scale-110")} />
+              <Icon size={24} strokeWidth={isActive ? 2.5 : 2} className={cn("mb-1 transition-transform", isActive && "scale-110")} />
               <span className="text-[10px] uppercase font-bold tracking-wider">{link.label}</span>
-              {isActive && <div className="absolute top-0 w-8 h-1 bg-primary rounded-b-full shadow-[0_4px_10px_rgba(71,242,228,0.5)]" />}
+              {isActive && (
+                <div className="absolute top-0 w-10 h-1 bg-primary rounded-b-full shadow-[0_2px_8px_rgba(var(--primary),0.4)]" />
+              )}
             </Link>
           );
         })}
