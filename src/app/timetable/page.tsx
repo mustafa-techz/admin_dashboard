@@ -8,6 +8,8 @@ import TimetableList from '@/components/timetable/TimetableList';
 import TimetableView from '@/components/timetable/TimetableView';
 import { cn } from '@/lib/utils';
 import { CalendarDays, PlusCircle, LayoutList } from 'lucide-react';
+import RefreshButton from '@/components/shared/RefreshButton';
+import { useMemo } from 'react';
 
 type AdminTab = 'list' | 'create';
 
@@ -30,6 +32,9 @@ export default function TimetablePage() {
   });
 
   const branchId = selectedBranch?.id ?? '';
+  
+  const timetableQueryKeys = useMemo(() => [['timetables'], ['classes'], ['sections']], []);
+  const parentTimetableQueryKeys = useMemo(() => [['timetables'], ['studentByParent']], []);
 
   // Parent view
   if (role === 'parent') {
@@ -42,6 +47,12 @@ export default function TimetablePage() {
           <div>
             <h1 className="text-2xl md:text-3xl font-black tracking-tight">Class Timetable</h1>
             <p className="text-sm text-muted-foreground">View your child&apos;s weekly schedule.</p>
+          </div>
+          <div className="ml-auto">
+            <RefreshButton 
+              label="Sync Schedule"
+              queryKeys={parentTimetableQueryKeys} 
+            />
           </div>
         </div>
 
@@ -63,6 +74,12 @@ export default function TimetablePage() {
             <h1 className="text-2xl md:text-3xl font-black tracking-tight">Timetable Management</h1>
             <p className="text-sm text-muted-foreground">Create and manage class timetables.</p>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <RefreshButton 
+            label="Refresh Data"
+            queryKeys={timetableQueryKeys} 
+          />
         </div>
       </div>
 

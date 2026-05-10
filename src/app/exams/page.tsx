@@ -9,6 +9,8 @@ import MarksEntry from '@/components/exams/MarksEntry';
 import ParentExamView from '@/components/exams/ParentExamView';
 import { cn } from '@/lib/utils';
 import { ClipboardList, PlusCircle, LayoutList, PenLine } from 'lucide-react';
+import RefreshButton from '@/components/shared/RefreshButton';
+import { useMemo } from 'react';
 
 type AdminTab = 'list' | 'create' | 'marks';
 
@@ -32,6 +34,9 @@ export default function ExamsPage() {
   });
 
   const branchId = selectedBranch?.id ?? '';
+  
+  const examQueryKeys = useMemo(() => [['assessments'], ['studentByParent']], []);
+  const adminExamQueryKeys = useMemo(() => [['assessments']], []);
 
   // Parent view
   if (role === 'parent') {
@@ -44,6 +49,12 @@ export default function ExamsPage() {
           <div>
             <h1 className="text-2xl md:text-3xl font-black tracking-tight">Exams & Results</h1>
             <p className="text-sm text-muted-foreground">View exam schedules and published results.</p>
+          </div>
+          <div className="ml-auto">
+            <RefreshButton 
+              label="Sync Results"
+              queryKeys={examQueryKeys} 
+            />
           </div>
         </div>
 
@@ -65,6 +76,12 @@ export default function ExamsPage() {
             <h1 className="text-2xl md:text-3xl font-black tracking-tight">Exam Management</h1>
             <p className="text-sm text-muted-foreground">Create exams, enter marks, and publish results.</p>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <RefreshButton 
+            label="Refresh Data"
+            queryKeys={adminExamQueryKeys} 
+          />
         </div>
       </div>
 
