@@ -2,6 +2,8 @@ import { useAuthStore } from '@/store/authStore';
 import { Bell, User as UserIcon, MapPin } from 'lucide-react';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
 import { logoutUser } from '@/services/auth.service';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { branchService } from '@/services/firebase/masterDataService';
@@ -15,11 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { NAVIGATION_CONFIG } from '@/config/navigation';
 
 export default function Header() {
   const { user, role } = useAuthStore();
   const totalUnreadCount = useChatStore((state) => state.totalUnreadCount);
   const queryClient = useQueryClient();
+  const pathname = usePathname();
 
   const { data: branches = [] } = useQuery({
     queryKey: ['branches'],
@@ -73,21 +77,24 @@ export default function Header() {
     await requestChatNotificationPermission();
   };
 
-  const navLinks = [
-    { label: 'Home', href: '/dashboard' },
-    { label: 'Chat', href: '/chat' },
-    { label: 'Events', href: '/announcements' },
-    { label: 'Users', href: '/users', roles: ['admin'] },
-    { label: 'Teachers', href: '/teachers', roles: ['admin', 'sub-admin'] },
-    { label: 'Students', href: '/students', roles: ['admin', 'sub-admin', 'teacher'] },
-    { label: 'Attendance', href: '/attendance', roles: ['admin', 'sub-admin', 'teacher'] },
-    { label: 'Fees', href: '/fees', roles: ['admin', 'sub-admin', 'parent'] },
-    { label: 'Timetable', href: '/timetable', roles: ['admin', 'sub-admin', 'teacher', 'parent'] },
-    { label: 'Exams', href: '/exams', roles: ['admin', 'sub-admin', 'teacher', 'parent'] },
-  ];
+  const filteredLinks = NAVIGATION_CONFIG.desktopNav.filter(
+    link => !link.roles || (role && link.roles.includes(role))
+  );
 
-
-  const filteredLinks = navLinks.filter(link => !link.roles || (role && link.roles.includes(role)));
+  const isActiveRoute = (linkHref: string) => {
+    if (pathname === linkHref) return true;
+    
+    // Check if the current route belongs to a group
+    const groupKey = linkHref.replace('/', '') as keyof typeof NAVIGATION_CONFIG.groups;
+    if (NAVIGATION_CONFIG.groups[groupKey]) {
+      return NAVIGATION_CONFIG.groups[groupKey].some(item => pathname.startsWith(item.href));
+    }
+    
+    // Fallback for direct children
+    if (linkHref !== '/' && pathname.startsWith(linkHref)) return true;
+    
+    return false;
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 shadow-soft">
@@ -98,17 +105,25 @@ export default function Header() {
             <span className="font-bold text-xl tracking-tight hidden sm:block">SchoolDash</span>
           </Link>
 
-          {/* Desktop Navigation */}
           <nav className="ml-8 hidden md:flex items-center gap-6">
-            {filteredLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {filteredLinks.map((link) => {
+              const isActive = isActiveRoute(link.href);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "text-sm font-medium transition-colors hover:text-primary relative py-2",
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  )}
+                >
+                  {link.label}
+                  {isActive && (
+                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full" />
+                  )}
+                </Link>
+              );
+            })}
           </nav>
         </div>
 
@@ -153,11 +168,11 @@ export default function Header() {
               <p className="text-xs text-muted-foreground capitalize">{role}</p>
             </div>
 
-            <div className="group relative" onClick={handleLogout}>
-              <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center cursor-pointer border border-border">
-                <UserIcon size={18} className="text-muted-foreground" />
+            <Link href="/profile" className="group relative">
+              <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center cursor-pointer border border-primary/20 text-primary-foreground font-bold text-sm shadow-soft hover:scale-110 transition-transform">
+                {user?.name?.charAt(0).toUpperCase() || 'U'}
               </div>
-            </div>
+            </Link>
           </div>
         </div>
       </div>
