@@ -33,7 +33,7 @@ function ExamScheduleCard({ assessmentId }: { assessmentId: string }) {
         <div key={slot.id} className="flex items-center gap-3 px-3 py-2 bg-muted/30 rounded-lg">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-foreground">{slot.subject}</p>
-            <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5" suppressHydrationWarning>
               <Calendar size={11} />
               {new Date(slot.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
               <span className="mx-0.5">·</span>

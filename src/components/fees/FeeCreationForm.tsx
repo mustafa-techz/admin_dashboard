@@ -8,6 +8,13 @@ import { autoSplitInstallments, validateInstallmentTotal, formatINR, getAcademic
 import type { FeeInstallmentFormData, SplitType } from '@/types/fees';
 import { Check, Plus, Trash2, AlertCircle, Loader2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // ─────────────────────────────────────────────────────────────────
 // Live Calculation Summary (memoized)
@@ -223,16 +230,19 @@ export default function FeeCreationForm() {
             <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
               Academic Year
             </label>
-            <select
+            <Select
               value={academicYear}
-              onChange={(e) => setAcademicYear(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+              onValueChange={setAcademicYear}
             >
-              <option value="">Select Year</option>
-              {academicYears.map((yr) => (
-                <option key={yr} value={yr}>{yr}</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Year" />
+              </SelectTrigger>
+              <SelectContent>
+                {academicYears.map((yr) => (
+                  <SelectItem key={yr} value={yr}>{yr}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

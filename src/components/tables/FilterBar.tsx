@@ -3,6 +3,13 @@
 import { Search, Plus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { classService } from '@/services/firebase/masterDataService';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface FilterBarProps {
   onSearch: (value: string) => void;
@@ -40,17 +47,21 @@ export default function FilterBar({
       </div>
 
       <div className="flex items-center gap-3 w-full sm:w-auto">
-        <select
-          onChange={(e) => onFilterChange?.(e.target.value)}
-          className="block w-full px-4 py-2.5 bg-card border border-border rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-soft min-w-[150px]"
+        <Select
+          onValueChange={(value) => onFilterChange?.(value === "all" ? "" : value)}
         >
-          <option value="">All Classes</option>
-          {classes.map((cls) => (
-            <option key={cls.id} value={cls.id}>
-              Class {cls.className}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="w-full sm:w-[150px]">
+            <SelectValue placeholder="All Classes" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Classes</SelectItem>
+            {classes.map((cls) => (
+              <SelectItem key={cls.id} value={cls.id}>
+                Class {cls.className}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         {onAddClick && (
           <button
