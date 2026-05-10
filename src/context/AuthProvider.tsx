@@ -5,7 +5,7 @@ import { auth } from "@/firebase/auth"
 import { onIdTokenChanged, User } from "firebase/auth"
 import { useAuthStore } from "@/store/authStore"
 import { db } from "@/firebase/firestore"
-import { doc, getDoc } from "firebase/firestore"
+import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore"
 import { normalizeUserRole, UserRole } from "@/types/user"
 
 const AUTH_COOKIE_NAME = "firebase-auth-token"
@@ -72,6 +72,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         const token = await currentUser.getIdToken()
 
+        // For teachers, fetch their teacher document to get branchIds/classIds
+        let teacherData: Record<string, any> | null = null;
+        if (role === 'teacher') {
+          try {
+            const teacherSnapshot = await getDoc(doc(db, "teachers", currentUser.uid));
+            if (teacherSnapshot.exists()) {
+              teacherData = teacherSnapshot.data();
+            } else if (currentUser.email) {
+              // Fallback for older accounts where doc ID isn't the auth UID
+              const q = query(collection(db, "teachers"), where("email", "==", currentUser.email));
+              const querySnapshot = await getDocs(q);
+              if (!querySnapshot.empty) {
+                teacherData = querySnapshot.docs[0].data();
+              }
+            }
+          } catch (teacherErr) {
+            // Non-blocking
+            console.warn("Could not fetch teacher doc:", teacherErr);
+          }
+        }
+
         if (role) {
           login(
             {
@@ -80,6 +101,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               email: currentUser.email || "",
               role,
               studentRollNumber: userData?.studentRollNumber,
+              // Teacher scope fields (from teacher doc or user doc)
+              branchIds: teacherData?.branchIds || userData?.branchIds,
+              branchId: teacherData?.branchId || userData?.branchId,
+              classIds: teacherData?.classIds,
+              classTeacherOf: teacherData?.classTeacher,
             },
             role
           )

@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useMemo } from 'react';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { studentService } from '@/services/studentService';
+import { useAuthStore } from '@/store/authStore';
+import { getAuthorizedClassIds } from '@/lib/teacherScope';
 import DataTable from '@/components/tables/DataTable';
 import FilterBar from '@/components/tables/FilterBar';
 import { Student } from '@/types/student';
@@ -11,13 +13,19 @@ import { Eye, Edit, Trash2 } from 'lucide-react';
 import StudentForm from '@/components/students/StudentForm';
 import StudentViewModal from '@/components/students/StudentViewModal';
 import ConfirmationModal from '@/components/shared/ConfirmationModal';
+import { useStudents } from '@/hooks/useStudents';
 import { classService, sectionService } from '@/services/firebase/masterDataService';
 
 export default function StudentsPage() {
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState('');
+  const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const router = useRouter();
+  
+  const authorizedClassIds = getAuthorizedClassIds(
+    user ? { role: user.role, classIds: user.classIds } : null
+  );
 
   // Master Data Queries
   const { data: classes = [], isLoading: isLoadingClasses, isError: isErrorClasses } = useQuery({
@@ -25,6 +33,10 @@ export default function StudentsPage() {
     queryFn: () => classService.getClasses(),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
+    // For teachers, only show their assigned classes in the filter
+    select: (data) => authorizedClassIds
+      ? data.filter((c) => authorizedClassIds.includes(c.id))
+      : data,
   });
 
   const { data: sections = [], isLoading: isLoadingSections, isError: isErrorSections } = useQuery({
@@ -46,10 +58,17 @@ export default function StudentsPage() {
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
   const [pendingSubmitData, setPendingSubmitData] = useState<any>(null);
 
-  const { data: students, isLoading } = useQuery<Student[]>({
-    queryKey: ['students'],
-    queryFn: () => studentService.getStudents(),
-  });
+  // Students — uses branch store + teacher scope internally
+  const {
+    students: studentsList,
+    isLoading,
+    addStudent,
+    updateStudent,
+    deleteStudent,
+    isAdding,
+    isUpdating,
+    isDeleting,
+  } = useStudents();
 
   const createMutation = useMutation({
     mutationFn: studentService.addStudent,
@@ -79,7 +98,7 @@ export default function StudentsPage() {
     },
   });
 
-  const filteredStudents = students?.filter(student => {
+  const filteredStudents = studentsList?.filter(student => {
     const matchesSearch =
       student?.fullName?.toLowerCase().includes(search.toLowerCase()) ||
       student?.rollNumber?.toLowerCase().includes(search.toLowerCase());

@@ -1,7 +1,7 @@
 import { X, User, Phone, MapPin, Calendar, BookOpen, GraduationCap, Mail } from 'lucide-react';
 import { Teacher } from '@/types/teacher';
 import { useQuery } from '@tanstack/react-query';
-import { classService } from '@/services/firebase/masterDataService';
+import { classService, branchService } from '@/services/firebase/masterDataService';
 
 interface TeacherViewModalProps {
   isOpen: boolean;
@@ -15,10 +15,20 @@ export default function TeacherViewModal({ isOpen, onClose, teacher }: TeacherVi
     queryFn: () => classService.getClasses(),
   });
 
+  const { data: branches = [] } = useQuery({
+    queryKey: ['branches'],
+    queryFn: () => branchService.getBranches(),
+    staleTime: 30 * 60 * 1000,
+  });
+
   if (!isOpen || !teacher) return null;
 
   const classTeacherName = classes.find(c => c.id === teacher.classTeacher)?.className || 'None';
   const taughtClasses = teacher.classIds.map(id => classes.find(c => c.id === id)?.className || id).join(', ');
+
+  // Resolve branch names from branchIds[] or fallback to branchId
+  const teacherBranchIds = teacher.branchIds?.length ? teacher.branchIds : teacher.branchId ? [teacher.branchId] : [];
+  const branchNames = teacherBranchIds.map(id => branches.find(b => b.id === id)?.branchName || id);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
@@ -46,6 +56,16 @@ export default function TeacherViewModal({ isOpen, onClose, teacher }: TeacherVi
               <h4 className="font-bold text-sm tracking-tight text-foreground">Faculty Profile</h4>
             </div>
             <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Branches</p>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {branchNames.length > 0 ? branchNames.map((name, i) => (
+                    <span key={i} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-black rounded-md border border-blue-200">{name}</span>
+                  )) : (
+                    <span className="text-xs text-muted-foreground italic">Not assigned</span>
+                  )}
+                </div>
+              </div>
               <div>
                 <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Class Teacher Of</p>
                 <p className="text-sm font-bold">Class {classTeacherName}</p>

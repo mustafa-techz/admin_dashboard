@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { classService, sectionService } from '@/services/firebase/masterDataService';
 import { useCreateAssessment } from '@/hooks/useAssessments';
 import { useAuthStore } from '@/store/authStore';
+import { getAuthorizedClassIds } from '@/lib/teacherScope';
 import { getAcademicYearOptions } from '@/lib/feeUtils';
 import { cn } from '@/lib/utils';
 import type { ExamScheduleFormData, AssessmentType } from '@/types/assessment';
@@ -30,10 +31,20 @@ export default function AssessmentForm({ branchId, onSuccess }: { branchId: stri
   const createMutation = useCreateAssessment();
   const academicYears = useMemo(() => getAcademicYearOptions(), []);
 
-  const { data: classes = [] } = useQuery({
+  const authorizedClassIds = getAuthorizedClassIds(
+    user ? { role: user.role, classIds: user.classIds } : null
+  );
+
+  const { data: allClasses = [] } = useQuery({
     queryKey: ['classes'],
     queryFn: () => classService.getClasses(),
   });
+
+  // Filter classes for teacher scope
+  const classes = useMemo(() => {
+    if (!authorizedClassIds) return allClasses;
+    return allClasses.filter((c) => authorizedClassIds.includes(c.id));
+  }, [allClasses, authorizedClassIds]);
 
   const { data: sections = [] } = useQuery({
     queryKey: ['sections'],

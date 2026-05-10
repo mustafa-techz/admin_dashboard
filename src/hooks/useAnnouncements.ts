@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventService } from '../services/eventService';
 import { AnnouncementFilter, CreateEventData, SchoolEvent } from '../types/announcement';
+import { useBranchStore } from '@/store/branchStore';
 
 const QUERY_KEY = 'announcements';
 const ADMIN_QUERY_KEY = 'events-admin';
@@ -24,11 +25,13 @@ export function useAnnouncements(filter: AnnouncementFilter = {}) {
 
 /**
  * Fetches the 3 nearest upcoming published announcements for the dashboard.
+ * Scoped to the currently selected branch.
  */
 export function useUpcomingAnnouncements(limit = 3) {
+  const { selectedBranchId } = useBranchStore();
   return useQuery({
-    queryKey: [QUERY_KEY, 'upcoming', limit],
-    queryFn: () => eventService.getUpcomingAnnouncements(limit),
+    queryKey: [QUERY_KEY, 'upcoming', limit, selectedBranchId],
+    queryFn: () => eventService.getUpcomingAnnouncements(limit, selectedBranchId || undefined),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -37,13 +40,16 @@ export function useUpcomingAnnouncements(limit = 3) {
 
 /**
  * Fetches all events (including drafts) for admin/teacher management.
+ * Scoped to the currently selected branch.
  * Shorter staleTime so admin sees fresh data.
  */
 export function useAdminEvents() {
+  const { selectedBranchId } = useBranchStore();
   return useQuery({
-    queryKey: [ADMIN_QUERY_KEY],
-    queryFn: () => eventService.getAllEvents(),
+    queryKey: [ADMIN_QUERY_KEY, selectedBranchId],
+    queryFn: () => eventService.getAllEvents(50, selectedBranchId || undefined),
     staleTime: 60 * 1000, // 1 minute
+    enabled: !!selectedBranchId,
   });
 }
 

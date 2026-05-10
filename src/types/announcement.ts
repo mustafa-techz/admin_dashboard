@@ -11,6 +11,8 @@ export interface SchoolEvent {
   description: string;
   type: EventType;
   scope: EventScope;
+  /** Branch this event belongs to (null = all branches / school-wide) */
+  branchId?: string | null;
   classId?: string | null;
   sectionId?: string | null;
   startAt: Timestamp;
@@ -28,6 +30,7 @@ export interface SchoolEvent {
 export type CreateEventData = Omit<SchoolEvent, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'createdByName'>;
 
 export interface AnnouncementFilter {
+  branchId?: string | null;
   classId?: string | null;
   sectionId?: string | null;
   limit?: number;

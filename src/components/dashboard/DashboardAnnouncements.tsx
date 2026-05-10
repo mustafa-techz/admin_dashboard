@@ -185,6 +185,10 @@ export default function DashboardAnnouncements() {
     );
   }
 
+  if (upcomingEvents.length === 0) {
+    return null;
+  }
+
   return (
     <section className="bg-card rounded-3xl border border-border shadow-soft overflow-hidden">
       {/* Header */}
@@ -209,29 +213,13 @@ export default function DashboardAnnouncements() {
 
       {/* List */}
       <div className="p-6 md:p-8">
-        {upcomingEvents.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4">
-            <AnimatePresence mode="popLayout">
-              {upcomingEvents.map((event, index) => (
-                <AnnouncementCard key={event.id} event={event} index={index} />
-              ))}
-            </AnimatePresence>
-          </div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-12 text-center"
-          >
-            <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mb-4 border border-dashed border-muted-foreground/20">
-              <Calendar size={32} className="text-muted-foreground/30" />
-            </div>
-            <h4 className="text-base font-black text-foreground">All caught up!</h4>
-            <p className="text-sm text-muted-foreground max-w-[240px] mt-1">
-              No upcoming announcements at the moment. Check back later for updates.
-            </p>
-          </motion.div>
-        )}
+        <div className="grid grid-cols-1 gap-4">
+          <AnimatePresence mode="popLayout">
+            {upcomingEvents.map((event, index) => (
+              <AnnouncementCard key={event.id} event={event} index={index} />
+            ))}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Footer Info */}

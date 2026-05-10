@@ -3,7 +3,8 @@ import * as Yup from 'yup';
 import { useQuery } from '@tanstack/react-query';
 import { Teacher, TeacherFormData } from '@/types/teacher';
 import { ClassMaster, BranchMaster } from '@/types/masterData';
-import { classService } from '@/services/firebase/masterDataService';
+import { classService, branchService } from '@/services/firebase/masterDataService';
+import { useBranchStore } from '@/store/branchStore';
 
 interface TeacherFormProps {
   initialData?: Partial<Teacher>;
@@ -24,6 +25,7 @@ const validationSchema = Yup.object().shape({
     state: Yup.string().required('State is required'),
     pincode: Yup.string().matches(/^[0-9]{6}$/, 'Must be 6 digits').required('Pincode is required'),
   }),
+  branchIds: Yup.array().of(Yup.string()).min(1, 'At least one branch is required'),
   subjects: Yup.array().of(Yup.string()).min(1, 'At least one subject is required'),
   classIds: Yup.array().of(Yup.string()).min(1, 'At least one class is required'),
   classTeacher: Yup.string(),
@@ -43,6 +45,7 @@ const defaultValues: TeacherFormData = {
     pincode: '',
   },
   branchId: '',
+  branchIds: [],
   subjects: [],
   classIds: [],
   classTeacher: '',
@@ -56,19 +59,38 @@ export default function TeacherForm({ initialData, onSubmit, onCancel, isLoading
     queryFn: () => classService.getClasses(),
   });
 
-  const { data: selectedBranch } = useQuery<BranchMaster | null>({
-    queryKey: ['selectedBranch'],
-    queryFn: () => {
-      const saved = localStorage.getItem('selectedBranch');
-      return saved ? JSON.parse(saved) : null;
-    },
-    enabled: false,
+  const { data: branches = [] } = useQuery<BranchMaster[]>({
+    queryKey: ['branches'],
+    queryFn: () => branchService.getBranches(),
+    staleTime: 30 * 60 * 1000,
   });
+
+  const { selectedBranchId } = useBranchStore();
+
+  // Merge initialData with defaults, ensuring branchIds is always an array
+  const mergedInitial = initialData
+    ? {
+        ...defaultValues,
+        ...initialData,
+        branchIds: initialData.branchIds?.length
+          ? initialData.branchIds
+          : initialData.branchId
+            ? [initialData.branchId]
+            : selectedBranchId
+              ? [selectedBranchId]
+              : [],
+      }
+    : {
+        ...defaultValues,
+        branchIds: selectedBranchId ? [selectedBranchId] : [],
+      };
 
   const handleSubmit = (values: TeacherFormData) => {
     const finalValues = {
       ...values,
-      branchId: isEditing ? values.branchId : (selectedBranch?.id || values.branchId)
+      // Set primary branchId to first selected branch
+      branchId: values.branchIds?.[0] || selectedBranchId || values.branchId,
+      branchIds: values.branchIds || [],
     };
     onSubmit(finalValues);
   };
@@ -84,9 +106,10 @@ export default function TeacherForm({ initialData, onSubmit, onCancel, isLoading
         </div>
 
         <Formik
-          initialValues={(initialData as any) || defaultValues}
+          initialValues={mergedInitial as any}
           validationSchema={validationSchema}
           onSubmit={handleSubmit}
+          enableReinitialize
         >
           {({ errors, touched, isValid, values, setFieldValue }) => (
             <Form className="p-6 space-y-8">
@@ -163,10 +186,41 @@ export default function TeacherForm({ initialData, onSubmit, onCancel, isLoading
                 </div>
               </div>
 
-              {/* Teaching Info */}
+              {/* Branch & Teaching Info */}
               <div className="space-y-4">
-                <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground border-b border-border pb-2">Teaching Information</h3>
+                <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground border-b border-border pb-2">Branch & Teaching Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Branch Multi-select */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-bold mb-2">Branch (Multi-select) *</label>
+                    <div className="flex flex-wrap gap-2 p-3 bg-secondary border border-border rounded-xl min-h-[56px]">
+                      {branches.map(branch => (
+                        <button
+                          key={branch.id}
+                          type="button"
+                          onClick={() => {
+                            const currentIds: string[] = values.branchIds || [];
+                            const next = currentIds.includes(branch.id)
+                              ? currentIds.filter((id: string) => id !== branch.id)
+                              : [...currentIds, branch.id];
+                            setFieldValue('branchIds', next);
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${(values.branchIds || []).includes(branch.id)
+                            ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20 scale-105'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            }`}
+                        >
+                          {branch.branchName}
+                        </button>
+                      ))}
+                      {branches.length === 0 && (
+                        <span className="text-xs text-muted-foreground italic">No branches available</span>
+                      )}
+                    </div>
+                    <ErrorMessage name="branchIds" component="div" className="text-red-500 text-xs mt-1 font-bold" />
+                  </div>
+
+                  {/* Subjects Multi-select */}
                   <div>
                     <label className="block text-sm font-bold mb-2">Subjects (Multi-select) *</label>
                     <div className="flex flex-wrap gap-2 p-3 bg-secondary border border-border rounded-xl min-h-[100px]">
@@ -176,7 +230,7 @@ export default function TeacherForm({ initialData, onSubmit, onCancel, isLoading
                           type="button"
                           onClick={() => {
                             const next = values.subjects.includes(sub)
-                              ? values.subjects.filter(s => s !== sub)
+                              ? values.subjects.filter((s: string) => s !== sub)
                               : [...values.subjects, sub];
                             setFieldValue('subjects', next);
                           }}
@@ -192,6 +246,7 @@ export default function TeacherForm({ initialData, onSubmit, onCancel, isLoading
                     <ErrorMessage name="subjects" component="div" className="text-red-500 text-xs mt-1 font-bold" />
                   </div>
 
+                  {/* Classes Multi-select */}
                   <div>
                     <label className="block text-sm font-bold mb-2">Classes (Multi-select) *</label>
                     <div className="flex flex-wrap gap-2 p-3 bg-secondary border border-border rounded-xl min-h-[100px]">
@@ -201,7 +256,7 @@ export default function TeacherForm({ initialData, onSubmit, onCancel, isLoading
                           type="button"
                           onClick={() => {
                             const next = values.classIds.includes(cls.id)
-                              ? values.classIds.filter(id => id !== cls.id)
+                              ? values.classIds.filter((id: string) => id !== cls.id)
                               : [...values.classIds, cls.id];
                             setFieldValue('classIds', next);
                           }}
@@ -217,6 +272,7 @@ export default function TeacherForm({ initialData, onSubmit, onCancel, isLoading
                     <ErrorMessage name="classIds" component="div" className="text-red-500 text-xs mt-1 font-bold" />
                   </div>
 
+                  {/* Class Teacher Of */}
                   <div className="md:col-span-2">
                     <label className="block text-sm font-bold mb-1">Class Teacher Of</label>
                     <Field as="select" name="classTeacher" className="w-full px-3 py-2 bg-secondary border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">

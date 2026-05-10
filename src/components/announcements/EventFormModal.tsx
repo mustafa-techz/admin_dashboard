@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calendar, Clock } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import { SchoolEvent, EventType, EventScope, EventPriority, EVENT_TYPE_LABELS } from '@/types/announcement';
+import { useBranchStore } from '@/store/branchStore';
 import {
   Select,
   SelectContent,
@@ -39,6 +40,7 @@ export default function EventFormModal({
   initialData,
   isSubmitting = false,
 }: EventFormModalProps) {
+  const { selectedBranchId } = useBranchStore();
   const [title, setTitle] = useState(initialData?.title ?? '');
   const [description, setDescription] = useState(initialData?.description ?? '');
   const [type, setType] = useState<EventType>(initialData?.type ?? 'academic');
@@ -73,6 +75,7 @@ export default function EventFormModal({
         description: description.trim(),
         type,
         scope,
+        branchId: selectedBranchId || null,
         classId: classId || null,
         sectionId: sectionId || null,
         startAt: Timestamp.fromDate(startDate),

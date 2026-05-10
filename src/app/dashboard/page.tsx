@@ -16,6 +16,7 @@ import { DashboardReminderCard } from '@/components/reminders/DashboardReminderC
 import { ReminderPopup } from '@/components/reminders/ReminderPopup';
 import { studentService } from '@/services/studentService';
 import { usePendingFeeInstallments } from '@/hooks/useFees';
+import { useStudents } from '@/hooks/useStudents';
 import { useMemo } from 'react';
 import { Reminder } from '@/types/reminder';
 
@@ -205,20 +206,7 @@ export default function DashboardPage() {
         )}
 
         {role === 'teacher' && (
-          <>
-            <DashboardCard
-              title="My Students"
-              value="42"
-              icon={<BookOpen size={24} />}
-            />
-            <DashboardCard
-              title="Student Alerts"
-              value="3"
-              icon={<AlertCircle size={24} />}
-              description="Action required for 3 students"
-              className="border-red-100"
-            />
-          </>
+          <TeacherDashboardCards />
         )}
 
         <DashboardCard
@@ -254,5 +242,25 @@ export default function DashboardPage() {
       {/* Render the Popup */}
       <ReminderPopup reminders={reminders} />
     </div>
+  );
+}
+
+/** Isolated teacher dashboard cards — scoped student count */
+function TeacherDashboardCards() {
+  const { students, isLoading } = useStudents();
+  return (
+    <>
+      <DashboardCard
+        title="My Students"
+        value={isLoading ? '...' : students.length}
+        icon={<BookOpen size={24} />}
+      />
+      <DashboardCard
+        title="Student Alerts"
+        value="0"
+        icon={<AlertCircle size={24} />}
+        description="No alerts at this time"
+      />
+    </>
   );
 }

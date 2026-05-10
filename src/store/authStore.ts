@@ -8,6 +8,14 @@ interface AuthUser {
   email: string;
   role: UserRole;
   studentRollNumber?: string;
+  /** Teacher: assigned branch IDs (multi-branch support) */
+  branchIds?: string[];
+  /** Teacher: legacy single branch ID */
+  branchId?: string;
+  /** Teacher: assigned class IDs */
+  classIds?: string[];
+  /** Teacher: class teacher of (classId) */
+  classTeacherOf?: string;
 }
 
 interface AuthState {

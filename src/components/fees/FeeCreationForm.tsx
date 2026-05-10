@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback, memo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useBranchStore } from '@/store/branchStore';
 import { branchService } from '@/services/firebase/masterDataService';
 import { useCreateFeeStructure } from '@/hooks/useFees';
 import { autoSplitInstallments, validateInstallmentTotal, formatINR, getAcademicYearOptions } from '@/lib/feeUtils';
@@ -96,14 +97,7 @@ export default function FeeCreationForm() {
     queryFn: () => branchService.getBranches(),
   });
 
-  const { data: selectedBranch } = useQuery({
-    queryKey: ['selectedBranch'],
-    queryFn: () => {
-      const saved = localStorage.getItem('selectedBranch');
-      return saved ? JSON.parse(saved) : null;
-    },
-    initialData: null,
-  });
+  const { selectedBranchId } = useBranchStore();
 
   const createFeeStructure = useCreateFeeStructure();
   const academicYears = useMemo(() => getAcademicYearOptions(), []);
@@ -148,13 +142,13 @@ export default function FeeCreationForm() {
     feeName.trim() &&
     academicYear &&
     totalAmount > 0 &&
-    selectedBranch?.id &&
+    selectedBranchId &&
     installments.length > 0 &&
     validation.valid &&
     installments.every((inst) => inst.installmentName.trim() && inst.dueDate);
 
   const handleSubmit = async () => {
-    if (!canSubmit || !selectedBranch) return;
+    if (!canSubmit || !selectedBranchId) return;
 
     try {
       await createFeeStructure.mutateAsync({
@@ -164,7 +158,7 @@ export default function FeeCreationForm() {
           totalAmount,
           splitType,
           installmentCount: installments.length,
-          branchId: selectedBranch.id,
+          branchId: selectedBranchId,
         },
         installments,
       });

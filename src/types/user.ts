@@ -46,4 +46,6 @@ export interface UpdateUserData {
   name?: string;
   email?: string;
   role?: UserRole;
+  /** Parent only: child's roll number e.g. "10A-023" */
+  studentRollNumber?: string;
 }

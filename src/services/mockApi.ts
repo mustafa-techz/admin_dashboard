@@ -10,8 +10,12 @@ export const mockStudents: Student[] = [
     parentId: 'parent-1',
     parentDetails: {
       fatherName: 'Richard Doe',
+      fatherOccupation: 'Engineer',
       motherName: 'Mary Doe',
+      motherOccupation: 'Doctor',
       phone: '+1 234 567 890',
+      email: 'richard.doe@example.com',
+      address: '123 Street, New York, NY',
     },
     addressDetails: {
       street: '123 Street',
@@ -36,8 +40,12 @@ export const mockStudents: Student[] = [
     parentId: 'parent-2',
     parentDetails: {
       fatherName: 'Robert Smith',
+      fatherOccupation: 'Lawyer',
       motherName: 'Linda Smith',
+      motherOccupation: 'Teacher',
       phone: '+1 234 567 891',
+      email: 'robert.smith@example.com',
+      address: '456 Avenue, Los Angeles, CA',
     },
     addressDetails: {
       street: '456 Avenue',
@@ -55,7 +63,7 @@ export const mockStudents: Student[] = [
   },
 ];
 
-export const mockTeachers: Teacher[] = [
+export const mockTeachers = [
   {
     id: '1',
     name: 'John Doe',
@@ -74,7 +82,7 @@ export const mockTeachers: Teacher[] = [
     experience: '8 years',
     contact: '+1112223335',
   },
-];
+] as unknown as Teacher[];
 
 export const mockSubAdmins: SubAdmin[] = [
   {
