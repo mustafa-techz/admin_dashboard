@@ -8,6 +8,13 @@ import { branchService } from '@/services/firebase/masterDataService';
 import { useEffect } from 'react';
 import { requestChatNotificationPermission } from '@/lib/chatNotifications';
 import { useChatStore } from '@/store/chatStore';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function Header() {
   const { user, role } = useAuthStore();
@@ -46,8 +53,7 @@ export default function Header() {
     }
   }, [branches, selectedBranch, queryClient]);
 
-  const handleBranchChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const branchId = e.target.value;
+  const handleBranchChange = (branchId: string) => {
     const branch = branches.find(b => b.id === branchId);
     if (branch) {
       queryClient.setQueryData(['selectedBranch'], branch);
@@ -108,19 +114,23 @@ export default function Header() {
 
         <div className="flex items-center gap-4">
           {/* Branch Dropdown */}
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-secondary rounded-xl border border-border">
-            <MapPin size={14} className="text-primary" />
-            <select
+          <div className="hidden sm:flex items-center gap-2">
+            <Select
               value={selectedBranch?.id || ''}
-              onChange={handleBranchChange}
-              className="bg-transparent text-xs font-bold focus:outline-none cursor-pointer"
+              onValueChange={handleBranchChange}
             >
-              {branches.map(branch => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.branchName}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="bg-secondary h-9 border-border rounded-xl px-3 py-1.5 text-xs font-bold gap-2">
+                <MapPin size={14} className="text-primary" />
+                <SelectValue placeholder="Select Branch" />
+              </SelectTrigger>
+              <SelectContent>
+                {branches.map(branch => (
+                  <SelectItem key={branch.id} value={branch.id}>
+                    {branch.branchName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <button

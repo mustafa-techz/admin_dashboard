@@ -5,6 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calendar, Clock } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import { SchoolEvent, EventType, EventScope, EventPriority, EVENT_TYPE_LABELS } from '@/types/announcement';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface EventFormModalProps {
   isOpen: boolean;
@@ -159,30 +166,36 @@ export default function EventFormModal({
                     <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
                       Type
                     </label>
-                    <select
-                      id="event-type"
+                    <Select
                       value={type}
-                      onChange={(e) => setType(e.target.value as EventType)}
-                      className="w-full px-3 py-2.5 bg-muted rounded-xl text-sm text-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
+                      onValueChange={(value) => setType(value as EventType)}
                     >
-                      {EVENT_TYPES.map((t) => (
-                        <option key={t} value={t}>{EVENT_TYPE_LABELS[t]}</option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EVENT_TYPES.map((t) => (
+                          <SelectItem key={t} value={t}>{EVENT_TYPE_LABELS[t]}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
                       Priority
                     </label>
-                    <select
-                      id="event-priority"
+                    <Select
                       value={priority}
-                      onChange={(e) => setPriority(e.target.value as EventPriority)}
-                      className="w-full px-3 py-2.5 bg-muted rounded-xl text-sm text-foreground border border-border focus:outline-none focus:ring-2 focus:ring-primary/40 transition"
+                      onValueChange={(value) => setPriority(value as EventPriority)}
                     >
-                      <option value="normal">Normal</option>
-                      <option value="high">🔥 High</option>
-                    </select>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select priority" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="high">🔥 High</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 

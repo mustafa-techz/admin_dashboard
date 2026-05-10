@@ -19,7 +19,7 @@ export default function UsersPage() {
   const { users, isLoading, isError, error, createUser, updateUser, deleteUser, isCreating, isUpdating } = useUsers();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRole, setSelectedRole] = useState<UserRole | "">('');
+  const [selectedRole, setSelectedRole] = useState<UserRole | "" | "all_roles">('');
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -36,7 +36,7 @@ export default function UsersPage() {
     const matchesSearch =
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = selectedRole === '' || user.role === selectedRole;
+    const matchesRole = selectedRole === '' || selectedRole === 'all_roles' || user.role === selectedRole;
     return matchesSearch && matchesRole;
   }) || [];
 

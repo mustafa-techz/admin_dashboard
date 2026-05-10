@@ -2,10 +2,17 @@
 
 import { Search, Plus } from 'lucide-react';
 import { UserRole } from '@/types/user';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface UserFilterBarProps {
   onSearch: (value: string) => void;
-  onRoleChange?: (role: UserRole | "") => void;
+  onRoleChange?: (role: UserRole | "" | "all_roles") => void;
   onAddClick?: () => void;
   addLabel?: string;
   placeholder?: string;
@@ -33,16 +40,21 @@ export default function UserFilterBar({
       </div>
 
       <div className="flex items-center gap-3 w-full sm:w-auto">
-        <select
-          onChange={(e) => onRoleChange?.(e.target.value as UserRole | "")}
-          className="block w-full px-4 py-2.5 bg-card border border-border rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-soft min-w-[150px]"
+        <Select
+          value={undefined} // Since it's uncontrolled or controlled by parent, but native select used default behavior
+          onValueChange={(value) => onRoleChange?.(value as UserRole | "" | "all_roles")}
         >
-          <option value="">All Roles</option>
-          <option value="admin">Admin</option>
-          <option value="sub-admin">Sub Admin</option>
-          <option value="teacher">Teacher</option>
-          <option value="parent">Parent</option>
-        </select>
+          <SelectTrigger className="w-full sm:w-[150px]">
+            <SelectValue placeholder="All Roles" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all_roles">All Roles</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="sub-admin">Sub Admin</SelectItem>
+            <SelectItem value="teacher">Teacher</SelectItem>
+            <SelectItem value="parent">Parent</SelectItem>
+          </SelectContent>
+        </Select>
 
         {onAddClick && (
           <button

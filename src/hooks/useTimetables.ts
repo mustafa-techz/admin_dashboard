@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { timetableService } from '@/services/timetableService';
 import type {
   TimetableFormData,
@@ -28,6 +28,7 @@ export function useTimetables(branchId: string, status?: TimetableStatus) {
     queryFn: () => timetableService.getTimetables(branchId, status),
     enabled: !!branchId,
     staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -53,6 +54,7 @@ export function useTimetableSlots(timetableId: string) {
     queryKey: timetableKeys.slots(timetableId),
     queryFn: () => timetableService.getSlots(timetableId),
     enabled: !!timetableId,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -67,11 +69,15 @@ export function useCreateTimetable() {
       data,
       slots,
       createdBy,
+      userRole,
+      userName,
     }: {
       data: TimetableFormData;
       slots: TimetableSlotFormData[];
       createdBy: string;
-    }) => timetableService.createTimetable(data, slots, createdBy),
+      userRole: string;
+      userName: string;
+    }) => timetableService.createTimetable(data, slots, createdBy, userRole, userName),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: timetableKeys.all });
     },

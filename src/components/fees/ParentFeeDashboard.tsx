@@ -106,7 +106,7 @@ function InstallmentCard({ installment }: { installment: StudentFeeInstallment }
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
           <h4 className="text-base font-black text-foreground">{installment.installmentName}</h4>
-          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground" suppressHydrationWarning>
             <Calendar size={12} />
             <span>Due: {new Date(installment.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
           </div>

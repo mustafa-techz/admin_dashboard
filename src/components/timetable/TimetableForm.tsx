@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { classService, sectionService } from '@/services/firebase/masterDataService';
+import { teacherService } from '@/services/teacherService';
 import { useCreateTimetable } from '@/hooks/useTimetables';
 import { useAuthStore } from '@/store/authStore';
 import { getAcademicYearOptions } from '@/lib/feeUtils';
@@ -10,6 +11,13 @@ import { cn } from '@/lib/utils';
 import type { TimetableSlotFormData, Weekday } from '@/types/timetable';
 import { WEEKDAYS } from '@/types/timetable';
 import { Plus, Trash2, Clock, Loader2, Save } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const DEFAULT_SLOT: Omit<TimetableSlotFormData, 'order'> = {
   day: 'Monday',
@@ -42,15 +50,29 @@ export default function TimetableForm({ branchId, onSuccess }: { branchId: strin
     academicYear: academicYears[1] || '',
   });
 
+  const { data: teachers = [] } = useQuery({
+    queryKey: ['teachers'],
+    queryFn: () => teacherService.getTeachers(),
+    staleTime: 10 * 60 * 1000,
+    enabled: !!form.classId,
+  });
+
+  const classTeachers = useMemo(() => {
+    if (!form.classId) return [];
+    return teachers.filter(
+      (t) => (t.classIds && t.classIds.includes(form.classId)) || t.classTeacher === form.classId
+    );
+  }, [teachers, form.classId]);
+
   const [slots, setSlots] = useState<TimetableSlotFormData[]>([
     { ...DEFAULT_SLOT, order: 1 },
   ]);
 
-  const updateForm = (key: string, value: string) => {
+  const updateForm = useCallback((key: string, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
-  };
+  }, []);
 
-  const addSlot = (day?: Weekday) => {
+  const addSlot = useCallback((day?: Weekday) => {
     setSlots((prev) => [
       ...prev,
       {
@@ -59,17 +81,17 @@ export default function TimetableForm({ branchId, onSuccess }: { branchId: strin
         order: prev.length + 1,
       },
     ]);
-  };
+  }, []);
 
-  const removeSlot = (index: number) => {
+  const removeSlot = useCallback((index: number) => {
     setSlots((prev) => prev.filter((_, i) => i !== index));
-  };
+  }, []);
 
-  const updateSlot = (index: number, key: keyof TimetableSlotFormData, value: string | number) => {
+  const updateSlot = useCallback((index: number, key: keyof TimetableSlotFormData, value: string | number) => {
     setSlots((prev) =>
       prev.map((s, i) => (i === index ? { ...s, [key]: value } : s))
     );
-  };
+  }, []);
 
   const isValid =
     form.name.trim() &&
@@ -94,6 +116,8 @@ export default function TimetableForm({ branchId, onSuccess }: { branchId: strin
       },
       slots,
       createdBy: user.id,
+      userRole: user.role,
+      userName: user.name,
     });
 
     // Reset form
@@ -136,48 +160,60 @@ export default function TimetableForm({ branchId, onSuccess }: { branchId: strin
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
               Academic Year *
             </label>
-            <select
+            <Select
               value={form.academicYear}
-              onChange={(e) => updateForm('academicYear', e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+              onValueChange={(value) => updateForm('academicYear', value)}
             >
-              <option value="">Select Year</option>
-              {academicYears.map((y) => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Year" />
+              </SelectTrigger>
+              <SelectContent>
+                {academicYears.map((y) => (
+                  <SelectItem key={y} value={y}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
               Class *
             </label>
-            <select
+            <Select
               value={form.classId}
-              onChange={(e) => updateForm('classId', e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+              onValueChange={(value) => {
+                updateForm('classId', value);
+                setSlots(prev => prev.map(s => ({ ...s, teacherName: '', teacherId: '' })));
+              }}
             >
-              <option value="">Select Class</option>
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>{c.className}</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Class" />
+              </SelectTrigger>
+              <SelectContent>
+                {classes.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">
               Section *
             </label>
-            <select
+            <Select
               value={form.sectionId}
-              onChange={(e) => updateForm('sectionId', e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+              onValueChange={(value) => updateForm('sectionId', value)}
             >
-              <option value="">Select Section</option>
-              {sections.map((s) => (
-                <option key={s.id} value={s.id}>{s.sectionName}</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Section" />
+              </SelectTrigger>
+              <SelectContent>
+                {sections.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>{s.sectionName}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
@@ -255,13 +291,24 @@ export default function TimetableForm({ branchId, onSuccess }: { branchId: strin
                       className="flex-1 px-2 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                   </div>
-                  <input
-                    type="text"
+                  <Select
                     value={slot.teacherName || ''}
-                    onChange={(e) => updateSlot(originalIndex, 'teacherName', e.target.value)}
-                    placeholder="Teacher"
-                    className="px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  />
+                    onValueChange={(value) => {
+                      const teacher = classTeachers.find(t => t.fullName === value);
+                      updateSlot(originalIndex, 'teacherName', value);
+                      updateSlot(originalIndex, 'teacherId', teacher?.id || '');
+                    }}
+                    disabled={!form.classId}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder={!form.classId ? 'Select class first' : 'Select Teacher'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {classTeachers.map(t => (
+                        <SelectItem key={t.id} value={t.fullName}>{t.fullName}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <button
                     type="button"
                     onClick={() => removeSlot(originalIndex)}

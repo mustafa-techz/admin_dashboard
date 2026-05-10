@@ -26,6 +26,13 @@ import {
 } from 'lucide-react';
 import ConfirmationModal from '@/components/shared/ConfirmationModal';
 import { useDeleteStudentFeeAssignment } from '@/hooks/useFees';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // ─────────────────────────────────────────────────────────────────
 // Student Detail View
@@ -161,7 +168,7 @@ function StudentFeeDetail({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                   <div>
                     <h5 className="text-sm font-black">{inst.installmentName}</h5>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5" suppressHydrationWarning>
                       <Calendar size={11} />
                       Due: {new Date(inst.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </div>
@@ -210,7 +217,7 @@ function StudentFeeDetail({
 
                 {/* Paid info */}
                 {isPaid && inst.lastPaymentDate && (
-                  <div className="bg-emerald-100/50 rounded-xl p-2.5 text-xs text-emerald-700 font-medium flex items-center gap-1.5">
+                  <div className="bg-emerald-100/50 rounded-xl p-2.5 text-xs text-emerald-700 font-medium flex items-center gap-1.5" suppressHydrationWarning>
                     <Check size={12} />
                     Paid on {new Date(inst.lastPaymentDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                     {inst.lastPaymentMode && ` via ${PAYMENT_MODE_LABELS[inst.lastPaymentMode]}`}
@@ -347,27 +354,36 @@ export default function AdminStudentFeeOverview() {
               className="w-full pl-10 pr-4 py-2 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
             />
           </div>
-          <select
+          <Select
             value={selectedFeeId}
-            onChange={(e) => setSelectedFeeId(e.target.value)}
-            className="px-4 py-2 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+            onValueChange={setSelectedFeeId}
           >
-            <option value="all">All Fee Structures</option>
-            {feeStructures.map((fs) => (
-              <option key={fs.id} value={fs.id}>{fs.feeName}</option>
-            ))}
-          </select>
-          <select
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="All Fee Structures" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Fee Structures</SelectItem>
+              {feeStructures.map((fs) => (
+                <SelectItem key={fs.id} value={fs.id}>{fs.feeName}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+            onValueChange={setStatusFilter}
           >
-            <option value="all">All Status</option>
-            <option value="paid">Paid</option>
-            <option value="partial">Partial</option>
-            <option value="pending">Pending</option>
-            <option value="overdue">Overdue</option>
-          </select>
+            <SelectTrigger className="w-full sm:w-[150px]">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
+              <SelectItem value="partial">Partial</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="overdue">Overdue</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

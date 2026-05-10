@@ -50,7 +50,9 @@ export const timetableService = {
   async createTimetable(
     data: TimetableFormData,
     slots: TimetableSlotFormData[],
-    createdBy: string
+    createdBy: string,
+    userRole: string,
+    userName: string
   ): Promise<string> {
     try {
       const batch = writeBatch(db);
@@ -65,6 +67,8 @@ export const timetableService = {
         branchId: data.branchId,
         status: 'draft' as TimetableStatus,
         createdBy,
+        userRole,
+        userName,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });

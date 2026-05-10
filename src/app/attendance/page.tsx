@@ -19,6 +19,13 @@ import VirtualDataTable from '@/components/tables/VirtualDataTable';
 import FilterBar from '@/components/tables/FilterBar';
 import { Student } from '@/types/student';
 import { classService, sectionService } from '@/services/firebase/masterDataService';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function AttendancePage() {
   const [search, setSearch] = useState('');
@@ -315,35 +322,41 @@ export default function AttendancePage() {
           <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
             Select Class
           </label>
-          <select
+          <Select
             value={selectedClassId}
-            onChange={(e) => setSelectedClassId(e.target.value)}
-            className="w-full bg-secondary border border-border rounded-2xl px-4 py-3 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
+            onValueChange={setSelectedClassId}
           >
-            <option value="">Choose Class</option>
-            {classes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.className}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Choose Class" />
+            </SelectTrigger>
+            <SelectContent>
+              {classes.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.className}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
             Select Section
           </label>
-          <select
+          <Select
             value={selectedSectionId}
-            onChange={(e) => setSelectedSectionId(e.target.value)}
-            className="w-full bg-secondary border border-border rounded-2xl px-4 py-3 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
+            onValueChange={setSelectedSectionId}
           >
-            <option value="">Choose Section</option>
-            {sections.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.sectionName}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Choose Section" />
+            </SelectTrigger>
+            <SelectContent>
+              {sections.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.sectionName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { assessmentService } from '@/services/assessmentService';
 import type {
   AssessmentFormData,
@@ -35,6 +35,7 @@ export function useAssessments(branchId: string, status?: AssessmentStatus) {
     queryFn: () => assessmentService.getAssessments(branchId, status),
     enabled: !!branchId,
     staleTime: 3 * 60 * 1000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -60,6 +61,7 @@ export function useExamSchedule(assessmentId: string) {
     queryKey: assessmentKeys.schedule(assessmentId),
     queryFn: () => assessmentService.getSchedule(assessmentId),
     enabled: !!assessmentId,
+    placeholderData: keepPreviousData,
   });
 }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   useAssessments,
@@ -12,6 +12,8 @@ import {
 } from '@/hooks/useAssessments';
 import { useAuthStore } from '@/store/authStore';
 import { classService, sectionService } from '@/services/firebase/masterDataService';
+import { studentService } from '@/services/studentService';
+import { assessmentService } from '@/services/assessmentService';
 import { cn } from '@/lib/utils';
 import { ASSESSMENT_STATUS_COLORS, ASSESSMENT_STATUS_LABELS } from '@/types/assessment';
 import type { Assessment, AssessmentStatus } from '@/types/assessment';
@@ -62,7 +64,7 @@ function ScheduleDetail({ assessmentId }: { assessmentId: string }) {
           {schedule.map((slot) => (
             <tr key={slot.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
               <td className="py-3 font-bold">{slot.subject}</td>
-              <td className="py-3 flex items-center gap-1.5 text-muted-foreground">
+              <td className="py-3 flex items-center gap-1.5 text-muted-foreground" suppressHydrationWarning>
                 <Calendar size={12} />
                 {new Date(slot.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
               </td>
@@ -94,6 +96,7 @@ function StatusActions({
   const updateStatus = useUpdateAssessmentStatus();
   const generateSummaries = useGenerateSummaries();
   const publishResults = usePublishResults();
+  const [errorModal, setErrorModal] = useState<{ title: string; message: string } | null>(null);
 
   const isPending = updateStatus.isPending || generateSummaries.isPending || publishResults.isPending;
 
@@ -119,8 +122,42 @@ function StatusActions({
           icon: <Lock size={12} />,
           color: 'bg-orange-600 text-white hover:bg-orange-700',
           action: async () => {
-            await updateStatus.mutateAsync({ id: assessment.id, status: 'locked' });
-            await generateSummaries.mutateAsync(assessment.id);
+            try {
+              // Validate all required marks are entered before locking
+              const allStudents = await studentService.getStudents();
+              const classStudents = allStudents.filter(
+                (s) => s.classId === assessment.classId && s.sectionId === assessment.sectionId
+              );
+
+              if (classStudents.length === 0) {
+                setErrorModal({
+                  title: 'No Students Found',
+                  message: 'No students found in this class/section. Cannot generate results for an empty class.',
+                });
+                return;
+              }
+
+              const allMarks = await assessmentService.getAllMarks(assessment.id);
+              const requiredCount = classStudents.length * assessment.subjects.length;
+
+              if (allMarks.length < requiredCount) {
+                const missingCount = requiredCount - allMarks.length;
+                setErrorModal({
+                  title: 'Incomplete Marks',
+                  message: `Cannot lock assessment. Marks are not entered for all students/subjects. Missing ${missingCount} entries. Please ensure all marks are entered before locking.`,
+                });
+                return;
+              }
+
+              await updateStatus.mutateAsync({ id: assessment.id, status: 'locked' });
+              await generateSummaries.mutateAsync(assessment.id);
+            } catch (err) {
+              console.error('Validation failed:', err);
+              setErrorModal({
+                title: 'Validation Failed',
+                message: 'Failed to validate marks. Please check your connection and try again.',
+              });
+            }
           },
         };
       case 'locked':
@@ -138,21 +175,34 @@ function StatusActions({
   if (!nextAction) return null;
 
   return (
-    <button
-      type="button"
-      disabled={isPending}
-      onClick={(e) => {
-        e.stopPropagation();
-        nextAction.action();
-      }}
-      className={cn(
-        'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm',
-        nextAction.color
-      )}
-    >
-      {isPending ? <Loader2 size={12} className="animate-spin" /> : nextAction.icon}
-      {nextAction.label}
-    </button>
+    <>
+      <button
+        type="button"
+        disabled={isPending}
+        onClick={(e) => {
+          e.stopPropagation();
+          nextAction.action();
+        }}
+        className={cn(
+          'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm',
+          nextAction.color
+        )}
+      >
+        {isPending ? <Loader2 size={12} className="animate-spin" /> : nextAction.icon}
+        {nextAction.label}
+      </button>
+
+      {/* Validation Error Modal */}
+      <ConfirmationModal
+        isOpen={!!errorModal}
+        onClose={() => setErrorModal(null)}
+        onConfirm={() => setErrorModal(null)}
+        title={errorModal?.title || 'Validation Error'}
+        message={errorModal?.message || ''}
+        confirmText="Understood"
+        cancelText="Close"
+      />
+    </>
   );
 }
 
@@ -307,7 +357,7 @@ export default function AssessmentList({ branchId }: { branchId: string }) {
 
             {a.status === 'published' && a.publishedAt && (
               <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200/50">
-                <p className="text-sm font-bold text-emerald-700">
+                <p className="text-sm font-bold text-emerald-700" suppressHydrationWarning>
                   ✅ Results published on {new Date(a.publishedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </p>
               </div>

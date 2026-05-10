@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { classService, sectionService } from '@/services/firebase/masterDataService';
 import { useCreateAssessment } from '@/hooks/useAssessments';
@@ -9,6 +9,13 @@ import { getAcademicYearOptions } from '@/lib/feeUtils';
 import { cn } from '@/lib/utils';
 import type { ExamScheduleFormData, AssessmentType } from '@/types/assessment';
 import { Plus, Trash2, Loader2, Save, Calendar } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const DEFAULT_SCHEDULE: ExamScheduleFormData = {
   subject: '',
@@ -43,9 +50,9 @@ export default function AssessmentForm({ branchId, onSuccess }: { branchId: stri
 
   const [schedule, setSchedule] = useState<ExamScheduleFormData[]>([{ ...DEFAULT_SCHEDULE }]);
 
-  const updateForm = (key: string, value: string) => {
+  const updateForm = useCallback((key: string, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
-  };
+  }, []);
 
   const addScheduleSlot = () => {
     setSchedule((prev) => [...prev, { ...DEFAULT_SCHEDULE }]);
@@ -55,11 +62,11 @@ export default function AssessmentForm({ branchId, onSuccess }: { branchId: stri
     setSchedule((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const updateScheduleSlot = (index: number, key: keyof ExamScheduleFormData, value: string | number) => {
+  const updateScheduleSlot = useCallback((index: number, key: keyof ExamScheduleFormData, value: string | number) => {
     setSchedule((prev) =>
       prev.map((s, i) => (i === index ? { ...s, [key]: value } : s))
     );
-  };
+  }, []);
 
   const subjects = useMemo(() => {
     return schedule.filter((s) => s.subject.trim()).map((s) => s.subject.trim());
@@ -95,6 +102,9 @@ export default function AssessmentForm({ branchId, onSuccess }: { branchId: stri
     setSchedule([{ ...DEFAULT_SCHEDULE }]);
     onSuccess?.();
   };
+  useEffect(() => {
+console.log("Assessment Detailssssssss",schedule)
+  },[])
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -105,14 +115,18 @@ export default function AssessmentForm({ branchId, onSuccess }: { branchId: stri
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Type *</label>
-            <select
+            <Select
               value={form.type}
-              onChange={(e) => updateForm('type', e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+              onValueChange={(value) => updateForm('type', value)}
             >
-              <option value="exam">Full Exam</option>
-              <option value="test">Test / Quiz</option>
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="exam">Full Exam</SelectItem>
+                <SelectItem value="test">Test / Quiz</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
@@ -128,44 +142,53 @@ export default function AssessmentForm({ branchId, onSuccess }: { branchId: stri
 
           <div>
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Academic Year *</label>
-            <select
+            <Select
               value={form.academicYear}
-              onChange={(e) => updateForm('academicYear', e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+              onValueChange={(value) => updateForm('academicYear', value)}
             >
-              <option value="">Select Year</option>
-              {academicYears.map((y) => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Year" />
+              </SelectTrigger>
+              <SelectContent>
+                {academicYears.map((y) => (
+                  <SelectItem key={y} value={y}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Class *</label>
-            <select
+            <Select
               value={form.classId}
-              onChange={(e) => updateForm('classId', e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+              onValueChange={(value) => updateForm('classId', value)}
             >
-              <option value="">Select Class</option>
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>{c.className}</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Class" />
+              </SelectTrigger>
+              <SelectContent>
+                {classes.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.className}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5 block">Section *</label>
-            <select
+            <Select
               value={form.sectionId}
-              onChange={(e) => updateForm('sectionId', e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-border bg-background text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+              onValueChange={(value) => updateForm('sectionId', value)}
             >
-              <option value="">Select Section</option>
-              {sections.map((s) => (
-                <option key={s.id} value={s.id}>{s.sectionName}</option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Section" />
+              </SelectTrigger>
+              <SelectContent>
+                {sections.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>{s.sectionName}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>

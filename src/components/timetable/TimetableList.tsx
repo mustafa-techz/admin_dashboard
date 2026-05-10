@@ -51,6 +51,17 @@ export default function TimetableList({ branchId }: { branchId: string }) {
   const getSectionName = (sectionId: string) =>
     sections.find((s) => s.id === sectionId)?.sectionName || sectionId;
 
+  const getCreatorDetails = (userId: string, userRole: string, userName: string) => {
+    if (!userId) return 'Unknown User';
+    const roleLabels: Record<string, string> = {
+      admin: 'Admin',
+      'sub-admin': 'Sub-Admin',
+      teacher: 'Teacher',
+      parent: 'Parent',
+    };
+    return `${userName} (${roleLabels[userRole] || userRole})`;
+  };
+
   const handleDelete = () => {
     if (deleteTarget) {
       deleteMutation.mutate(deleteTarget, {
@@ -128,8 +139,9 @@ export default function TimetableList({ branchId }: { branchId: string }) {
                 </div>
               </div>
 
-              <div className="mt-3 text-xs text-muted-foreground">
-                Created: {new Date(tt.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+              <div className="mt-3 flex flex-col gap-1 text-xs text-muted-foreground">
+                <p suppressHydrationWarning>Created: {new Date(tt.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                <p>Created By: {getCreatorDetails(tt.createdBy, tt.userRole, tt.userName)}</p>
               </div>
             </div>
           );
