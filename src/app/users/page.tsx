@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUsers } from '@/hooks/useUsers';
 import { User, UserRole, CreateUserData, UpdateUserData } from '@/types/user';
@@ -32,13 +31,22 @@ export default function UsersPage() {
     }
   }, [role, router]);
 
-  const filteredUsers = users?.filter((user) => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = selectedRole === '' || selectedRole === 'all_roles' || user.role === selectedRole;
-    return matchesSearch && matchesRole;
-  }) || [];
+  const filteredUsers = useMemo(() => {
+    return users?.filter((user) => {
+      const matchesSearch =
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const isAllRoles = selectedRole === '' || selectedRole === 'all_roles';
+      const matchesRole = isAllRoles || (user.role as string) === selectedRole;
+      
+      return matchesSearch && matchesRole;
+    }) || [];
+  }, [users, searchTerm, selectedRole]);
+
+  const handleSetViewUser = useCallback((user: User) => setViewingUser(user), []);
+  const handleSetEditUser = useCallback((user: User) => setEditingUser(user), []);
+  const handleSetDeleteUser = useCallback((user: User) => setDeletingUser(user), []);
 
   const handleCreateUser = async (data: CreateUserData) => {
     try {
@@ -99,9 +107,9 @@ export default function UsersPage() {
         <UsersTable
           users={filteredUsers}
           isLoading={isLoading}
-          onView={setViewingUser}
-          onEdit={setEditingUser}
-          onDelete={setDeletingUser}
+          onView={handleSetViewUser}
+          onEdit={handleSetEditUser}
+          onDelete={handleSetDeleteUser}
         />
       </div>
 

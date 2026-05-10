@@ -40,7 +40,7 @@ export const requireAdminRequest = async (request: Request) => {
       role = normalizeUserRole(userDoc.data()?.role);
     }
 
-    if (role !== "admin") {
+    if (role !== "admin" && role !== "sub-admin") {
       console.warn(`Access denied for user ${decodedToken.uid}: Role is ${role}`);
       return {
         ok: false as const,

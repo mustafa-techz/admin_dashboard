@@ -12,6 +12,7 @@ import {
   runTransaction,
 } from 'firebase/firestore';
 import { db } from '@/firebase/firestore';
+import { executeFirebaseOp } from '@/lib/api-errors';
 import { generateReminder } from './reminderService';
 import { studentService } from './studentService';
 import { calculatePercentage, getGrade, getPassStatus } from '@/lib/gradeUtils';
@@ -69,7 +70,7 @@ export const assessmentService = {
     schedule: ExamScheduleFormData[],
     createdBy: string
   ): Promise<string> {
-    try {
+    return executeFirebaseOp(async () => {
       const batch = writeBatch(db);
       const assessmentRef = doc(assessmentsCol);
 
@@ -103,17 +104,14 @@ export const assessmentService = {
 
       await batch.commit();
       return assessmentRef.id;
-    } catch (error) {
-      console.error('Error creating assessment:', error);
-      throw error;
-    }
+    }, 'createAssessment');
   },
 
   /**
    * Get assessments for a branch.
    */
   async getAssessments(branchId: string, status?: AssessmentStatus): Promise<Assessment[]> {
-    try {
+    return executeFirebaseOp(async () => {
       let q;
       if (status) {
         q = query(assessmentsCol, where('branchId', '==', branchId), where('status', '==', status));
@@ -130,17 +128,14 @@ export const assessmentService = {
           publishedAt: d.data().publishedAt ? tsToISO(d.data().publishedAt) : null,
         }))
         .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) as Assessment[];
-    } catch (error) {
-      console.error('Error getting assessments:', error);
-      throw error;
-    }
+    }, 'getAssessments');
   },
 
   /**
    * Get published assessments for a class/section (parent view).
    */
   async getPublishedAssessments(classId: string, sectionId: string): Promise<Assessment[]> {
-    try {
+    return executeFirebaseOp(async () => {
       const q = query(
         assessmentsCol,
         where('classId', '==', classId),
@@ -155,17 +150,14 @@ export const assessmentService = {
         updatedAt: tsToISO(d.data().updatedAt),
         publishedAt: d.data().publishedAt ? tsToISO(d.data().publishedAt) : null,
       })) as Assessment[];
-    } catch (error) {
-      console.error('Error getting published assessments:', error);
-      throw error;
-    }
+    }, 'getPublishedAssessments');
   },
 
   /**
    * Get a single assessment by ID.
    */
   async getAssessmentById(id: string): Promise<Assessment | null> {
-    try {
+    return executeFirebaseOp(async () => {
       const docSnap = await getDoc(doc(assessmentsCol, id));
       if (!docSnap.exists()) return null;
       const data = docSnap.data();
@@ -176,10 +168,7 @@ export const assessmentService = {
         updatedAt: tsToISO(data.updatedAt),
         publishedAt: data.publishedAt ? tsToISO(data.publishedAt) : null,
       } as Assessment;
-    } catch (error) {
-      console.error('Error getting assessment:', error);
-      throw error;
-    }
+    }, 'getAssessmentById');
   },
 
   // ─────────────────────────────────────────────────────────────
@@ -190,22 +179,19 @@ export const assessmentService = {
    * Get exam schedule for an assessment.
    */
   async getSchedule(assessmentId: string): Promise<ExamScheduleSlot[]> {
-    try {
+    return executeFirebaseOp(async () => {
       const snapshot = await getDocs(scheduleCol(assessmentId));
       return snapshot.docs
         .map((d) => ({ id: d.id, ...d.data() }))
         .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime()) as ExamScheduleSlot[];
-    } catch (error) {
-      console.error('Error getting schedule:', error);
-      throw error;
-    }
+    }, 'getSchedule');
   },
 
   /**
    * Replace all schedule slots (full save).
    */
   async saveSchedule(assessmentId: string, slots: ExamScheduleFormData[]): Promise<void> {
-    try {
+    return executeFirebaseOp(async () => {
       const batch = writeBatch(db);
 
       // Delete existing
@@ -233,10 +219,7 @@ export const assessmentService = {
       });
 
       await batch.commit();
-    } catch (error) {
-      console.error('Error saving schedule:', error);
-      throw error;
-    }
+    }, 'saveSchedule');
   },
 
   // ─────────────────────────────────────────────────────────────
@@ -247,7 +230,7 @@ export const assessmentService = {
    * Transition assessment status.
    */
   async updateStatus(id: string, status: AssessmentStatus): Promise<void> {
-    try {
+    return executeFirebaseOp(async () => {
       const updateData: Record<string, any> = {
         status,
         updatedAt: serverTimestamp(),
@@ -256,10 +239,7 @@ export const assessmentService = {
         updateData.publishedAt = serverTimestamp();
       }
       await updateDoc(doc(assessmentsCol, id), updateData);
-    } catch (error) {
-      console.error('Error updating assessment status:', error);
-      throw error;
-    }
+    }, 'updateStatus');
   },
 
   // ─────────────────────────────────────────────────────────────
@@ -278,7 +258,7 @@ export const assessmentService = {
     enteredBy: string,
     enteredByName: string
   ): Promise<void> {
-    try {
+    return executeFirebaseOp(async () => {
       const BATCH_LIMIT = 450;
       let batch = writeBatch(db);
       let opCount = 0;
@@ -311,34 +291,28 @@ export const assessmentService = {
       if (opCount > 0) {
         await batch.commit();
       }
-    } catch (error) {
-      console.error('Error saving subject marks:', error);
-      throw error;
-    }
+    }, 'saveSubjectMarks');
   },
 
   /**
    * Get all marks for an assessment (for summary generation).
    */
   async getAllMarks(assessmentId: string): Promise<SubjectMark[]> {
-    try {
+    return executeFirebaseOp(async () => {
       const snapshot = await getDocs(subjectMarksCol(assessmentId));
       return snapshot.docs.map((d) => ({
         id: d.id,
         ...d.data(),
         updatedAt: tsToISO(d.data().updatedAt),
       })) as SubjectMark[];
-    } catch (error) {
-      console.error('Error getting all marks:', error);
-      throw error;
-    }
+    }, 'getAllMarks');
   },
 
   /**
    * Get marks for a specific subject.
    */
   async getSubjectMarks(assessmentId: string, subject: string): Promise<SubjectMark[]> {
-    try {
+    return executeFirebaseOp(async () => {
       const q = query(subjectMarksCol(assessmentId), where('subject', '==', subject));
       const snapshot = await getDocs(q);
       return snapshot.docs.map((d) => ({
@@ -346,10 +320,7 @@ export const assessmentService = {
         ...d.data(),
         updatedAt: tsToISO(d.data().updatedAt),
       })) as SubjectMark[];
-    } catch (error) {
-      console.error('Error getting subject marks:', error);
-      throw error;
-    }
+    }, 'getSubjectMarks');
   },
 
   // ─────────────────────────────────────────────────────────────
@@ -361,7 +332,7 @@ export const assessmentService = {
    * Called when transitioning to 'locked' state.
    */
   async generateSummaries(assessmentId: string): Promise<number> {
-    try {
+    return executeFirebaseOp(async () => {
       const assessment = await this.getAssessmentById(assessmentId);
       if (!assessment) throw new Error('Assessment not found');
 
@@ -427,17 +398,14 @@ export const assessmentService = {
       }
 
       return summaryCount;
-    } catch (error) {
-      console.error('Error generating summaries:', error);
-      throw error;
-    }
+    }, 'generateSummaries');
   },
 
   /**
    * Get student summary for a specific student.
    */
   async getStudentSummary(assessmentId: string, studentId: string): Promise<StudentResultSummary | null> {
-    try {
+    return executeFirebaseOp(async () => {
       const docSnap = await getDoc(doc(studentSummaryCol(assessmentId), studentId));
       if (!docSnap.exists()) return null;
       return {
@@ -445,27 +413,21 @@ export const assessmentService = {
         ...docSnap.data(),
         generatedAt: tsToISO(docSnap.data().generatedAt),
       } as StudentResultSummary;
-    } catch (error) {
-      console.error('Error getting student summary:', error);
-      throw error;
-    }
+    }, 'getStudentSummary');
   },
 
   /**
    * Get all summaries for an assessment.
    */
   async getAllSummaries(assessmentId: string): Promise<StudentResultSummary[]> {
-    try {
+    return executeFirebaseOp(async () => {
       const snapshot = await getDocs(studentSummaryCol(assessmentId));
       return snapshot.docs.map((d) => ({
         id: d.id,
         ...d.data(),
         generatedAt: tsToISO(d.data().generatedAt),
       })) as StudentResultSummary[];
-    } catch (error) {
-      console.error('Error getting all summaries:', error);
-      throw error;
-    }
+    }, 'getAllSummaries');
   },
 
   /**
@@ -473,7 +435,7 @@ export const assessmentService = {
    * Uses transaction to prevent double-publish.
    */
   async publishResults(assessmentId: string, publishedBy: string): Promise<void> {
-    try {
+    return executeFirebaseOp(async () => {
       const assessmentRef = doc(assessmentsCol, assessmentId);
 
       // Transaction: check status + publish atomically
@@ -550,17 +512,14 @@ export const assessmentService = {
         console.error('Failed to send result publish reminders:', reminderErr);
         // Don't throw — publish succeeded, reminders are best-effort
       }
-    } catch (error) {
-      console.error('Error publishing results:', error);
-      throw error;
-    }
+    }, 'publishResults');
   },
 
   /**
    * Delete an assessment and all subcollections.
    */
   async deleteAssessment(id: string): Promise<void> {
-    try {
+    return executeFirebaseOp(async () => {
       const batch = writeBatch(db);
 
       // Delete schedule
@@ -579,9 +538,6 @@ export const assessmentService = {
       batch.delete(doc(assessmentsCol, id));
 
       await batch.commit();
-    } catch (error) {
-      console.error('Error deleting assessment:', error);
-      throw error;
-    }
+    }, 'deleteAssessment');
   },
 };

@@ -18,6 +18,7 @@ import {
 import { db } from "../firebase/firestore";
 import { Student } from "../types/student";
 import { userService } from "./userService";
+import { executeFirebaseOp } from "@/lib/api-errors";
 
 const studentCollection = collection(db, "students");
 
@@ -152,8 +153,7 @@ export const studentService = {
 
   // Read
   async getStudents(): Promise<Student[]> {
-    try {
-
+    return executeFirebaseOp(async () => {
       const q = query(studentCollection, orderBy("createdAt", "desc"));
       const querySnapshot = await getDocs(q);
 
@@ -163,51 +163,52 @@ export const studentService = {
       })) as Student[];
 
       return students;
-    } catch (err) {
-      console.error("🔥 FIRESTORE ERROR:", err);
-      throw err;
-    }
+    }, 'getStudents');
   },
 
   // Read Paginated for 2000+ Students Virtualization
   async getStudentsPaginated(limitCount = 100, lastDoc?: QueryDocumentSnapshot<DocumentData> | null): Promise<{ students: Student[], lastDoc: QueryDocumentSnapshot<DocumentData> | null }> {
-    let q = query(studentCollection, orderBy("createdAt", "desc"), limit(limitCount));
+    return executeFirebaseOp(async () => {
+      let q = query(studentCollection, orderBy("createdAt", "desc"), limit(limitCount));
 
-    if (lastDoc) {
-      q = query(studentCollection, orderBy("createdAt", "desc"), startAfter(lastDoc), limit(limitCount));
-    }
+      if (lastDoc) {
+        q = query(studentCollection, orderBy("createdAt", "desc"), startAfter(lastDoc), limit(limitCount));
+      }
 
-    const querySnapshot = await getDocs(q);
-    const students = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })) as Student[];
+      const querySnapshot = await getDocs(q);
+      const students = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Student[];
 
-    return {
-      students,
-      lastDoc: querySnapshot.docs.length > 0 ? querySnapshot.docs[querySnapshot.docs.length - 1] : null
-    };
+      return {
+        students,
+        lastDoc: querySnapshot.docs.length > 0 ? querySnapshot.docs[querySnapshot.docs.length - 1] : null
+      };
+    }, 'getStudentsPaginated');
   },
 
   // Get Single Student
   async getStudentById(id: string): Promise<Student | null> {
-    const docRef = doc(db, "students", id);
-    const docSnap = await getDoc(docRef);
+    return executeFirebaseOp(async () => {
+      const docRef = doc(db, "students", id);
+      const docSnap = await getDoc(docRef);
 
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      return {
-        id: docSnap.id,
-        ...data,
-        createdAt: data.createdAt?.toDate()?.toISOString(),
-      } as unknown as Student;
-    }
-    return null;
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          ...data,
+          createdAt: data.createdAt?.toDate()?.toISOString(),
+        } as unknown as Student;
+      }
+      return null;
+    }, 'getStudentById');
   },
 
   // Get Student by Roll Number
   async getStudentByRollNumber(rollNumber: string): Promise<Student | null> {
-    try {
+    return executeFirebaseOp(async () => {
       const q = query(studentCollection, where("rollNumber", "==", rollNumber), limit(1));
       const querySnapshot = await getDocs(q);
 
@@ -221,15 +222,12 @@ export const studentService = {
         } as unknown as Student;
       }
       return null;
-    } catch (err) {
-      console.error("Error getting student by roll number:", err);
-      return null;
-    }
+    }, 'getStudentByRollNumber');
   },
 
   // Get Student by Parent User ID
   async getStudentByParentUserId(userId: string): Promise<Student | null> {
-    try {
+    return executeFirebaseOp(async () => {
       const q = query(studentCollection, where("parentDetails.userId", "==", userId), limit(1));
       const querySnapshot = await getDocs(q);
 
@@ -243,24 +241,25 @@ export const studentService = {
         } as unknown as Student;
       }
       return null;
-    } catch (err) {
-      console.error("Error getting student by parent userId:", err);
-      return null;
-    }
+    }, 'getStudentByParentUserId');
   },
 
   // Update
   async updateStudent(id: string, student: Partial<Student>) {
-    const docRef = doc(db, "students", id);
-    await updateDoc(docRef, {
-      ...student,
-      updatedAt: serverTimestamp(),
-    });
+    return executeFirebaseOp(async () => {
+      const docRef = doc(db, "students", id);
+      await updateDoc(docRef, {
+        ...student,
+        updatedAt: serverTimestamp(),
+      });
+    }, 'updateStudent');
   },
 
   // Delete
   async deleteStudent(id: string) {
-    const docRef = doc(db, "students", id);
-    await deleteDoc(docRef);
+    return executeFirebaseOp(async () => {
+      const docRef = doc(db, "students", id);
+      await deleteDoc(docRef);
+    }, 'deleteStudent');
   }
 };

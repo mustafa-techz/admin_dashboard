@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   useAssessments,
@@ -207,6 +207,66 @@ function StatusActions({
 }
 
 // ─────────────────────────────────────────────────────────────────
+// Assessment Card
+// ─────────────────────────────────────────────────────────────────
+const AssessmentCard = React.memo(function AssessmentCard({
+  a,
+  isSelected,
+  onSelect,
+  className,
+  sectionName,
+}: {
+  a: Assessment;
+  isSelected: boolean;
+  onSelect: (id: string) => void;
+  className: string;
+  sectionName: string;
+}) {
+  return (
+    <div
+      onClick={() => onSelect(a.id)}
+      className={cn(
+        'text-left bg-card rounded-2xl border-2 shadow-soft p-5 transition-all duration-200 hover:shadow-md cursor-pointer',
+        isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="text-base font-black text-foreground truncate">{a.name}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {className} — {sectionName} · {a.academicYear}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span
+            className={cn(
+              'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap',
+              ASSESSMENT_STATUS_COLORS[a.status]
+            )}
+          >
+            {ASSESSMENT_STATUS_LABELS[a.status]}
+          </span>
+          <ChevronRight
+            size={20}
+            className={cn(
+              'text-muted-foreground transition-transform',
+              isSelected && 'rotate-90 text-primary'
+            )}
+          />
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <span className="px-2 py-0.5 bg-muted rounded-md font-bold uppercase">
+          {a.type}
+        </span>
+        <span>{a.subjects.length} subjects</span>
+      </div>
+    </div>
+  );
+});
+
+// ─────────────────────────────────────────────────────────────────
 // Main Assessment List
 // ─────────────────────────────────────────────────────────────────
 export default function AssessmentList({ branchId }: { branchId: string }) {
@@ -228,10 +288,10 @@ export default function AssessmentList({ branchId }: { branchId: string }) {
     staleTime: 10 * 60 * 1000,
   });
 
-  const getClassName = (id: string) => classes.find((c) => c.id === id)?.className || id;
-  const getSectionName = (id: string) => sections.find((s) => s.id === id)?.sectionName || id;
+  const getClassName = React.useCallback((id: string) => classes.find((c) => c.id === id)?.className || id, [classes]);
+  const getSectionName = React.useCallback((id: string) => sections.find((s) => s.id === id)?.sectionName || id, [sections]);
 
-  const handleDelete = () => {
+  const handleDelete = React.useCallback(() => {
     if (deleteTarget) {
       deleteMutation.mutate(deleteTarget, {
         onSuccess: () => {
@@ -240,7 +300,11 @@ export default function AssessmentList({ branchId }: { branchId: string }) {
         },
       });
     }
-  };
+  }, [deleteTarget, deleteMutation, selectedId]);
+
+  const handleSelect = React.useCallback((id: string) => {
+    setSelectedId(prev => prev === id ? null : id);
+  }, []);
 
   if (isLoading) {
     return (
@@ -271,47 +335,14 @@ export default function AssessmentList({ branchId }: { branchId: string }) {
           const isSelected = selectedId === a.id;
 
           return (
-            <div
+            <AssessmentCard
               key={a.id}
-              onClick={() => setSelectedId(isSelected ? null : a.id)}
-              className={cn(
-                'text-left bg-card rounded-2xl border-2 shadow-soft p-5 transition-all duration-200 hover:shadow-md cursor-pointer',
-                isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'
-              )}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <h3 className="text-base font-black text-foreground truncate">{a.name}</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {getClassName(a.classId)} — {getSectionName(a.sectionId)} · {a.academicYear}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span
-                    className={cn(
-                      'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap',
-                      ASSESSMENT_STATUS_COLORS[a.status]
-                    )}
-                  >
-                    {ASSESSMENT_STATUS_LABELS[a.status]}
-                  </span>
-                  <ChevronRight
-                    size={20}
-                    className={cn(
-                      'text-muted-foreground transition-transform',
-                      isSelected && 'rotate-90 text-primary'
-                    )}
-                  />
-                </div>
-              </div>
-
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                <span className="px-2 py-0.5 bg-muted rounded-md font-bold uppercase">
-                  {a.type}
-                </span>
-                <span>{a.subjects.length} subjects</span>
-              </div>
-            </div>
+              a={a}
+              isSelected={isSelected}
+              onSelect={handleSelect}
+              className={getClassName(a.classId)}
+              sectionName={getSectionName(a.sectionId)}
+            />
           );
         })}
       </div>

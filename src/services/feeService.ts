@@ -13,6 +13,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/firebase/firestore';
+import { executeFirebaseOp } from '@/lib/api-errors';
 import { generateReminder, resolveRemindersForInstallment } from './reminderService';
 import type {
   FeeStructure,
@@ -56,7 +57,7 @@ export const feeService = {
     installments: FeeInstallmentFormData[],
     createdBy: string
   ): Promise<string> {
-    try {
+    return executeFirebaseOp(async () => {
       const batch = writeBatch(db);
 
       // Create fee structure doc
@@ -89,17 +90,14 @@ export const feeService = {
 
       await batch.commit();
       return feeStructureRef.id;
-    } catch (error) {
-      console.error('Error creating fee structure:', error);
-      throw error;
-    }
+    }, 'createFeeStructure');
   },
 
   /**
    * Get all fee structures for a branch.
    */
   async getFeeStructures(branchId: string): Promise<FeeStructure[]> {
-    try {
+    return executeFirebaseOp(async () => {
       const q = query(
         feeStructuresCol,
         where('branchId', '==', branchId),
@@ -113,17 +111,14 @@ export const feeService = {
         createdAt: tsToISO(d.data().createdAt),
         updatedAt: tsToISO(d.data().updatedAt),
       })) as FeeStructure[];
-    } catch (error) {
-      console.error('Error getting fee structures:', error);
-      throw error;
-    }
+    }, 'getFeeStructures');
   },
 
   /**
    * Get installments for a fee structure.
    */
   async getFeeInstallments(feeStructureId: string): Promise<FeeInstallment[]> {
-    try {
+    return executeFirebaseOp(async () => {
       const q = query(
         feeInstallmentsCol,
         where('feeStructureId', '==', feeStructureId),
@@ -134,10 +129,7 @@ export const feeService = {
         id: d.id,
         ...d.data(),
       })) as FeeInstallment[];
-    } catch (error) {
-      console.error('Error getting fee installments:', error);
-      throw error;
-    }
+    }, 'getFeeInstallments');
   },
 
   // ───────────────────────────────────────────────────────────────
@@ -154,7 +146,7 @@ export const feeService = {
     feeStructure: FeeStructure,
     installments: FeeInstallment[],
   ): Promise<string> {
-    try {
+    return executeFirebaseOp(async () => {
       const { studentService } = await import('./studentService');
       const student = await studentService.getStudentById(studentId);
       if (!student) throw new Error('Student not found');
@@ -233,10 +225,7 @@ export const feeService = {
       }
 
       return assignmentRef.id;
-    } catch (error) {
-      console.error('Error assigning fee to student:', error);
-      throw error;
-    }
+    }, 'assignFeeToStudent');
   },
 
   /**
@@ -247,7 +236,7 @@ export const feeService = {
     feeStructure: FeeStructure,
     installments: FeeInstallment[],
   ): Promise<void> {
-    try {
+    return executeFirebaseOp(async () => {
       // Firestore batches max 500 ops. Chunk if needed.
       const BATCH_LIMIT = 450;
       let batch = writeBatch(db);
@@ -304,48 +293,41 @@ export const feeService = {
       }
 
       // Generate reminders for the first active installment only (Sequential Rule)
-      try {
-        for (const student of (students as any[])) {
-          if (!student.sfiRefs || !student.userId) continue;
+      for (const student of (students as any[])) {
+        if (!student.sfiRefs || !student.userId) continue;
 
-          const sortedSFIs = (student.sfiRefs as any[]).sort((a, b) => a.inst.order - b.inst.order);
-          const first = sortedSFIs[0];
+        const sortedSFIs = (student.sfiRefs as any[]).sort((a, b) => a.inst.order - b.inst.order);
+        const first = sortedSFIs[0];
 
-          if (first) {
-            const dueDate = new Date(first.inst.dueDate).getTime();
-            await generateReminder({
-              type: 'FEE',
-              title: `Fee Due: ${first.inst.installmentName}`,
-              message: `Your fee installment of ₹${first.inst.amount} is due on ${new Date(first.inst.dueDate).toLocaleDateString()}.`,
-              targetRole: 'PARENT',
-              targetUserIds: [student.userId],
-              branchId: feeStructure.branchId,
-              priority: 'HIGH',
-              deliveryChannels: ['PUSH', 'DASHBOARD'],
-              scheduledAt: dueDate - 7 * 24 * 60 * 60 * 1000,
-              status: 'PENDING',
-              metadata: {
-                studentFeeInstallmentId: first.sfiId,
-                dueDate: first.inst.dueDate,
-                amount: first.inst.amount
-              },
-            });
-          }
+        if (first) {
+          const dueDate = new Date(first.inst.dueDate).getTime();
+          await generateReminder({
+            type: 'FEE',
+            title: `Fee Due: ${first.inst.installmentName}`,
+            message: `Your fee installment of ₹${first.inst.amount} is due on ${new Date(first.inst.dueDate).toLocaleDateString()}.`,
+            targetRole: 'PARENT',
+            targetUserIds: [student.userId],
+            branchId: feeStructure.branchId,
+            priority: 'HIGH',
+            deliveryChannels: ['PUSH', 'DASHBOARD'],
+            scheduledAt: dueDate - 7 * 24 * 60 * 60 * 1000,
+            status: 'PENDING',
+            metadata: {
+              studentFeeInstallmentId: first.sfiId,
+              dueDate: first.inst.dueDate,
+              amount: first.inst.amount
+            },
+          });
         }
-      } catch (err) {
-        console.error('Failed to bulk generate reminders', err);
       }
-    } catch (error) {
-      console.error('Error assigning fee to multiple students:', error);
-      throw error;
-    }
+    }, 'assignFeeToStudents');
   },
 
   /**
    * Get fee assignments for a student (parent view).
    */
   async getStudentFeeAssignments(studentId: string): Promise<StudentFeeAssignment[]> {
-    try {
+    return executeFirebaseOp(async () => {
       const q = query(
         studentFeeAssignmentsCol,
         where('studentId', '==', studentId)
@@ -357,10 +339,7 @@ export const feeService = {
         createdAt: tsToISO(d.data().createdAt),
         updatedAt: tsToISO(d.data().updatedAt),
       })) as StudentFeeAssignment[];
-    } catch (error) {
-      console.error('Error getting student fee assignments:', error);
-      throw error;
-    }
+    }, 'getStudentFeeAssignments');
   },
 
   /**
@@ -370,7 +349,7 @@ export const feeService = {
     branchId: string,
     feeStructureId?: string
   ): Promise<StudentFeeAssignment[]> {
-    try {
+    return executeFirebaseOp(async () => {
       let q;
       if (feeStructureId) {
         q = query(
@@ -391,10 +370,7 @@ export const feeService = {
         createdAt: tsToISO(d.data().createdAt),
         updatedAt: tsToISO(d.data().updatedAt),
       })) as StudentFeeAssignment[];
-    } catch (error) {
-      console.error('Error getting branch fee assignments:', error);
-      throw error;
-    }
+    }, 'getBranchFeeAssignments');
   },
 
   /**
@@ -404,7 +380,7 @@ export const feeService = {
     studentId: string,
     feeStructureId: string
   ): Promise<StudentFeeInstallment[]> {
-    try {
+    return executeFirebaseOp(async () => {
       const q = query(
         studentFeeInstallmentsCol,
         where('studentId', '==', studentId),
@@ -418,10 +394,7 @@ export const feeService = {
           ...d.data(),
         }))
         .sort((a: any, b: any) => (a.order || 0) - (b.order || 0)) as StudentFeeInstallment[];
-    } catch (error) {
-      console.error('Error getting student fee installments:', error);
-      throw error;
-    }
+    }, 'getStudentFeeInstallments');
   },
 
   /**
@@ -429,7 +402,7 @@ export const feeService = {
    * Useful for dynamically generating fee reminders on the dashboard.
    */
   async getAllPendingStudentFeeInstallments(studentId: string): Promise<StudentFeeInstallment[]> {
-    try {
+    return executeFirebaseOp(async () => {
       const q = query(
         studentFeeInstallmentsCol,
         where('studentId', '==', studentId),
@@ -443,10 +416,7 @@ export const feeService = {
           ...d.data(),
         }))
         .sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()) as StudentFeeInstallment[];
-    } catch (error) {
-      console.error('Error getting pending student fee installments:', error);
-      throw error;
-    }
+    }, 'getAllPendingStudentFeeInstallments');
   },
 
   // ───────────────────────────────────────────────────────────────
@@ -464,7 +434,7 @@ export const feeService = {
     paymentData: RecordPaymentData,
     recordedBy: string
   ): Promise<string> {
-    try {
+    return executeFirebaseOp(async () => {
       const batch = writeBatch(db);
 
       // 1. Get current installment state
@@ -577,10 +547,7 @@ export const feeService = {
       }
 
       return paymentRef.id;
-    } catch (error) {
-      console.error('Error recording payment:', error);
-      throw error;
-    }
+    }, 'recordPayment');
   },
 
   /**
@@ -589,7 +556,7 @@ export const feeService = {
   async getPaymentHistory(
     studentFeeInstallmentId: string
   ): Promise<Payment[]> {
-    try {
+    return executeFirebaseOp(async () => {
       const q = query(
         paymentsCol,
         where('studentFeeInstallmentId', '==', studentFeeInstallmentId),
@@ -601,17 +568,14 @@ export const feeService = {
         ...d.data(),
         createdAt: tsToISO(d.data().createdAt),
       })) as Payment[];
-    } catch (error) {
-      console.error('Error getting payment history:', error);
-      throw error;
-    }
+    }, 'getPaymentHistory');
   },
 
   /**
    * Get all payments for a student across all fee structures.
    */
   async getStudentPayments(studentId: string): Promise<Payment[]> {
-    try {
+    return executeFirebaseOp(async () => {
       const q = query(
         paymentsCol,
         where('studentId', '==', studentId),
@@ -623,17 +587,14 @@ export const feeService = {
         ...d.data(),
         createdAt: tsToISO(d.data().createdAt),
       })) as Payment[];
-    } catch (error) {
-      console.error('Error getting student payments:', error);
-      throw error;
-    }
+    }, 'getStudentPayments');
   },
 
   /**
    * Get the fee structure document by id
    */
   async getFeeStructureById(id: string): Promise<FeeStructure | null> {
-    try {
+    return executeFirebaseOp(async () => {
       const docSnap = await getDoc(doc(feeStructuresCol, id));
       if (!docSnap.exists()) return null;
       return {
@@ -642,16 +603,13 @@ export const feeService = {
         createdAt: tsToISO(docSnap.data().createdAt),
         updatedAt: tsToISO(docSnap.data().updatedAt),
       } as FeeStructure;
-    } catch (error) {
-      console.error('Error getting fee structure by id:', error);
-      throw error;
-    }
+    }, 'getFeeStructureById');
   },
   /**
    * Delete a fee structure and its associated installments.
    */
   async deleteFeeStructure(feeStructureId: string): Promise<void> {
-    try {
+    return executeFirebaseOp(async () => {
       const batch = writeBatch(db);
 
       // 1. Delete fee structure doc
@@ -670,17 +628,14 @@ export const feeService = {
       // but to strictly meet the user request, we just delete the structure + its template installments.
 
       await batch.commit();
-    } catch (error) {
-      console.error('Error deleting fee structure:', error);
-      throw error;
-    }
+    }, 'deleteFeeStructure');
   },
 
   /**
    * Delete a student fee assignment and all its installments.
    */
   async deleteStudentFeeAssignment(assignmentId: string): Promise<void> {
-    try {
+    return executeFirebaseOp(async () => {
       const batch = writeBatch(db);
 
       // 1. Get the assignment doc to know studentId & feeStructureId
@@ -709,9 +664,6 @@ export const feeService = {
       // but we are removing the fee entirely for the student.
 
       await batch.commit();
-    } catch (error) {
-      console.error('Error deleting student fee assignment:', error);
-      throw error;
-    }
+    }, 'deleteStudentFeeAssignment');
   },
 };
