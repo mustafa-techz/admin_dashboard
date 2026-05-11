@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/firebase/firestore';
 import { executeFirebaseOp } from '@/lib/api-errors';
-import { generateReminder } from './reminderService';
+
 import { studentService } from './studentService';
 import { calculatePercentage, getGrade, getPassStatus } from '@/lib/gradeUtils';
 import type {
@@ -431,7 +431,7 @@ export const assessmentService = {
   },
 
   /**
-   * Publish results + send reminders to parents.
+   * Publish results.
    * Uses transaction to prevent double-publish.
    */
   async publishResults(assessmentId: string, publishedBy: string): Promise<void> {
@@ -456,62 +456,7 @@ export const assessmentService = {
         });
       });
 
-      // After successful publish, send reminders (outside transaction for perf)
-      try {
-        const assessment = await this.getAssessmentById(assessmentId);
-        if (!assessment) return;
 
-        // Get students in this class/section
-        const allStudents = await studentService.getStudents();
-        const classStudents = allStudents.filter(
-          (s) => s.classId === assessment.classId && s.sectionId === assessment.sectionId
-        );
-
-        // Batch create reminders for parents
-        const BATCH_LIMIT = 450;
-        let batch = writeBatch(db);
-        let opCount = 0;
-
-        for (const student of classStudents) {
-          const parentUserId = student.parentDetails?.userId;
-          if (!parentUserId) continue;
-
-          const reminderRef = doc(collection(db, 'reminders'));
-          batch.set(reminderRef, {
-            type: 'EXAM',
-            title: `${assessment.name} — Results Published`,
-            message: `Your child ${student.fullName}'s ${assessment.name} results are now available. Tap to view.`,
-            targetRole: 'PARENT',
-            targetUserIds: [parentUserId],
-            branchId: assessment.branchId,
-            priority: 'HIGH',
-            deliveryChannels: ['DASHBOARD', 'PUSH', 'POPUP'],
-            scheduledAt: Date.now(),
-            status: 'PENDING',
-            metadata: {
-              assessmentId: assessment.id,
-              assessmentName: assessment.name,
-              studentId: student.id,
-              route: '/exams',
-            },
-            createdAt: serverTimestamp(),
-          });
-
-          opCount++;
-          if (opCount >= BATCH_LIMIT) {
-            await batch.commit();
-            batch = writeBatch(db);
-            opCount = 0;
-          }
-        }
-
-        if (opCount > 0) {
-          await batch.commit();
-        }
-      } catch (reminderErr) {
-        console.error('Failed to send result publish reminders:', reminderErr);
-        // Don't throw — publish succeeded, reminders are best-effort
-      }
     }, 'publishResults');
   },
 

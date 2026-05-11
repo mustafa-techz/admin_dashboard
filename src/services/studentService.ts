@@ -100,7 +100,6 @@ export const studentService = {
              * IMPORTANT
              * Save Firebase Auth UID
              * This will be used for:
-             * - reminders
              * - notifications
              * - chats
              * - fees
