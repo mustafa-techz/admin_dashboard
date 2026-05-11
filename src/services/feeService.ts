@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/firebase/firestore';
 import { executeFirebaseOp } from '@/lib/api-errors';
-import { generateReminder, resolveRemindersForInstallment } from './reminderService';
+
 import type {
   FeeStructure,
   FeeStructureFormData,
@@ -193,36 +193,7 @@ export const feeService = {
 
       await batch.commit();
 
-      // Reminder Generation Logic
-      try {
-        // Sequential rule: only generate reminder for the first unpaid installment
-        const firstInst = installments.sort((a, b) => a.order - b.order)[0];
-        const sfiForFirst = sfiRefs.find(r => r.inst.id === firstInst.id);
 
-        if (firstInst && sfiForFirst && parentUserId) {
-          const dueDate = new Date(firstInst.dueDate).getTime();
-          // Generate the 7-day push notification
-          await generateReminder({
-            type: 'FEE',
-            title: `Fee Reminder: ${firstInst.installmentName}`,
-            message: `Your fee of ₹${firstInst.amount} is due on ${new Date(firstInst.dueDate).toLocaleDateString()}.`,
-            targetRole: 'PARENT',
-            targetUserIds: [parentUserId],
-            branchId: feeStructure.branchId,
-            priority: 'HIGH',
-            deliveryChannels: ['PUSH', 'DASHBOARD'],
-            scheduledAt: dueDate - 7 * 24 * 60 * 60 * 1000,
-            status: 'PENDING',
-            metadata: {
-              studentFeeInstallmentId: sfiForFirst.sfiId,
-              dueDate: firstInst.dueDate,
-              amount: firstInst.amount
-            }
-          });
-        }
-      } catch (err) {
-        console.error('Failed to generate reminders for fee assignment', err);
-      }
 
       return assignmentRef.id;
     }, 'assignFeeToStudent');
@@ -292,34 +263,7 @@ export const feeService = {
         await batch.commit();
       }
 
-      // Generate reminders for the first active installment only (Sequential Rule)
-      for (const student of (students as any[])) {
-        if (!student.sfiRefs || !student.userId) continue;
 
-        const sortedSFIs = (student.sfiRefs as any[]).sort((a, b) => a.inst.order - b.inst.order);
-        const first = sortedSFIs[0];
-
-        if (first) {
-          const dueDate = new Date(first.inst.dueDate).getTime();
-          await generateReminder({
-            type: 'FEE',
-            title: `Fee Due: ${first.inst.installmentName}`,
-            message: `Your fee installment of ₹${first.inst.amount} is due on ${new Date(first.inst.dueDate).toLocaleDateString()}.`,
-            targetRole: 'PARENT',
-            targetUserIds: [student.userId],
-            branchId: feeStructure.branchId,
-            priority: 'HIGH',
-            deliveryChannels: ['PUSH', 'DASHBOARD'],
-            scheduledAt: dueDate - 7 * 24 * 60 * 60 * 1000,
-            status: 'PENDING',
-            metadata: {
-              studentFeeInstallmentId: first.sfiId,
-              dueDate: first.inst.dueDate,
-              amount: first.inst.amount
-            },
-          });
-        }
-      }
     }, 'assignFeeToStudents');
   },
 
@@ -399,7 +343,6 @@ export const feeService = {
 
   /**
    * Get all pending fee installments for a student.
-   * Useful for dynamically generating fee reminders on the dashboard.
    */
   async getAllPendingStudentFeeInstallments(studentId: string): Promise<StudentFeeInstallment[]> {
     return executeFirebaseOp(async () => {
@@ -507,44 +450,7 @@ export const feeService = {
 
       await batch.commit();
 
-      // Automatically hide/remove related reminders if fully paid
-      if (newInstStatus === 'paid') {
-        try {
-          await resolveRemindersForInstallment(paymentData.studentFeeInstallmentId);
 
-          // Sequential Logic: Trigger reminder for the NEXT unpaid installment
-          const { studentService } = await import('./studentService');
-          const student = await studentService.getStudentById(paymentData.studentId);
-          if (student) {
-            const parentUserId = (student as any).parentDetails?.userId;
-            const nextPending = await this.getAllPendingStudentFeeInstallments(paymentData.studentId);
-            const next = nextPending[0]; // Already sorted by dueDate
-
-            if (next && parentUserId) {
-              const dueDate = new Date(next.dueDate).getTime();
-              await generateReminder({
-                type: 'FEE',
-                title: `Next Fee Due: ${next.installmentName}`,
-                message: `Your next fee installment of ₹${next.amountPending} is due on ${new Date(next.dueDate).toLocaleDateString()}.`,
-                targetRole: 'PARENT',
-                targetUserIds: [parentUserId],
-                branchId: next.branchId,
-                priority: 'HIGH',
-                deliveryChannels: ['PUSH', 'DASHBOARD'],
-                scheduledAt: dueDate - 7 * 24 * 60 * 60 * 1000,
-                status: 'PENDING',
-                metadata: {
-                  studentFeeInstallmentId: next.id,
-                  dueDate: next.dueDate,
-                  amount: next.amountPending
-                },
-              });
-            }
-          }
-        } catch (err) {
-          console.error('Failed to resolve or trigger next reminder:', err);
-        }
-      }
 
       return paymentRef.id;
     }, 'recordPayment');

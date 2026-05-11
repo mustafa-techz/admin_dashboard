@@ -11,14 +11,7 @@ import StatCircle from '@/components/shared/StatCircle';
 import { Users, UserCheck, BookOpen, AlertCircle, Calendar, Activity as ActivityIcon, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { DashboardStats } from '@/types';
-import { fetchUserDashboardReminders } from '@/services/reminderService';
-import { DashboardReminderCard } from '@/components/reminders/DashboardReminderCard';
-import { ReminderPopup } from '@/components/reminders/ReminderPopup';
-import { studentService } from '@/services/studentService';
-import { usePendingFeeInstallments } from '@/hooks/useFees';
 import { useStudents } from '@/hooks/useStudents';
-import { useMemo } from 'react';
-import { Reminder } from '@/types/reminder';
 
 
 export default function DashboardPage() {
@@ -31,87 +24,7 @@ export default function DashboardPage() {
     queryFn: getDashboardStats,
   });
 
-  // Fetch reminders for the logged-in user (from Firestore)
-  const { data: dbReminders = [], isLoading: remindersLoading } = useQuery({
-    queryKey: ['dashboardReminders', user?.uid],
-    queryFn: () => user?.uid ? fetchUserDashboardReminders(user.uid) : Promise.resolve([]),
-    enabled: !!user?.uid,
-  });
-
-  // Dynamically fetch pending fee installments for parents
-  const { data: student } = useQuery({
-    queryKey: ['studentByParent', user?.uid],
-    queryFn: () => user?.uid ? studentService.getStudentByParentUserId(user.uid) : Promise.resolve(null),
-    enabled: role === 'parent' && !!user?.uid,
-  });
-
-  const { data: pendingInstallments = [], isLoading: pendingFeesLoading } = usePendingFeeInstallments(student?.id || '');
-
-  // Generate dynamic reminders from pending fees (Sequential: Only next active unpaid installment)
-  const dynamicFeeReminders: Reminder[] = useMemo(() => {
-    // pendingInstallments is already sorted by dueDate from the service
-    const nextInst = pendingInstallments[0] as any;
-    if (!nextInst) return [];
-
-    const due = new Date(nextInst.dueDate).getTime();
-    const now = new Date();
-    now.setHours(0, 0, 0, 0); // Start of today
-    const dueDate = new Date(nextInst.dueDate);
-    dueDate.setHours(0, 0, 0, 0);
-
-    const diffTime = dueDate.getTime() - now.getTime();
-    const daysToDue = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    // Reminder Conditions
-    // 5 days or less -> Dashboard
-    // 3 days or less -> Popup
-    // 0 days or less -> High Priority
-
-    if (daysToDue > 7) return []; // Not yet time for dashboard/popup
-
-    const channels: string[] = ['DASHBOARD'];
-    if (daysToDue <= 3) {
-      channels.push('POPUP');
-    }
-
-    const title = daysToDue === 0
-      ? '⚠ Fee Due Today'
-      : daysToDue === 1
-        ? '⚠ Fee Due Tomorrow'
-        : daysToDue < 0
-          ? '🚨 Fee Overdue'
-          : `⚠ Fee Due in ${daysToDue} Days`;
-
-    return [{
-      id: `dynamic-fee-${nextInst.id}`,
-      type: 'FEE',
-      title,
-      message: `Your installment "${nextInst.installmentName}" of ₹${nextInst.amountPending} is ${daysToDue < 0 ? 'overdue' : 'pending'}. Please pay to avoid late fees.`,
-      targetRole: 'PARENT',
-      targetUserIds: [user?.uid || ''],
-      branchId: nextInst.branchId,
-      priority: daysToDue <= 0 ? 'HIGH' : 'MEDIUM',
-      deliveryChannels: channels as any[],
-      scheduledAt: due,
-      status: 'PENDING',
-      createdAt: Date.now(),
-      metadata: {
-        dueDate: nextInst.dueDate,
-        amount: nextInst.amountPending,
-        studentFeeInstallmentId: nextInst.id,
-      }
-    }];
-  }, [pendingInstallments, user?.uid]);
-
-  // Combine Firestore reminders with dynamic ones
-  const reminders = useMemo(() => {
-    // BEST PRACTICE: Ignore Firestore FEE reminders to prevent duplicates
-    // and rely 100% on dynamic zero-cost calculation which enforces the 7-day rule perfectly.
-    const nonFeeDbReminders = dbReminders.filter(r => r.type !== 'FEE');
-    return [...nonFeeDbReminders, ...dynamicFeeReminders];
-  }, [dbReminders, dynamicFeeReminders]);
-
-  const isLoading = statsLoading || remindersLoading;
+  const isLoading = statsLoading;
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -147,16 +60,6 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Reminders Section */}
-      {(role === 'teacher' || role === 'parent') && reminders.length > 0 && (
-        <div className="space-y-4 animate-in slide-in-from-bottom-4">
-          {reminders
-            .filter((r) => r.deliveryChannels.includes('DASHBOARD'))
-            .map((reminder) => (
-              <DashboardReminderCard key={reminder.id} reminder={reminder} />
-            ))}
-        </div>
-      )}
 
       <div className="lg:col-span-2">
         <DashboardAnnouncements />
@@ -239,8 +142,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Render the Popup */}
-      <ReminderPopup reminders={reminders} />
+
     </div>
   );
 }

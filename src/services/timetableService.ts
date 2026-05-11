@@ -220,7 +220,7 @@ export const timetableService = {
 
   /**
    * Publish a timetable (draft → published).
-   * After publish, sends reminder notifications to all parents in the class/section.
+
    */
   async publishTimetable(id: string): Promise<void> {
     return executeFirebaseOp(async () => {
@@ -233,56 +233,7 @@ export const timetableService = {
         updatedAt: serverTimestamp(),
       });
 
-      // Send reminder notifications to parents (best-effort, don't block on failure)
-      try {
-        const allStudents = await studentService.getStudents();
-        const classStudents = allStudents.filter(
-          (s) => s.classId === timetable.classId && s.sectionId === timetable.sectionId
-        );
 
-        const BATCH_LIMIT = 450;
-        let batch = writeBatch(db);
-        let opCount = 0;
-
-        for (const student of classStudents) {
-          const parentUserId = student.parentDetails?.userId;
-          if (!parentUserId) continue;
-
-          const reminderRef = doc(collection(db, 'reminders'));
-          batch.set(reminderRef, {
-            type: 'EXAM',
-            title: `📅 New Timetable Published`,
-            message: `The class timetable "${timetable.name}" has been published. Tap to view your child's schedule.`,
-            targetRole: 'PARENT',
-            targetUserIds: [parentUserId],
-            branchId: timetable.branchId,
-            priority: 'MEDIUM',
-            deliveryChannels: ['DASHBOARD', 'POPUP'],
-            scheduledAt: Date.now(),
-            status: 'PENDING',
-            metadata: {
-              timetableId: id,
-              timetableName: timetable.name,
-              route: '/timetable',
-            },
-            createdAt: serverTimestamp(),
-          });
-
-          opCount++;
-          if (opCount >= BATCH_LIMIT) {
-            await batch.commit();
-            batch = writeBatch(db);
-            opCount = 0;
-          }
-        }
-
-        if (opCount > 0) {
-          await batch.commit();
-        }
-      } catch (reminderErr) {
-        console.error('Failed to send timetable publish reminders:', reminderErr);
-        // Don't throw — publish succeeded, reminders are best-effort
-      }
     }, 'publishTimetable');
   },
 
