@@ -32,16 +32,83 @@ export default function MessageBubble({
 
   // 1. Handle system messages
   if (message.senderId === "system" && message.text) {
+
+    // ── Fee reminder system message ──────────────────────────────────────────
+    if (message.subtype === "fee_reminder") {
+      const meta = message.metadata;
+      const isOverdue = meta?.reminderType?.startsWith("overdue") ?? false;
+      const isDueToday = meta?.reminderType === "due_today";
+
+      return (
+        <div className="flex justify-center my-3 px-4">
+          <div
+            className={cn(
+              "w-full max-w-sm rounded-2xl border shadow-sm p-4 space-y-2",
+              isOverdue
+                ? "bg-red-50 border-red-200"
+                : isDueToday
+                ? "bg-amber-50 border-amber-200"
+                : "bg-blue-50 border-blue-200"
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-base leading-none">
+                {isOverdue ? "⚠️" : isDueToday ? "🔔" : "📅"}
+              </span>
+              <span
+                className={cn(
+                  "text-[10px] font-black uppercase tracking-widest",
+                  isOverdue
+                    ? "text-red-600"
+                    : isDueToday
+                    ? "text-amber-600"
+                    : "text-blue-600"
+                )}
+              >
+                {isOverdue ? "Fee Overdue" : isDueToday ? "Due Today" : "Fee Reminder"}
+              </span>
+            </div>
+            <p className="text-xs font-medium text-foreground leading-relaxed">
+              {message.text}
+            </p>
+            {meta && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {meta.amount > 0 && (
+                  <span
+                    className={cn(
+                      "px-2 py-0.5 rounded-full text-[10px] font-black",
+                      isOverdue
+                        ? "bg-red-100 text-red-700"
+                        : isDueToday
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-blue-100 text-blue-700"
+                    )}
+                  >
+                    {`₹${meta.amount.toLocaleString("en-IN")}`}
+                  </span>
+                )}
+                {meta.installmentName && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-secondary text-secondary-foreground">
+                    {meta.installmentName}
+                  </span>
+                )}
+              </div>
+            )}
+            <p className="text-[9px] text-muted-foreground text-right">{timeLabel}</p>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Generic system message (add members, etc.) ───────────────────────────
     let displayText = message.text;
 
-    // Parse 'system_add' messages
     if (message.text.startsWith("system_add:")) {
       const parts = message.text.split(":");
       if (parts.length >= 4) {
         const adderUid = parts[1];
         const adderName = parts[2];
-        const addedNames = parts.slice(3).join(":"); // In case names had colons
-
+        const addedNames = parts.slice(3).join(":");
         if (adderUid === user?.id) {
           displayText = `You added ${addedNames}`;
         } else {
@@ -58,6 +125,7 @@ export default function MessageBubble({
       </div>
     );
   }
+
 
   return (
     <div
