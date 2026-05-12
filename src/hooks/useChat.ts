@@ -34,6 +34,7 @@ import {
   uploadChatImage,
   subscribeToChatList,
   subscribeToMessages,
+  addMembersToConversation,
 } from "@/services/chatService";
 import {
   UserChat,
@@ -41,6 +42,7 @@ import {
   SendMessageInput,
   CreateDirectChatInput,
   CreateGroupInput,
+  AddMembersInput,
 } from "@/types/chat";
 import { DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import { useChatStore } from "@/store/chatStore";
@@ -331,6 +333,19 @@ export const useCreateGroup = (userId: string | undefined) => {
       if (userId) {
         queryClient.invalidateQueries({ queryKey: chatKeys.list(userId) });
       }
+    },
+  });
+};
+
+// ─── Add Members ──────────────────────────────────────────────────────────────
+
+export const useAddMembersToChat = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: AddMembersInput) => addMembersToConversation(input),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: chatKeys.list(variables.addedBy) });
     },
   });
 };

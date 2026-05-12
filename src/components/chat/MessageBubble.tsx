@@ -4,6 +4,7 @@ import { Message } from "@/types/chat";
 import { format } from "date-fns";
 import { Timestamp } from "firebase/firestore";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/authStore";
 
 interface MessageBubbleProps {
   message: Message;
@@ -27,6 +28,36 @@ export default function MessageBubble({
 }: MessageBubbleProps) {
   const timeLabel = formatTime(message.createdAt);
   const isOptimistic = message.id.startsWith("optimistic_");
+  const { user } = useAuthStore();
+
+  // 1. Handle system messages
+  if (message.senderId === "system" && message.text) {
+    let displayText = message.text;
+
+    // Parse 'system_add' messages
+    if (message.text.startsWith("system_add:")) {
+      const parts = message.text.split(":");
+      if (parts.length >= 4) {
+        const adderUid = parts[1];
+        const adderName = parts[2];
+        const addedNames = parts.slice(3).join(":"); // In case names had colons
+
+        if (adderUid === user?.id) {
+          displayText = `You added ${addedNames}`;
+        } else {
+          displayText = `${adderName} added ${addedNames}`;
+        }
+      }
+    }
+
+    return (
+      <div className="flex justify-center my-4">
+        <span className="bg-secondary/60 text-secondary-foreground px-3 py-1.5 rounded-xl text-xs font-medium shadow-sm">
+          {displayText}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div

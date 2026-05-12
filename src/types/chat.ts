@@ -95,6 +95,13 @@ export interface CreateDirectChatInput {
   userBRoleLabel?: string;
 }
 
+export interface AddMembersInput {
+  conversationId: string;
+  newParticipants: { uid: string; name: string }[];
+  addedBy: string;
+  addedByName: string;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Fan-out payload sent to the Next.js API route after a message is written
 // ─────────────────────────────────────────────────────────────────────────────
