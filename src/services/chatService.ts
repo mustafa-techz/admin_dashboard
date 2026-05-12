@@ -29,6 +29,7 @@ import {
   writeBatch,
   DocumentData,
   QueryDocumentSnapshot,
+  arrayUnion,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db } from "@/firebase/firestore";
@@ -41,6 +42,7 @@ import {
   CreateGroupInput,
   CreateDirectChatInput,
   MessageFanoutPayload,
+  AddMembersInput,
 } from "@/types/chat";
 
 // ─── Collection helpers ───────────────────────────────────────────────────────
@@ -194,6 +196,73 @@ export const createGroupConversation = async (
 
   await batch.commit();
   return conversationId;
+};
+
+export const addMembersToConversation = async (
+  input: AddMembersInput
+): Promise<void> => {
+  const { conversationId, newParticipants, addedBy, addedByName } = input;
+
+  const convDocRef = doc(db, "conversations", conversationId);
+  const convSnap = await getDoc(convDocRef);
+  if (!convSnap.exists()) throw new Error("Conversation not found");
+
+  const convData = convSnap.data() as Conversation;
+
+  // Authorization check
+  const isAuthorized = convData.createdBy === addedBy || convData.admins?.includes(addedBy);
+  if (!isAuthorized) {
+    throw new Error("Unauthorized to add members");
+  }
+
+  // Deduplicate against existing
+  const existingParticipants = new Set(convData.participants || []);
+  const usersToAdd = newParticipants.filter((u) => !existingParticipants.has(u.uid));
+
+  if (usersToAdd.length === 0) return;
+
+  const batch = writeBatch(db);
+
+  // 1. Update conversation participants array
+  const uidsToAdd = usersToAdd.map(u => u.uid);
+  batch.update(convDocRef, {
+    participants: arrayUnion(...uidsToAdd),
+  });
+
+  // 2. Seed userChats for the NEW members
+  // Using a plain text for userChats lastMessage is fine
+  const plainSystemMessage = `${addedByName} added you to the group`;
+  const avatarLetter = convData.name?.charAt(0).toUpperCase() || "G";
+
+  usersToAdd.forEach((u) => {
+    batch.set(userChatDocRef(u.uid, conversationId), {
+      name: convData.name || "Group",
+      type: convData.type,
+      lastMessage: plainSystemMessage,
+      lastMessageAt: serverTimestamp(),
+      unreadCount: 1,
+      lastSeenAt: null,
+      avatarLetter,
+    });
+  });
+
+  await batch.commit();
+
+  // 3. Send a parseable system message so existing members get notified/updated via fan-out
+  // Format: system_add:{adderUid}:{adderName}:{addedNamesCsv}
+  const addedNamesCsv = usersToAdd.map(u => u.name).join(", ");
+  const rawText = `system_add:${addedBy}:${addedByName}:${addedNamesCsv}`;
+
+  await sendMessage({
+    conversationId,
+    senderId: "system",
+    senderName: "System",
+    text: rawText,
+    participants: [...convData.participants, ...uidsToAdd],
+    conversationType: convData.type,
+    conversationName: convData.name,
+    tempId: crypto.randomUUID(),
+  });
 };
 
 // ─── Messages ─────────────────────────────────────────────────────────────────

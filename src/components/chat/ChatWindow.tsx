@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Users, Radio, MessageCircle } from "lucide-react";
+import { ArrowLeft, Users, Radio, MessageCircle, UserPlus } from "lucide-react";
 import { useChatStore } from "@/store/chatStore";
 import { useAuthStore } from "@/store/authStore";
 import {
@@ -14,6 +14,7 @@ import { getConversation } from "@/services/chatService";
 import { Conversation } from "@/types/chat";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
+import AddMembersModal from "./AddMembersModal";
 
 interface ChatWindowProps {
   conversationId: string;
@@ -29,6 +30,7 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   const { user, role } = useAuthStore();
   const { closeMobileChat } = useChatStore();
   const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [isAddMembersModalOpen, setIsAddMembersModalOpen] = useState(false);
 
   const sendMessageMutation = useSendMessage(user?.id);
   const markAsRead = useMarkAsRead(user?.id);
@@ -86,6 +88,11 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
   const displayName = conversation?.name ?? "Chat";
   const participantCount = conversation?.participants.length ?? 0;
 
+  const isAuthorizedToAdd =
+    conversation?.type !== "direct" &&
+    (conversation?.createdBy === user?.id ||
+      conversation?.admins?.includes(user?.id ?? ""));
+
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
@@ -122,6 +129,17 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
             </p>
           )}
         </div>
+
+        {/* Add Members Button */}
+        {isAuthorizedToAdd && (
+          <button
+            onClick={() => setIsAddMembersModalOpen(true)}
+            className="h-8 w-8 rounded-full flex items-center justify-center text-primary bg-primary/10 hover:bg-primary/20 transition-colors shrink-0"
+            title="Add Members"
+          >
+            <UserPlus size={16} />
+          </button>
+        )}
       </div>
 
       {/* Messages */}
@@ -146,6 +164,22 @@ export default function ChatWindow({ conversationId }: ChatWindowProps) {
         }
         isSending={sendMessageMutation.isPending}
       />
+
+      {/* Add Members Modal */}
+      {isAddMembersModalOpen && conversation && (
+        <AddMembersModal
+          isOpen={isAddMembersModalOpen}
+          onClose={() => setIsAddMembersModalOpen(false)}
+          conversationId={conversationId}
+          existingParticipantIds={conversation.participants}
+          onMembersAdded={(newUids) => {
+            setConversation({
+              ...conversation,
+              participants: [...conversation.participants, ...newUids],
+            });
+          }}
+        />
+      )}
     </div>
   );
 }

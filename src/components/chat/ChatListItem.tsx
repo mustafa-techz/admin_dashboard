@@ -4,6 +4,7 @@ import { UserChat } from "@/types/chat";
 import { formatDistanceToNowStrict } from "date-fns";
 import { Timestamp } from "firebase/firestore";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/authStore";
 
 interface ChatListItemProps {
   chat: UserChat;
@@ -25,8 +26,24 @@ export default function ChatListItem({
   isActive,
   onClick,
 }: ChatListItemProps) {
+  const { user } = useAuthStore();
   const hasUnread = chat.unreadCount > 0;
   const timeLabel = formatTimestamp(chat.lastMessageAt);
+
+  let displayMessage = chat.lastMessage || "No messages yet";
+  if (displayMessage.startsWith("system_add:")) {
+    const parts = displayMessage.split(":");
+    if (parts.length >= 4) {
+      const adderUid = parts[1];
+      const adderName = parts[2];
+      const addedNames = parts.slice(3).join(":");
+      if (adderUid === user?.id) {
+        displayMessage = `You added ${addedNames}`;
+      } else {
+        displayMessage = `${adderName} added ${addedNames}`;
+      }
+    }
+  }
 
   return (
     <button
@@ -85,7 +102,7 @@ export default function ChatListItem({
               hasUnread ? "text-foreground font-medium" : "text-muted-foreground"
             )}
           >
-            {chat.lastMessage || "No messages yet"}
+            {displayMessage}
           </p>
 
           {hasUnread && (
