@@ -40,7 +40,7 @@ export function getAuthorizedBranchIds(
 ): string[] | undefined {
   if (!user) return undefined;
   if (user.role === 'teacher') {
-    if (user.branchIds && user.branchIds.length > 0) return user.branchIds;
+    if (user.branchIds && (user.branchIds?.length || 0) > 0) return user.branchIds;
     if (user.branchId) return [user.branchId];
     return []; // Strict fallback: no branch info = no access, not admin access
   }

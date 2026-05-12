@@ -14,7 +14,7 @@ import {
 import { db } from '@/firebase/firestore';
 import { executeFirebaseOp } from '@/lib/api-errors';
 
-import { studentService } from './studentService';
+
 import { calculatePercentage, getGrade, getPassStatus } from '@/lib/gradeUtils';
 import type {
   Assessment,

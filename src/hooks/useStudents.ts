@@ -8,7 +8,7 @@ import { Student } from "../types/student";
 export const useStudents = () => {
   const queryClient = useQueryClient();
   const { selectedBranchId } = useBranchStore();
-  const { user, role } = useAuthStore();
+  const { user } = useAuthStore();
 
   // Determine teacher-scoped classIds (undefined for admin/sub-admin)
   const classIds = getAuthorizedClassIds(

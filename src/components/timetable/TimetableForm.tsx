@@ -41,6 +41,7 @@ export default function TimetableForm({ branchId, onSuccess }: { branchId: strin
   const { data: allClasses = [] } = useQuery({
     queryKey: ['classes'],
     queryFn: () => classService.getClasses(),
+    staleTime: 5 * 60 * 1000,
   });
 
   // Filter classes for teacher scope
@@ -52,6 +53,7 @@ export default function TimetableForm({ branchId, onSuccess }: { branchId: strin
   const { data: sections = [] } = useQuery({
     queryKey: ['sections'],
     queryFn: () => sectionService.getSections(),
+    staleTime: 5 * 60 * 1000,
   });
 
   const [form, setForm] = useState({
@@ -71,7 +73,7 @@ export default function TimetableForm({ branchId, onSuccess }: { branchId: strin
   const classTeachers = useMemo(() => {
     if (!form.classId) return [];
     return teachers.filter(
-      (t) => (t.classIds && t.classIds.includes(form.classId)) || t.classTeacher === form.classId
+      (t) => ((t.classIds || []).includes(form.classId)) || t.classTeacher === form.classId
     );
   }, [teachers, form.classId]);
 

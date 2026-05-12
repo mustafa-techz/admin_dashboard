@@ -3,8 +3,7 @@ import {
   doc,
   getDocs,
   getDoc,
-  setDoc,
-  updateDoc,
+
   query,
   where,
   orderBy,
@@ -150,7 +149,7 @@ export const feeService = {
       const { studentService } = await import('./studentService');
       const student = await studentService.getStudentById(studentId);
       if (!student) throw new Error('Student not found');
-      const parentUserId = (student as any).parentDetails?.userId || '';
+      const parentUserId = (student as any)?.parentDetails?.userId || '';
 
       const batch = writeBatch(db);
 

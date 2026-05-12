@@ -29,9 +29,9 @@ export default function CreatePage() {
   const [deleteId, setDeleteId] = useState<{ id: string; type: DataType } | null>(null);
 
   // Queries
-  const { data: classes = [], isLoading: loadingClasses } = useQuery({ queryKey: ['classes'], queryFn: classService.getClasses });
-  const { data: sections = [], isLoading: loadingSections } = useQuery({ queryKey: ['sections'], queryFn: sectionService.getSections });
-  const { data: branches = [], isLoading: loadingBranches } = useQuery({ queryKey: ['branches'], queryFn: branchService.getBranches });
+  const { data: classes = [], isLoading: loadingClasses } = useQuery({ queryKey: ['classes'], queryFn: classService.getClasses, staleTime: 5 * 60 * 1000 });
+  const { data: sections = [], isLoading: loadingSections } = useQuery({ queryKey: ['sections'], queryFn: sectionService.getSections, staleTime: 5 * 60 * 1000 });
+  const { data: branches = [], isLoading: loadingBranches } = useQuery({ queryKey: ['branches'], queryFn: branchService.getBranches, staleTime: 5 * 60 * 1000 });
 
   // Mutations
   const classMutation = useMutation({

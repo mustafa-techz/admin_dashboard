@@ -6,7 +6,7 @@ import { onIdTokenChanged, User } from "firebase/auth"
 import { useAuthStore } from "@/store/authStore"
 import { db } from "@/firebase/firestore"
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore"
-import { normalizeUserRole, UserRole } from "@/types/user"
+import { normalizeUserRole } from "@/types/user"
 
 const AUTH_COOKIE_NAME = "firebase-auth-token"
 const ROLE_COOKIE_NAME = "user-role"
@@ -19,19 +19,7 @@ const clearBrowserCookie = (name: string) => {
   document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`
 }
 
-const getUserRole = async (currentUser: User): Promise<UserRole | null> => {
-  const tokenResult = await currentUser.getIdTokenResult()
-  const claimedRole = normalizeUserRole(tokenResult.claims.role)
 
-  if (claimedRole) {
-    return claimedRole
-  }
-
-  const userSnapshot = await getDoc(doc(db, "users", currentUser.uid))
-  const storedRole = normalizeUserRole(userSnapshot.data()?.role)
-
-  return storedRole;
-}
 
 interface AuthContextType {
   user: User | null
@@ -64,17 +52,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userSnapshot = await getDoc(doc(db, "users", currentUser.uid))
         const userData = userSnapshot.data()
         
-        let role = normalizeUserRole(userData?.role)
-        if (!role) {
+        let resolvedRole = normalizeUserRole(userData?.role)
+        if (!resolvedRole) {
           const tokenResult = await currentUser.getIdTokenResult()
-          role = normalizeUserRole(tokenResult.claims.role)
+          resolvedRole = normalizeUserRole(tokenResult.claims.role)
         }
         
         const token = await currentUser.getIdToken()
 
         // For teachers, fetch their teacher document to get branchIds/classIds
         let teacherData: Record<string, any> | null = null;
-        if (role === 'teacher') {
+        if (resolvedRole === 'teacher') {
           try {
             const teacherSnapshot = await getDoc(doc(db, "teachers", currentUser.uid));
             if (teacherSnapshot.exists()) {
@@ -93,13 +81,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         }
 
-        if (role) {
+        if (resolvedRole) {
           login(
             {
               id: currentUser.uid,
               name: currentUser.displayName || currentUser.email || "User",
               email: currentUser.email || "",
-              role,
+              role: resolvedRole,
               studentRollNumber: userData?.studentRollNumber,
               // Teacher scope fields (from teacher doc or user doc)
               branchIds: teacherData?.branchIds || userData?.branchIds,
@@ -107,11 +95,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               classIds: teacherData?.classIds,
               classTeacherOf: teacherData?.classTeacher,
             },
-            role
+            resolvedRole
           )
 
           setBrowserCookie(AUTH_COOKIE_NAME, token)
-          setBrowserCookie(ROLE_COOKIE_NAME, role)
+          setBrowserCookie(ROLE_COOKIE_NAME, resolvedRole)
         } else {
           console.warn("No role found for user:", currentUser.uid)
           // Still set the auth token but clear the role cookie

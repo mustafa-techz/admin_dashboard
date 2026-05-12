@@ -482,7 +482,7 @@ export const searchUsers = async (
         ...d.data(),
       }) as ChatUser)
       .filter((u) => u.uid !== excludeUid)
-      .filter((u) => u.name.toLowerCase().includes(normalizedSearch));
+      .filter((u) => (u.name?.toLowerCase() || '').includes(normalizedSearch));
   } catch (error) {
     console.error("Error searching users:", error);
     throw error;

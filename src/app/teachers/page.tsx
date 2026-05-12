@@ -82,7 +82,7 @@ export default function TeachersPage() {
 
     const matchesClass = !classFilter || 
       teacher.classTeacher === classFilter || 
-      (teacher.classIds && teacher.classIds.includes(classFilter));
+      ((teacher.classIds || []).includes(classFilter));
 
     return matchesSearch && matchesClass;
   }) || [];
@@ -135,7 +135,7 @@ export default function TeachersPage() {
     {
       header: 'Classes',
       cell: (teacher: Teacher) => {
-        const classNames = teacher.classIds.map(id => classes.find(c => c.id === id)?.className || id).join(', ');
+        const classNames = (teacher.classIds || []).map(id => classes.find(c => c.id === id)?.className || id).join(', ');
         return (
           <div className="flex items-center gap-2 max-w-[150px] truncate">
             <span className="font-bold text-xs bg-secondary px-2 py-1 rounded-md">{classNames || 'None'}</span>
@@ -152,7 +152,7 @@ export default function TeachersPage() {
               {sub}
             </span>
           ))}
-          {teacher.subjects?.length > 2 && <span className="text-[10px] font-bold text-muted-foreground">+{teacher.subjects.length - 2} more</span>}
+          {(teacher.subjects?.length || 0) > 2 && <span className="text-[10px] font-bold text-muted-foreground">+{(teacher.subjects?.length || 0) - 2} more</span>}
         </div>
       )
     },

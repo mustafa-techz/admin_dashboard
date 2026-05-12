@@ -17,8 +17,8 @@ export default function SubAdminsPage() {
   });
 
   const filteredSubAdmins = subAdmins?.filter(admin => 
-    admin.name.toLowerCase().includes(search.toLowerCase()) ||
-    admin.email.toLowerCase().includes(search.toLowerCase())
+    (admin.name?.toLowerCase() || '').includes(search.toLowerCase()) ||
+    (admin.email?.toLowerCase() || '').includes(search.toLowerCase())
   ) || [];
 
   const columns = [
@@ -49,14 +49,14 @@ export default function SubAdminsPage() {
       header: 'Permissions',
       cell: (admin: SubAdmin) => (
         <div className="flex flex-wrap gap-1">
-          {admin.permissions.slice(0, 2).map((perm) => (
+          {(admin.permissions || []).slice(0, 2).map((perm) => (
             <span key={perm} className="px-2 py-0.5 bg-secondary text-[10px] font-bold rounded-lg border border-border">
               {perm.replace('-', ' ')}
             </span>
           ))}
-          {admin.permissions.length > 2 && (
+          {(admin.permissions?.length || 0) > 2 && (
             <span className="px-2 py-0.5 bg-secondary text-[10px] font-bold rounded-lg border border-border">
-              +{admin.permissions.length - 2}
+              +{(admin.permissions?.length || 0) - 2}
             </span>
           )}
         </div>

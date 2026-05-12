@@ -63,11 +63,11 @@ export default function ViewUserModal({ user, isOpen, onClose }: ViewUserModalPr
         <div className="p-6 space-y-6">
           <div className="flex flex-col items-center">
             <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-black mb-3 italic">
-              {user.name.charAt(0)}
+              {user?.name?.charAt(0) || 'U'}
             </div>
-            <h4 className="text-xl font-black italic">{user.name}</h4>
+            <h4 className="text-xl font-black italic">{user?.name || 'Unknown User'}</h4>
             <span className="px-3 py-1 bg-primary/10 text-primary text-xs font-black uppercase rounded-full mt-1 tracking-widest italic">
-              {user.role}
+              {user?.role || 'User'}
             </span>
           </div>
 
