@@ -244,5 +244,16 @@ service cloud.firestore {
       allow update: if isAdmin() || (isSignedIn() && request.auth.uid in resource.data.targetUserIds);
       allow delete: if isAdmin();
     }
+
+    // ──────────────────────────────────────────────────────────────────
+    // Fee Reminder Deduplication Records
+    // Server-only (Admin SDK bypasses rules). Admins can read for audit.
+    // ──────────────────────────────────────────────────────────────────
+    match /feeRemindersSent/{dedupeKey} {
+      // Only admins can read dedup records (for audit/debugging)
+      allow read: if isAdmin();
+      // Clients can NEVER write — only the Admin SDK (Cloud Function) does
+      allow write: if false;
+    }
   }
 }

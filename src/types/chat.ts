@@ -26,6 +26,30 @@ export interface Conversation {
 // ─────────────────────────────────────────────────────────────────────────────
 // conversations/{conversationId}/messages/{messageId}
 // ─────────────────────────────────────────────────────────────────────────────
+export interface FeeReminderMetadata {
+  feeStructureId: string;
+  feeInstallmentId: string;
+  studentFeeInstallmentId: string;
+  installmentName: string;
+  amount: number;
+  dueDate: string;
+  branchId: string;
+  studentId: string;
+  studentName: string;
+  /** Reminder type key — used for dedup and UI theming */
+  reminderType:
+    | "due_today"
+    | "due_in_1d"
+    | "due_in_2d"
+    | "due_in_3d"
+    | "due_in_4d"
+    | "due_in_5d"
+    | "overdue_day1"
+    | "overdue_day2"
+    | "overdue_day3"
+    | string;
+}
+
 export interface Message {
   id: string;
   senderId: string;
@@ -40,6 +64,12 @@ export interface Message {
   status?: "sending" | "sent" | "error";
   /** Whether the message is local-only (Firestore metadata) */
   hasPendingWrites?: boolean;
+  /** System message type — only present on automated system messages */
+  messageType?: "system";
+  /** Subtype for system messages */
+  subtype?: "fee_reminder" | string;
+  /** Structured metadata for fee reminder messages */
+  metadata?: FeeReminderMetadata;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

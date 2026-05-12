@@ -97,6 +97,29 @@
         { "fieldPath": "studentId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "studentFeeInstallments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status",  "order": "ASCENDING" },
+        { "fieldPath": "dueDate", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "feeRemindersSent",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sentAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "studentFeeInstallments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "nextReminderDate", "order": "ASCENDING" },
+        { "fieldPath": "status",           "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

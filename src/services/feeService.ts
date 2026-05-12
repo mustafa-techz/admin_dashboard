@@ -174,6 +174,12 @@ export const feeService = {
       installments.forEach((inst) => {
         const sfiRef = doc(studentFeeInstallmentsCol);
         sfiRefs.push({ inst, sfiId: sfiRef.id });
+
+        // Compute nextReminderDate: 5 days before dueDate for efficient Cloud Function queries
+        const reminderDate = new Date(inst.dueDate);
+        reminderDate.setDate(reminderDate.getDate() - 5);
+        const nextReminderDate = reminderDate.toISOString().split('T')[0];
+
         batch.set(sfiRef, {
           studentId,
           userId: parentUserId,
@@ -187,6 +193,7 @@ export const feeService = {
           status: 'pending',
           order: inst.order,
           branchId: feeStructure.branchId,
+          nextReminderDate,
         });
       });
 
@@ -233,6 +240,12 @@ export const feeService = {
         for (const inst of installments) {
           const sfiRef = doc(studentFeeInstallmentsCol);
           sfiRefsForStudent.push({ inst, sfiId: sfiRef.id });
+
+          // Compute nextReminderDate: 5 days before dueDate
+          const reminderDate = new Date(inst.dueDate);
+          reminderDate.setDate(reminderDate.getDate() - 5);
+          const nextReminderDate = reminderDate.toISOString().split('T')[0];
+
           batch.set(sfiRef, {
             studentId: student.id,
             userId: student.userId,
@@ -246,6 +259,7 @@ export const feeService = {
             status: 'pending',
             order: inst.order,
             branchId: feeStructure.branchId,
+            nextReminderDate,
           });
           opCount++;
 
@@ -401,6 +415,8 @@ export const feeService = {
         status: newInstStatus,
         lastPaymentDate: new Date().toISOString(),
         lastPaymentMode: paymentData.paymentMode,
+        // Clear nextReminderDate once fully paid — stops future reminders
+        ...(newInstStatus === 'paid' ? { nextReminderDate: null } : {}),
       });
 
       // 2. Update aggregate assignment
