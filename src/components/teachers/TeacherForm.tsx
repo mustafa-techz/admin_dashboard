@@ -8,7 +8,7 @@ import { useBranchStore } from '@/store/branchStore';
 
 interface TeacherFormProps {
   initialData?: Partial<Teacher>;
-  onSubmit: (values: any) => void;
+  onSubmit: (values: TeacherFormData) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
@@ -106,12 +106,12 @@ export default function TeacherForm({ initialData, onSubmit, onCancel, isLoading
         </div>
 
         <Formik
-          initialValues={mergedInitial as any}
+          initialValues={mergedInitial}
           validationSchema={validationSchema}
           onSubmit={handleSubmit}
           enableReinitialize
         >
-          {({ errors, touched, isValid, values, setFieldValue }) => (
+          {({ values, setFieldValue }) => (
             <Form className="p-6 space-y-8">
               {/* Basic Info */}
               <div className="space-y-4">
@@ -229,12 +229,12 @@ export default function TeacherForm({ initialData, onSubmit, onCancel, isLoading
                           key={sub}
                           type="button"
                           onClick={() => {
-                            const next = values.subjects.includes(sub)
-                              ? values.subjects.filter((s: string) => s !== sub)
+                            const next = (values.subjects || []).includes(sub)
+                              ? (values.subjects || []).filter((s: string) => s !== sub)
                               : [...values.subjects, sub];
                             setFieldValue('subjects', next);
                           }}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${values.subjects.includes(sub)
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${(values.subjects || []).includes(sub)
                             ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20 scale-105'
                             : 'bg-muted text-muted-foreground hover:bg-muted/80'
                             }`}
@@ -255,12 +255,12 @@ export default function TeacherForm({ initialData, onSubmit, onCancel, isLoading
                           key={cls.id}
                           type="button"
                           onClick={() => {
-                            const next = values.classIds.includes(cls.id)
-                              ? values.classIds.filter((id: string) => id !== cls.id)
+                            const next = (values.classIds || []).includes(cls.id)
+                              ? (values.classIds || []).filter((id: string) => id !== cls.id)
                               : [...values.classIds, cls.id];
                             setFieldValue('classIds', next);
                           }}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${values.classIds.includes(cls.id)
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${(values.classIds || []).includes(cls.id)
                             ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20 scale-105'
                             : 'bg-muted text-muted-foreground hover:bg-muted/80'
                             }`}

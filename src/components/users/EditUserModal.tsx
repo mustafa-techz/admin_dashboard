@@ -25,9 +25,9 @@ export default function EditUserModal({ user, isOpen, onClose, onSubmit, isLoadi
 
   const initialValues: UpdateUserData = {
     uid: user.uid,
-    name: user.name,
-    email: user.email,
-    role: user.role,
+    name: user?.name || '',
+    email: user?.email || '',
+    role: user?.role || 'teacher',
   };
 
   return (

@@ -53,6 +53,7 @@ export function useAssessmentById(id: string) {
     queryKey: assessmentKeys.detail(id),
     queryFn: () => assessmentService.getAssessmentById(id),
     enabled: !!id,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -61,6 +62,7 @@ export function useExamSchedule(assessmentId: string) {
     queryKey: assessmentKeys.schedule(assessmentId),
     queryFn: () => assessmentService.getSchedule(assessmentId),
     enabled: !!assessmentId,
+    staleTime: 5 * 60 * 1000,
     placeholderData: keepPreviousData,
   });
 }
@@ -70,6 +72,7 @@ export function useSubjectMarks(assessmentId: string, subject: string) {
     queryKey: assessmentKeys.subjectMarks(assessmentId, subject),
     queryFn: () => assessmentService.getSubjectMarks(assessmentId, subject),
     enabled: !!assessmentId && !!subject,
+    staleTime: 2 * 60 * 1000,
   });
 }
 
@@ -78,6 +81,7 @@ export function useAllMarks(assessmentId: string) {
     queryKey: assessmentKeys.allMarks(assessmentId),
     queryFn: () => assessmentService.getAllMarks(assessmentId),
     enabled: !!assessmentId,
+    staleTime: 2 * 60 * 1000,
   });
 }
 
@@ -86,6 +90,7 @@ export function useAllSummaries(assessmentId: string) {
     queryKey: assessmentKeys.summaries(assessmentId),
     queryFn: () => assessmentService.getAllSummaries(assessmentId),
     enabled: !!assessmentId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -94,6 +99,7 @@ export function useStudentSummary(assessmentId: string, studentId: string) {
     queryKey: assessmentKeys.studentSummary(assessmentId, studentId),
     queryFn: () => assessmentService.getStudentSummary(assessmentId, studentId),
     enabled: !!assessmentId && !!studentId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

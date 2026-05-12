@@ -4,8 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { Student } from '@/types/student';
-import { ClassMaster, SectionMaster, BranchMaster } from '@/types/masterData';
-import { classService, sectionService, branchService } from '@/services/firebase/masterDataService';
+import { ClassMaster, SectionMaster } from '@/types/masterData';
+import { classService, sectionService } from '@/services/firebase/masterDataService';
 import { useBranchStore } from '@/store/branchStore';
 
 
@@ -129,7 +129,7 @@ export default function StudentForm({ initialData, onSubmit, onCancel, isLoading
           validationSchema={validationSchema(isEditing)}
           onSubmit={handleSubmit}
         >
-          {({ errors, touched, isValid, values }) => (
+          {({ touched, isValid, values }) => (
             <Form className="p-6 space-y-8">
               {/* Personal Info */}
               <div className="space-y-4">
@@ -226,12 +226,12 @@ export default function StudentForm({ initialData, onSubmit, onCancel, isLoading
                 <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground border-b border-border pb-2">Parent / Guardian Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-bold mb-1">Father's Name *</label>
+                    <label className="block text-sm font-bold mb-1">Father&apos;s Name *</label>
                     <Field name="parentDetails.fatherName" placeholder="Father's Name" className="w-full px-3 py-2 bg-secondary border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
                     <ErrorMessage name="parentDetails.fatherName" component="div" className="text-red-500 text-xs mt-1 font-bold" />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold mb-1">Mother's Name</label>
+                    <label className="block text-sm font-bold mb-1">Mother&apos;s Name</label>
                     <Field name="parentDetails.motherName" placeholder="Mother's Name" className="w-full px-3 py-2 bg-secondary border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
                   </div>
                   <div>

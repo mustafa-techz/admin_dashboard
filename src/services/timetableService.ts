@@ -3,9 +3,7 @@ import {
   doc,
   getDocs,
   getDoc,
-  setDoc,
   updateDoc,
-  deleteDoc,
   query,
   where,
   writeBatch,
@@ -14,7 +12,6 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/firebase/firestore';
 import { executeFirebaseOp } from '@/lib/api-errors';
-import { studentService } from './studentService';
 import type {
   Timetable,
   TimetableFormData,

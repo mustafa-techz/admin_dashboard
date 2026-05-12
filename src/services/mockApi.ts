@@ -147,7 +147,7 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
   };
 };
 
-export const markAttendance = async (studentId: string, status: 'present' | 'absent'): Promise<void> => {
+export const markAttendance = async (_studentId: string, _status: 'present' | 'absent'): Promise<void> => {
   return new Promise((resolve) => {
     setTimeout(resolve, 500);
   });

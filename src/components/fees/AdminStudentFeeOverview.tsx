@@ -289,7 +289,7 @@ export default function AdminStudentFeeOverview() {
     }
     if (search) {
       const q = search.toLowerCase();
-      list = list.filter((a) => a.studentName.toLowerCase().includes(q));
+      list = list.filter((a) => (a.studentName?.toLowerCase() || '').includes(q));
     }
 
     return list;

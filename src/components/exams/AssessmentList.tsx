@@ -138,7 +138,7 @@ function StatusActions({
               }
 
               const allMarks = await assessmentService.getAllMarks(assessment.id);
-              const requiredCount = classStudents.length * assessment.subjects.length;
+              const requiredCount = classStudents.length * (assessment.subjects?.length || 0);
 
               if (allMarks.length < requiredCount) {
                 const missingCount = requiredCount - allMarks.length;
@@ -260,7 +260,7 @@ const AssessmentCard = React.memo(function AssessmentCard({
         <span className="px-2 py-0.5 bg-muted rounded-md font-bold uppercase">
           {a.type}
         </span>
-        <span>{a.subjects.length} subjects</span>
+        <span>{a.subjects?.length || 0} subjects</span>
       </div>
     </div>
   );

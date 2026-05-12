@@ -9,18 +9,17 @@ import {
   IndianRupee, 
   CalendarDays, 
   ClipboardList, 
-  MoreHorizontal, 
   GraduationCap,
   Settings,
-  LogOut,
-  FileText
+  LogOut
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { UserRole } from '@/types/user';
 
 export type NavItem = {
   label: string;
   href: string;
-  icon: any;
+  icon: LucideIcon;
   roles?: UserRole[];
 };
 

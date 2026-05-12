@@ -33,7 +33,7 @@ export const studentService = {
       const sectionDocRef = doc(db, "sections", student.sectionId);
 
       // Remove password from object before Firestore save
-      const { password, ...safeParentDetails } = student.parentDetails;
+      const { password, ...safeParentDetails } = student?.parentDetails || {} as any;
 
       /**
        * STEP 1

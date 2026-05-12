@@ -23,8 +23,8 @@ export default function ChatSidebar({ onSelectChat, activeChatId }: ChatSidebarP
 
 
   const filtered = chats.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.lastMessage.toLowerCase().includes(search.toLowerCase())
+    (c.name?.toLowerCase() || '').includes(search.toLowerCase()) ||
+    (c.lastMessage?.toLowerCase() || '').includes(search.toLowerCase())
   );
 
   const totalUnread = chats.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0);

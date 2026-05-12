@@ -98,11 +98,11 @@ export default function StudentViewModal({ isOpen, onClose, student }: StudentVi
                   </div>
                   <div className="grid grid-cols-2 gap-y-4 gap-x-2">
                      <div>
-                        <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Father's Name</p>
+                        <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Father&apos;s Name</p>
                         <p className="text-sm font-bold">{student.parentDetails?.fatherName}</p>
                      </div>
                      <div>
-                        <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Mother's Name</p>
+                        <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Mother&apos;s Name</p>
                         <p className="text-sm font-bold">{student.parentDetails?.motherName || 'N/A'}</p>
                      </div>
                      <div>

@@ -1,4 +1,4 @@
-import { X, User, Phone, MapPin, Calendar, BookOpen, GraduationCap, Mail } from 'lucide-react';
+import { X, MapPin, BookOpen, GraduationCap, Mail } from 'lucide-react';
 import { Teacher } from '@/types/teacher';
 import { useQuery } from '@tanstack/react-query';
 import { classService, branchService } from '@/services/firebase/masterDataService';
@@ -24,7 +24,6 @@ export default function TeacherViewModal({ isOpen, onClose, teacher }: TeacherVi
   if (!isOpen || !teacher) return null;
 
   const classTeacherName = classes.find(c => c.id === teacher.classTeacher)?.className || 'None';
-  const taughtClasses = teacher.classIds.map(id => classes.find(c => c.id === id)?.className || id).join(', ');
 
   // Resolve branch names from branchIds[] or fallback to branchId
   const teacherBranchIds = teacher.branchIds?.length ? teacher.branchIds : teacher.branchId ? [teacher.branchId] : [];
@@ -77,7 +76,7 @@ export default function TeacherViewModal({ isOpen, onClose, teacher }: TeacherVi
               <div className="col-span-2">
                 <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Classes Taught</p>
                 <div className="flex flex-wrap gap-2 mt-1">
-                  {teacher.classIds.map(id => {
+                  {(teacher.classIds || []).map(id => {
                     const name = classes.find(c => c.id === id)?.className || id;
                     return <span key={id} className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black rounded-md border border-primary/20">CLASS {name}</span>;
                   })}
@@ -93,7 +92,7 @@ export default function TeacherViewModal({ isOpen, onClose, teacher }: TeacherVi
               <h4 className="font-bold text-sm tracking-tight text-foreground">Subjects</h4>
             </div>
             <div className="flex flex-wrap gap-2">
-              {teacher.subjects.map(sub => (
+              {(teacher.subjects || []).map(sub => (
                 <span key={sub} className="px-3 py-1 bg-background border border-border text-xs font-bold rounded-lg shadow-sm">{sub}</span>
               ))}
             </div>

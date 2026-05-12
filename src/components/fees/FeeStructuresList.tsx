@@ -255,8 +255,8 @@ function AssignFeeModal({
     const query = search.toLowerCase();
     return students.filter(
       (s) =>
-        s.fullName.toLowerCase().includes(query) ||
-        s.rollNumber.toLowerCase().includes(query)
+        (s.fullName?.toLowerCase() || '').includes(query) ||
+        (s.rollNumber?.toLowerCase() || '').includes(query)
     );
   }, [students, search]);
 
@@ -280,7 +280,7 @@ function AssignFeeModal({
   const handleAssign = async () => {
     const selectedList = students
       .filter((s) => selectedStudents.has(s.id))
-      .map((s) => ({ id: s.id, fullName: s.fullName, userId: s.parentDetails?.userId || '' }));
+      .map((s) => ({ id: s.id, fullName: s.fullName, userId: s?.parentDetails?.userId || '' }));
 
     await assignMutation.mutateAsync({
       students: selectedList,

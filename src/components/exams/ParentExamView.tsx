@@ -203,7 +203,7 @@ export default function ParentExamView() {
                   <div>
                     <h3 className="text-base font-black text-foreground">{a.name}</h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {a.type === 'exam' ? 'Exam' : 'Test'} · {a.academicYear} · {a.subjects.length} subjects
+                      {a.type === 'exam' ? 'Exam' : 'Test'} · {a.academicYear} · {a.subjects?.length || 0} subjects
                     </p>
                   </div>
                 </div>

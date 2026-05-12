@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useAuthStore } from '@/store/authStore';
 import {
   useTimetables,
   usePublishTimetable,
@@ -13,15 +12,13 @@ import { classService, sectionService } from '@/services/firebase/masterDataServ
 import TimetableGrid from './TimetableGrid';
 import { cn } from '@/lib/utils';
 import { TIMETABLE_STATUS_COLORS, TIMETABLE_STATUS_LABELS } from '@/types/timetable';
-import type { Timetable } from '@/types/timetable';
 import {
   ChevronRight,
   Globe,
   EyeOff,
   Trash2,
   Loader2,
-  CalendarDays,
-  Archive,
+  CalendarDays
 } from 'lucide-react';
 import ConfirmationModal from '@/components/shared/ConfirmationModal';
 

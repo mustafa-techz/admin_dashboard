@@ -41,6 +41,7 @@ export default function StudentDetailPage() {
     queryKey: ['student', id],
     queryFn: () => studentService.getStudentById(id as string),
     enabled: !!id,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Single read: student_stats/{studentId}
@@ -135,7 +136,7 @@ export default function StudentDetailPage() {
               {
                 icon: Phone,
                 label: 'Guardian Contact',
-                value: student.parentDetails?.phone,
+                value: student?.parentDetails?.phone,
               },
               {
                 icon: MapPin,
@@ -219,7 +220,7 @@ export default function StudentDetailPage() {
                     Father's Name
                   </span>
                   <span className="text-sm font-black">
-                    {student.parentDetails?.fatherName}
+                    {student?.parentDetails?.fatherName}
                   </span>
                 </div>
               </div>

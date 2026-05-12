@@ -7,7 +7,7 @@ import {
   getDoc,
   serverTimestamp,
   query,
-  orderBy,
+
   where,
   runTransaction
 } from "firebase/firestore";
@@ -68,7 +68,7 @@ export const teacherService = {
       const newTeacherRef = doc(db, "teachers", createdUser.uid);
       
       // Ensure branchIds is always stored as an array for multi-branch queries
-      const branchIds = teacher.branchIds && teacher.branchIds.length > 0
+      const branchIds = teacher.branchIds && (teacher.branchIds?.length || 0) > 0
         ? teacher.branchIds
         : teacher.branchId
           ? [teacher.branchId]

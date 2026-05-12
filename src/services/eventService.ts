@@ -223,14 +223,12 @@ export const eventService = {
     try {
       const ref = doc(db, EVENTS_COLLECTION, eventId);
 
-      const { id: _id, createdAt: _ca, ...rest } =
-        data as Partial<SchoolEvent> & {
-          id?: string;
-          createdAt?: Timestamp;
-        };
+      const payload = { ...data };
+      delete payload.id;
+      delete payload.createdAt;
 
       await updateDoc(ref, {
-        ...rest,
+        ...payload,
         updatedAt: serverTimestamp(),
       });
 
