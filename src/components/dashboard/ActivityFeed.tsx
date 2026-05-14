@@ -98,7 +98,7 @@ const formatActionText = (log: ActivityLog): string => {
 };
 
 export default function ActivityFeed({ branchId }: { branchId?: string }) {
-  const { data, isLoading, isError, refetch, isFetching } = useActivityLogs(branchId, 20);
+  const { data, isLoading, isError, refetch, isFetching } = useActivityLogs(branchId, 5);
   const router = useRouter();
 
   // If error or no admin user, hide or show fallback

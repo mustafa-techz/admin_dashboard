@@ -36,12 +36,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       {pathname !== '/login' && <Header />}
 
       <main
-        className={`flex-1 pb-20 md:pb-0 relative z-10 ${pathname !== '/chat' ? 'md:pt-16' : ''
-          }`}
+        className={`flex-1 relative z-10 ${pathname !== '/chat' ? 'pb-20 md:pb-0 md:pt-16' : ''}`}
       >
         {pathname === '/chat' ? (
-          // Full-height, no padding — the chat layout fills the viewport
-          <div className="h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)]">
+          // Full-height. On mobile, subtract Header (4rem) + BottomNav (4rem) = 8rem. On desktop, just Header (4rem).
+          <div className="h-[calc(100dvh-8rem)] md:h-[calc(100dvh-4rem)] w-full">
             {children}
           </div>
         ) : (

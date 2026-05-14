@@ -19,6 +19,7 @@ interface FilterBarProps {
   onAddClick?: () => void;
   addLabel?: string;
   placeholder?: string;
+  authorizedClassIds?: string[];
 }
 
 const FilterBar = React.memo(function FilterBar({
@@ -26,13 +27,19 @@ const FilterBar = React.memo(function FilterBar({
   onFilterChange,
   onAddClick,
   addLabel = "Add New",
-  placeholder = "Search..."
+  placeholder = "Search...",
+  authorizedClassIds
 }: FilterBarProps) {
-  const { data: classes = [] } = useQuery({
+  const { data: classesData = [] } = useQuery({
     queryKey: ['classes'],
     queryFn: () => classService.getClasses(),
     staleTime: 5 * 60 * 1000,
   });
+
+  const classes = React.useMemo(() => {
+    if (!authorizedClassIds || authorizedClassIds.length === 0) return classesData;
+    return classesData.filter(cls => authorizedClassIds.includes(cls.id));
+  }, [classesData, authorizedClassIds]);
 
   return (
     <div className="flex flex-col sm:flex-row items-center gap-3 mb-6">

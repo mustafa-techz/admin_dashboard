@@ -24,8 +24,14 @@ export function getAuthorizedClassIds(
 ): string[] | undefined {
   if (!user) return undefined;
   if (user.role === 'teacher') {
-    // Return empty array if teacher has no assigned classes, rather than undefined (which implies admin/all)
-    return user.classIds || [];
+    const ids: string[] = [];
+    if (user.classIds && user.classIds.length > 0) {
+      ids.push(...user.classIds);
+    }
+    if (user.classTeacherOf && !ids.includes(user.classTeacherOf)) {
+      ids.push(user.classTeacherOf);
+    }
+    return ids;
   }
   return undefined;
 }

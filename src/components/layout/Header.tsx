@@ -1,6 +1,7 @@
 import { useAuthStore } from '@/store/authStore';
 import { useBranchStore } from '@/store/branchStore';
 import { Bell, User as UserIcon, MapPin } from 'lucide-react';
+import schoolConfig from '@/config/school.json';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -101,8 +102,8 @@ export default function Header() {
       <div className="container flex h-16 items-center justify-between px-4 md:px-8 mx-auto max-w-7xl">
         <div className="flex items-center gap-2">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold text-xl">S</div>
-            <span className="font-bold text-xl tracking-tight hidden sm:block">SchoolDash</span>
+            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold text-xl">{schoolConfig.schoolName.charAt(0)}</div>
+            <span className="font-bold text-xl tracking-tight hidden sm:block">{schoolConfig.schoolName}</span>
           </Link>
 
           <nav className="ml-8 hidden md:flex items-center gap-6">
