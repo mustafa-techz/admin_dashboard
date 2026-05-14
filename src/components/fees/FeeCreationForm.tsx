@@ -97,7 +97,7 @@ export default function FeeCreationForm() {
     queryFn: () => branchService.getBranches(),
   });
 
-  const { selectedBranchId } = useBranchStore();
+  const selectedBranchId = useBranchStore(state => state.selectedBranchId);
 
   const createFeeStructure = useCreateFeeStructure();
   const academicYears = useMemo(() => getAcademicYearOptions(), []);

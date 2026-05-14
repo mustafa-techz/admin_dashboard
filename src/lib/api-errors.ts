@@ -1,10 +1,10 @@
 export class AppError extends Error {
   public readonly code: string;
   public readonly statusCode: number;
-  public readonly details?: any;
+  public readonly details?: unknown;
   public readonly isOperational: boolean;
 
-  constructor(message: string, code: string, statusCode = 500, details?: any) {
+  constructor(message: string, code: string, statusCode = 500, details?: unknown) {
     super(message);
     this.name = 'AppError';
     this.code = code;
@@ -20,7 +20,7 @@ export class AppError extends Error {
  * Standardizes Firebase/Firestore errors into safe AppErrors.
  * Prevents leaking sensitive backend details to the frontend.
  */
-export function handleFirebaseError(error: any, context?: string): AppError {
+export function handleFirebaseError(error: unknown, context?: string): AppError {
   // Log the original detailed error internally
   console.error(`[Firebase Error] ${context ? `[${context}] ` : ''}`, error);
 
@@ -28,7 +28,7 @@ export function handleFirebaseError(error: any, context?: string): AppError {
     return error;
   }
 
-  const errorCode = error?.code || 'unknown';
+  const errorCode = (error as Record<string, unknown> | null)?.code as string || 'unknown';
   
   // Map common Firebase errors to user-friendly messages
   switch (errorCode) {

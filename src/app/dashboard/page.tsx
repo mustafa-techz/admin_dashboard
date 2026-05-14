@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
@@ -8,11 +8,11 @@ import { getDashboardStats } from '@/services/mockApi';
 import DashboardCard from '@/components/dashboard/DashboardCard';
 import ActivityFeed from '@/components/dashboard/ActivityFeed';
 import DashboardAnnouncements from '@/components/dashboard/DashboardAnnouncements';
-import StatCircle from '@/components/shared/StatCircle';
+
 import { 
   Users, UserCheck, BookOpen, AlertCircle, Calendar, 
-  Activity as ActivityIcon, RefreshCw, CreditCard, Clock, 
-  ClipboardCheck, MessageSquare, Award, FileText 
+  CreditCard, Clock,
+  ClipboardCheck, MessageSquare, Award 
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { DashboardStats } from '@/types';
@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 import { useBranchFeeAssignments } from '@/hooks/useFees';
 
 export default function DashboardPage() {
-  const { role } = useAuthStore();
+  const role = useAuthStore(state => state.role);
   const { user } = useAuth();
   const router = useRouter();
 
@@ -50,7 +50,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
       {/* Top Greeting Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-card p-6 lg:p-8 rounded-3xl border border-border shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6  p-6 lg:p-8 rounded-3xl ">
         <div className="space-y-2">
           <h2 className="text-3xl md:text-4xl font-black tracking-tight text-foreground">
             Hi, {firstName} 👋
@@ -95,12 +95,12 @@ export default function DashboardPage() {
 function AdminDashboard({ stats }: { stats?: DashboardStats }) {
   const router = useRouter();
   const { students } = useStudents();
-  const { selectedBranchId } = useBranchStore();
+  const selectedBranchId = useBranchStore(state => state.selectedBranchId);
   const { data: upcomingEvents, isLoading: isEventsLoading } = useUpcomingAnnouncements(3);
   const { data: branchFeeAssignments, isLoading: isFeesLoading } = useBranchFeeAssignments(selectedBranchId || '');
   
   // Dynamic Attendance Summary (Branch-scoped via students list)
-  const currentDate = new Date().toISOString().split('T')[0];
+  const currentDate = useMemo(() => new Date().toISOString().split('T')[0], []);
   const { data: todaySessions, isLoading: isAttendanceLoading } = useQuery({
     queryKey: ['daily-attendance-sessions', currentDate],
     queryFn: async () => {
@@ -256,7 +256,7 @@ function AdminDashboard({ stats }: { stats?: DashboardStats }) {
 
 function TeacherDashboard() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore(state => state.user);
   const { students, isLoading: isStudentsLoading } = useStudents();
   const { data: timetables, isLoading: isTimetablesLoading } = useTimetables(user?.branchId || '', 'published');
   const { data: events, isLoading: isEventsLoading } = useAdminEvents();
@@ -415,7 +415,7 @@ function QuickActionCard({ icon, label, onClick, color }: { icon: React.ReactNod
       className="flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border border-border bg-card hover:bg-muted/50 transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-95 group"
     >
       <div className={cn("p-3 rounded-full text-white shadow-md shadow-black/5 transition-transform group-hover:scale-110", color)}>
-        {React.cloneElement(icon as React.ReactElement, { size: 20 })}
+        {React.cloneElement(icon as React.ReactElement<{ size: number }>, { size: 20 })}
       </div>
       <span className="text-xs font-bold text-foreground/80 group-hover:text-foreground transition-colors">{label}</span>
     </button>

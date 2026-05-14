@@ -19,7 +19,8 @@ import { classService, sectionService } from '@/services/firebase/masterDataServ
 export default function StudentsPage() {
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState('');
-  const { user, role } = useAuthStore();
+  const user = useAuthStore(state => state.user);
+  const role = useAuthStore(state => state.role);
   const queryClient = useQueryClient();
   const router = useRouter();
 

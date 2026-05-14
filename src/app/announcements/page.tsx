@@ -14,8 +14,8 @@ import { useBranchStore } from '@/store/branchStore';
  * from the parent's student profile (e.g. from Firestore or Zustand store).
  */
 export default function AnnouncementsPage() {
-  const { role } = useAuthStore();
-  const { selectedBranchId } = useBranchStore();
+  const role = useAuthStore(state => state.role);
+  const selectedBranchId = useBranchStore(state => state.selectedBranchId);
 
   // For parents: ideally fetch their child's classId/sectionId from their profile.
   // Here we pass no filter (shows school-wide events) as a safe default.

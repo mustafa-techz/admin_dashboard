@@ -106,7 +106,7 @@ export default function StudentForm({ initialData, onSubmit, onCancel, isLoading
     staleTime: 5 * 60 * 1000,
   });
 
-  const { selectedBranchId } = useBranchStore();
+  const selectedBranchId = useBranchStore(state => state.selectedBranchId);
 
   const handleSubmit = (values: typeof defaultValues) => {
     const finalValues = {

@@ -7,9 +7,10 @@ import {
   getDoc,
   serverTimestamp,
   query,
-
   where,
-  runTransaction
+  runTransaction,
+  QuerySnapshot,
+  DocumentData,
 } from "firebase/firestore";
 import { db } from "../firebase/firestore";
 import { Teacher, TeacherFormData } from "../types/teacher";
@@ -68,7 +69,7 @@ export const teacherService = {
       const newTeacherRef = doc(db, "teachers", createdUser.uid);
       
       // Ensure branchIds is always stored as an array for multi-branch queries
-      const branchIds = teacher.branchIds && (teacher.branchIds?.length || 0) > 0
+      const branchIds = teacher.branchIds && teacher.branchIds.length > 0
         ? teacher.branchIds
         : teacher.branchId
           ? [teacher.branchId]
@@ -106,7 +107,7 @@ export const teacherService = {
         const seen = new Set<string>();
         const teachers: Teacher[] = [];
 
-        const processResult = (result: PromiseSettledResult<any>) => {
+        const processResult = (result: PromiseSettledResult<QuerySnapshot<DocumentData>>) => {
           if (result.status === 'fulfilled') {
             for (const snap of result.value.docs) {
               if (seen.has(snap.id)) continue;
@@ -127,8 +128,8 @@ export const teacherService = {
 
         // Sort by createdAt desc locally
         return teachers.sort((a, b) => {
-          const timeA = (a as any).createdAt?.seconds || 0;
-          const timeB = (b as any).createdAt?.seconds || 0;
+          const timeA = (a as Teacher & { createdAt?: { seconds: number } }).createdAt?.seconds || 0;
+          const timeB = (b as Teacher & { createdAt?: { seconds: number } }).createdAt?.seconds || 0;
           return timeB - timeA;
         });
       }
@@ -145,8 +146,8 @@ export const teacherService = {
 
       // Sort by createdAt desc locally
       return teachers.sort((a, b) => {
-        const timeA = (a as any).createdAt?.seconds || 0;
-        const timeB = (b as any).createdAt?.seconds || 0;
+        const timeA = (a as Teacher & { createdAt?: { seconds: number } }).createdAt?.seconds || 0;
+        const timeB = (b as Teacher & { createdAt?: { seconds: number } }).createdAt?.seconds || 0;
         return timeB - timeA;
       });
     } catch (error) {

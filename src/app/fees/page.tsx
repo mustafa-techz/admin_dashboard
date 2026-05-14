@@ -85,7 +85,8 @@ function ParentFeeDashboardWrapper({
 }
 
 export default function FeesPage() {
-  const { role, user } = useAuthStore();
+  const role = useAuthStore(state => state.role);
+  const user = useAuthStore(state => state.user);
 
   const router = useRouter();
   const queryClient = useQueryClient();

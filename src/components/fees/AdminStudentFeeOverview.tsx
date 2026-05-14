@@ -272,7 +272,7 @@ export default function AdminStudentFeeOverview() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedFeeId, setSelectedFeeId] = useState<string>('all');
 
-  const { selectedBranchId } = useBranchStore();
+  const selectedBranchId = useBranchStore(state => state.selectedBranchId);
 
   const branchId = selectedBranchId;
   const { data: feeStructures = [] } = useFeeStructures(branchId);

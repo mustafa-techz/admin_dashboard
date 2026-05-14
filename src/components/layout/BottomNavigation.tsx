@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { NAVIGATION_CONFIG } from '@/config/navigation';
 
 export default function BottomNavigation() {
-  const { role } = useAuthStore();
+  const role = useAuthStore(state => state.role);
   const pathname = usePathname();
 
   const navLinks = role && NAVIGATION_CONFIG.bottomNav[role] 

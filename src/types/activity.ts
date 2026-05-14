@@ -34,7 +34,7 @@ export interface ActivityLog {
   entityType: string;
   entityId: string;
   
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   
   createdAt: number;
   expiresAt: number;

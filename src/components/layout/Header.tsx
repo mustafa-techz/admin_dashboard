@@ -24,8 +24,11 @@ import { canSelectBranch, isAdminRole } from '@/lib/permissions';
 import { getAuthorizedBranchIds } from '@/lib/teacherScope';
 
 export default function Header() {
-  const { user, role } = useAuthStore();
-  const { selectedBranch, selectedBranchId, setSelectedBranch } = useBranchStore();
+  const user = useAuthStore(state => state.user);
+  const role = useAuthStore(state => state.role);
+  const selectedBranch = useBranchStore(state => state.selectedBranch);
+  const selectedBranchId = useBranchStore(state => state.selectedBranchId);
+  const setSelectedBranch = useBranchStore(state => state.setSelectedBranch);
   const totalUnreadCount = useChatStore((state) => state.totalUnreadCount);
   const pathname = usePathname();
 
@@ -41,7 +44,7 @@ export default function Header() {
     // Admin/Sub-admin see all branches
     if (isAdminRole(role)) return allBranches;
     // Teacher sees only assigned branches
-    const authorized = getAuthorizedBranchIds(user as any);
+    const authorized = getAuthorizedBranchIds(user as Parameters<typeof getAuthorizedBranchIds>[0]);
     if (authorized && authorized.length > 0) {
       return allBranches.filter((b) => authorized.includes(b.id));
     }
@@ -76,8 +79,11 @@ export default function Header() {
     await requestChatNotificationPermission();
   };
 
-  const filteredLinks = NAVIGATION_CONFIG.desktopNav.filter(
-    link => !link.roles || (role && link.roles.includes(role))
+  const filteredLinks = useMemo(() => 
+    NAVIGATION_CONFIG.desktopNav.filter(
+      link => !link.roles || (role && link.roles.includes(role))
+    ),
+    [role]
   );
 
   const isActiveRoute = (linkHref: string) => {

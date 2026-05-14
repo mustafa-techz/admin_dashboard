@@ -134,7 +134,7 @@ function ResultCard({ assessmentId, studentId }: { assessmentId: string; student
 // Main Parent View
 // ─────────────────────────────────────────────────────────────────
 export default function ParentExamView() {
-  const { user } = useAuthStore();
+  const user = useAuthStore(state => state.user);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const { data: student, isLoading: studentLoading } = useQuery({

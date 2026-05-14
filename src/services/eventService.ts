@@ -13,6 +13,7 @@ import {
   QueryDocumentSnapshot,
   DocumentData,
   startAfter,
+  QueryConstraint,
 } from 'firebase/firestore';
 import { db } from '../firebase/firestore';
 import {
@@ -64,7 +65,7 @@ export const eventService = {
       const pageSize = filter.limit ?? 15;
 
       // Build base constraints
-      const constraints: any[] = [
+      const constraints: QueryConstraint[] = [
         where('publishedToParents', '==', true),
         where('isDeleted', '==', false),
         where('endAt', '>=', now),
@@ -101,7 +102,7 @@ export const eventService = {
       return { events, lastDoc: last };
 
     } catch (error) {
-      console.error('❌ Error fetching announcements:', error);
+      console.error('Error fetching announcements:', error);
       throw error;
     }
   },
@@ -118,7 +119,7 @@ export const eventService = {
     try {
       const now = Timestamp.now();
       
-      const constraints: any[] = [
+      const constraints: QueryConstraint[] = [
         where('publishedToParents', '==', true),
         where('isDeleted', '==', false),
         where('endAt', '>=', now),
@@ -136,7 +137,7 @@ export const eventService = {
       return snapshot.docs.map(docToEvent);
 
     } catch (error) {
-      console.error('❌ Error fetching upcoming announcements:', error);
+      console.error('Error fetching upcoming announcements:', error);
       throw error;
     }
   },
@@ -146,7 +147,7 @@ export const eventService = {
    */
   async getAllEvents(limitCount = 50, branchId?: string): Promise<SchoolEvent[]> {
     try {
-      const constraints: any[] = [
+      const constraints: QueryConstraint[] = [
         where('isDeleted', '==', false),
         orderBy('createdAt', 'desc'),
         limit(limitCount),
@@ -161,7 +162,7 @@ export const eventService = {
       return snapshot.docs.map(docToEvent);
 
     } catch (error) {
-      console.error('❌ Error fetching all events:', error);
+      console.error('Error fetching all events:', error);
       throw error;
     }
   },
@@ -189,7 +190,7 @@ export const eventService = {
       return ref.id;
 
     } catch (error) {
-      console.error('❌ Error creating event:', error);
+      console.error('Error creating event:', error);
       throw error;
     }
   },
@@ -208,7 +209,7 @@ export const eventService = {
       });
 
     } catch (error) {
-      console.error('❌ Error publishing event:', error);
+      console.error('Error publishing event:', error);
       throw error;
     }
   },
@@ -233,7 +234,7 @@ export const eventService = {
       });
 
     } catch (error) {
-      console.error('❌ Error updating event:', error);
+      console.error('Error updating event:', error);
       throw error;
     }
   },
@@ -251,7 +252,7 @@ export const eventService = {
       });
 
     } catch (error) {
-      console.error('❌ Error deleting event:', error);
+      console.error('Error deleting event:', error);
       throw error;
     }
   },
@@ -270,7 +271,7 @@ export const eventService = {
       });
 
     } catch (error) {
-      console.error('❌ Error archiving event:', error);
+      console.error('Error archiving event:', error);
       throw error;
     }
   },

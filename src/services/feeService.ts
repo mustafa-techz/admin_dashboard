@@ -3,16 +3,15 @@ import {
   doc,
   getDocs,
   getDoc,
-
   query,
   where,
   orderBy,
   serverTimestamp,
   writeBatch,
-  Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/firebase/firestore';
 import { executeFirebaseOp } from '@/lib/api-errors';
+import { tsToISO } from '@/lib/firestoreUtils';
 
 import type {
   FeeStructure,
@@ -35,14 +34,7 @@ const studentFeeAssignmentsCol = collection(db, 'studentFeeAssignments');
 const studentFeeInstallmentsCol = collection(db, 'studentFeeInstallments');
 const paymentsCol = collection(db, 'payments');
 
-// ─────────────────────────────────────────────────────────────────
-// Helper: Timestamp → ISO string
-// ─────────────────────────────────────────────────────────────────
-function tsToISO(ts: unknown): string {
-  if (ts instanceof Timestamp) return ts.toDate().toISOString();
-  if (typeof ts === 'string') return ts;
-  return new Date().toISOString();
-}
+
 
 // ─────────────────────────────────────────────────────────────────
 // Fee Structures
@@ -149,7 +141,7 @@ export const feeService = {
       const { studentService } = await import('./studentService');
       const student = await studentService.getStudentById(studentId);
       if (!student) throw new Error('Student not found');
-      const parentUserId = (student as any)?.parentDetails?.userId || '';
+      const parentUserId = student?.parentDetails?.userId || '';
 
       const batch = writeBatch(db);
 
@@ -269,7 +261,8 @@ export const feeService = {
             opCount = 0;
           }
         }
-        (student as any).sfiRefs = sfiRefsForStudent;
+
+
       }
 
       if (opCount > 0) {
@@ -350,7 +343,7 @@ export const feeService = {
           id: d.id,
           ...d.data(),
         }))
-        .sort((a: any, b: any) => (a.order || 0) - (b.order || 0)) as StudentFeeInstallment[];
+        .sort((a, b) => ((a as unknown as { order?: number }).order || 0) - ((b as unknown as { order?: number }).order || 0)) as StudentFeeInstallment[];
     }, 'getStudentFeeInstallments');
   },
 
@@ -371,7 +364,7 @@ export const feeService = {
           id: d.id,
           ...d.data(),
         }))
-        .sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()) as StudentFeeInstallment[];
+        .sort((a, b) => new Date((a as unknown as { dueDate: string }).dueDate).getTime() - new Date((b as unknown as { dueDate: string }).dueDate).getTime()) as StudentFeeInstallment[];
     }, 'getAllPendingStudentFeeInstallments');
   },
 

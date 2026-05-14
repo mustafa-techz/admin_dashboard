@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { Timestamp } from 'firebase/firestore';
 
 export const AttendanceStatusEnum = z.enum(['present', 'absent', 'leave']);
 export type AttendanceStatus = z.infer<typeof AttendanceStatusEnum>;
@@ -24,7 +25,7 @@ export interface AttendanceSession {
   section: string;
   teacherId: string;
   totalStudents: number;
-  createdAt: any;
+  createdAt: Timestamp;
   /** Map of studentId → status */
   students: Record<string, AttendanceStatus>;
 }

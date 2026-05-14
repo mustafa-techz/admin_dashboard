@@ -26,7 +26,7 @@ export default function ChatListItem({
   isActive,
   onClick,
 }: ChatListItemProps) {
-  const { user } = useAuthStore();
+  const user = useAuthStore(state => state.user);
   const hasUnread = chat.unreadCount > 0;
   const timeLabel = formatTimestamp(chat.lastMessageAt);
 

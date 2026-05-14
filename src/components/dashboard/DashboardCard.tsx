@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 interface DashboardCardProps {
@@ -14,7 +14,7 @@ interface DashboardCardProps {
   className?: string;
 }
 
-export default function DashboardCard({ title, value, icon, description, trend, onClick, className }: DashboardCardProps) {
+const DashboardCard = React.memo(function DashboardCard({ title, value, icon, description, trend, onClick, className }: DashboardCardProps) {
   return (
     <div 
       onClick={onClick}
@@ -44,4 +44,8 @@ export default function DashboardCard({ title, value, icon, description, trend, 
       </div>
     </div>
   );
-}
+});
+
+DashboardCard.displayName = 'DashboardCard';
+
+export default DashboardCard;

@@ -28,7 +28,7 @@ export default function MessageBubble({
 }: MessageBubbleProps) {
   const timeLabel = formatTime(message.createdAt);
   const isOptimistic = message.id.startsWith("optimistic_");
-  const { user } = useAuthStore();
+  const user = useAuthStore(state => state.user);
 
   // 1. Handle system messages
   if (message.senderId === "system" && message.text) {

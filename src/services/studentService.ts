@@ -16,7 +16,7 @@ import {
   QueryDocumentSnapshot
 } from "firebase/firestore";
 import { db } from "../firebase/firestore";
-import { Student } from "../types/student";
+import { Student, ParentDetails } from "../types/student";
 import { userService } from "./userService";
 import { executeFirebaseOp } from "@/lib/api-errors";
 import { logActivity } from "@/lib/activityLogger";
@@ -34,7 +34,7 @@ export const studentService = {
       const sectionDocRef = doc(db, "sections", student.sectionId);
 
       // Remove password from object before Firestore save
-      const { password, ...safeParentDetails } = student?.parentDetails || {} as any;
+      const { password, ...safeParentDetails } = (student?.parentDetails || {}) as ParentDetails & { password?: string };
 
       /**
        * STEP 1
@@ -138,15 +138,16 @@ export const studentService = {
 
       return studentId;
 
-    } catch (error: any) {
-      console.error("🔥 ADD STUDENT ERROR:", error);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error("ADD STUDENT ERROR:", error);
 
       /**
        * Better duplicate email handling
        */
       if (
-        error?.message?.includes("email") ||
-        error?.message?.includes("already")
+        errorMessage?.includes("email") ||
+        errorMessage?.includes("already")
       ) {
         throw new Error("Parent email already exists");
       }

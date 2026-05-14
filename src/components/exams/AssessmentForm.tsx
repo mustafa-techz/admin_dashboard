@@ -27,7 +27,7 @@ const DEFAULT_SCHEDULE: ExamScheduleFormData = {
 };
 
 export default function AssessmentForm({ branchId, onSuccess }: { branchId: string; onSuccess?: () => void }) {
-  const { user } = useAuthStore();
+  const user = useAuthStore(state => state.user);
   const createMutation = useCreateAssessment();
   const academicYears = useMemo(() => getAcademicYearOptions(), []);
 

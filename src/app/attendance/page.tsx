@@ -37,17 +37,21 @@ export default function AttendancePage() {
   const [selectedClassId, setSelectedClassId] = useState<string>('');
   const [selectedSectionId, setSelectedSectionId] = useState<string>('');
 
-  const { user, role } = useAuthStore();
-  const { selectedBranchId } = useBranchStore();
-  const authorizedClassIds = getAuthorizedClassIds(
+  const user = useAuthStore(state => state.user);
+  const role = useAuthStore(state => state.role);
+  const selectedBranchId = useBranchStore(state => state.selectedBranchId);
+  const authorizedClassIds = useMemo(() => getAuthorizedClassIds(
     user ? { role: user.role, classIds: user.classIds } : null
-  );
+  ), [user]);
 
   const currentDate = new Date().toISOString().split('T')[0];
 
   // ── Zustand draft store ───────────────────────────────────────────────
-  const { drafts, setStatus, markAll, clearDrafts, getChanges } =
-    useAttendanceDraftStore();
+  const drafts = useAttendanceDraftStore(state => state.drafts);
+  const setStatus = useAttendanceDraftStore(state => state.setStatus);
+  const markAll = useAttendanceDraftStore(state => state.markAll);
+  const clearDrafts = useAttendanceDraftStore(state => state.clearDrafts);
+  const getChanges = useAttendanceDraftStore(state => state.getChanges);
 
   // ── Master Data ───────────────────────────────────────────────────────
   const { data: allClasses = [] } = useQuery({
@@ -134,7 +138,7 @@ export default function AttendancePage() {
   }, [displayStudents.length, committedAttendance, drafts]);
 
   // ── 4. Changes pending submission ────────────────────────────────────
-  const rawChanges = getChanges(committedAttendance);
+  const rawChanges = useMemo(() => getChanges(committedAttendance), [getChanges, committedAttendance]);
   const hasChanges = Object.keys(rawChanges).length > 0;
 
   // ── 5. Submit mutation ───────────────────────────────────────────────
@@ -189,7 +193,7 @@ export default function AttendancePage() {
   );
 
   // ── 8. Table columns (UI unchanged) ──────────────────────────────────
-  const columns = [
+  const columns = useMemo(() => [
     {
       header: 'S.No',
       cell: (student: Student) => {
@@ -317,7 +321,7 @@ export default function AttendancePage() {
         </div>
       ),
     },
-  ];
+  ], [filteredStudents, drafts, committedAttendance, isEditing, setStatus]);
 
   // ── Render ────────────────────────────────────────────────────────────
   return (

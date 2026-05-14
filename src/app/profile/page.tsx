@@ -5,7 +5,9 @@ import { User, Mail, Shield, LogOut, Camera, Key } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function ProfilePage() {
-  const { user, role, logout } = useAuthStore();
+  const user = useAuthStore(state => state.user);
+  const role = useAuthStore(state => state.role);
+  const logout = useAuthStore(state => state.logout);
   const router = useRouter();
 
   const handleLogout = () => {

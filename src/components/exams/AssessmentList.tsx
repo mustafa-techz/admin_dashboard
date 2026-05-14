@@ -270,7 +270,7 @@ const AssessmentCard = React.memo(function AssessmentCard({
 // Main Assessment List
 // ─────────────────────────────────────────────────────────────────
 export default function AssessmentList({ branchId }: { branchId: string }) {
-  const { user } = useAuthStore();
+  const user = useAuthStore(state => state.user);
   const { data: assessments = [], isLoading } = useAssessments(branchId);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);

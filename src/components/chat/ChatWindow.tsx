@@ -27,8 +27,9 @@ function ConvIcon({ type }: { type: string }) {
 }
 
 export default function ChatWindow({ conversationId }: ChatWindowProps) {
-  const { user, role } = useAuthStore();
-  const { closeMobileChat } = useChatStore();
+  const user = useAuthStore(state => state.user);
+  const role = useAuthStore(state => state.role);
+  const closeMobileChat = useChatStore(state => state.closeMobileChat);
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [isAddMembersModalOpen, setIsAddMembersModalOpen] = useState(false);
 

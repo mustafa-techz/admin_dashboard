@@ -17,7 +17,7 @@ export default function FeeStructuresList() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [structureToDelete, setStructureToDelete] = useState<string | null>(null);
 
-  const { selectedBranchId } = useBranchStore();
+  const selectedBranchId = useBranchStore(state => state.selectedBranchId);
 
   const branchId = selectedBranchId;
   const { data: feeStructures = [], isLoading } = useFeeStructures(branchId);

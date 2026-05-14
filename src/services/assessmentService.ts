@@ -8,12 +8,12 @@ import {
   where,
   writeBatch,
   serverTimestamp,
-  Timestamp,
   runTransaction,
 } from 'firebase/firestore';
 import { db } from '@/firebase/firestore';
 import { executeFirebaseOp } from '@/lib/api-errors';
 import { logActivity } from '@/lib/activityLogger';
+import { tsToISO } from '@/lib/firestoreUtils';
 
 
 import { calculatePercentage, getGrade, getPassStatus } from '@/lib/gradeUtils';
@@ -46,14 +46,7 @@ function studentSummaryCol(assessmentId: string) {
   return collection(db, 'assessments', assessmentId, 'studentSummary');
 }
 
-// ─────────────────────────────────────────────────────────────────
-// Helper: Timestamp → ISO string
-// ─────────────────────────────────────────────────────────────────
-function tsToISO(ts: unknown): string {
-  if (ts instanceof Timestamp) return ts.toDate().toISOString();
-  if (typeof ts === 'string') return ts;
-  return new Date().toISOString();
-}
+
 
 // ─────────────────────────────────────────────────────────────────
 // Assessment Service
@@ -134,7 +127,7 @@ export const assessmentService = {
           updatedAt: tsToISO(d.data().updatedAt),
           publishedAt: d.data().publishedAt ? tsToISO(d.data().publishedAt) : null,
         }))
-        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) as Assessment[];
+        .sort((a, b) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime()) as Assessment[];
     }, 'getAssessments');
   },
 

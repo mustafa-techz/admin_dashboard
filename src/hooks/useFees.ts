@@ -49,7 +49,7 @@ export function useFeeStructureById(id: string) {
 
 export function useCreateFeeStructure() {
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
+  const user = useAuthStore(state => state.user);
 
   return useMutation({
     mutationFn: ({
@@ -134,7 +134,7 @@ export function useStudentFeeInstallments(studentId: string, feeStructureId: str
 // ─────────────────────────────────────────────────────────────────
 export function useRecordPayment() {
   const queryClient = useQueryClient();
-  const { user } = useAuthStore();
+  const user = useAuthStore(state => state.user);
 
   return useMutation({
     mutationFn: (paymentData: RecordPaymentData) =>
