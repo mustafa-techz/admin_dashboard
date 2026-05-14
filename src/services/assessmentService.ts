@@ -13,6 +13,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/firebase/firestore';
 import { executeFirebaseOp } from '@/lib/api-errors';
+import { logActivity } from '@/lib/activityLogger';
 
 
 import { calculatePercentage, getGrade, getPassStatus } from '@/lib/gradeUtils';
@@ -103,6 +104,12 @@ export const assessmentService = {
       }
 
       await batch.commit();
+
+      await logActivity('exam_published', 'assessment', assessmentRef.id, {
+        assessmentName: data.name,
+        classId: data.classId,
+      });
+
       return assessmentRef.id;
     }, 'createAssessment');
   },
@@ -291,6 +298,11 @@ export const assessmentService = {
       if (opCount > 0) {
         await batch.commit();
       }
+
+      await logActivity('marks_entered', 'assessment', assessmentId, {
+        subject,
+        assessmentName: 'Assessment',
+      });
     }, 'saveSubjectMarks');
   },
 
@@ -454,6 +466,10 @@ export const assessmentService = {
           publishedBy,
           updatedAt: serverTimestamp(),
         });
+      });
+
+      await logActivity('exam_published', 'assessment', assessmentId, {
+        status: 'published'
       });
 
 

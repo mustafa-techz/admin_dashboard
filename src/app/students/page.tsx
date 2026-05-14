@@ -14,21 +14,23 @@ import StudentForm from '@/components/students/StudentForm';
 import StudentViewModal from '@/components/students/StudentViewModal';
 import ConfirmationModal from '@/components/shared/ConfirmationModal';
 import { useStudents } from '@/hooks/useStudents';
-import { classService, sectionService } from '@/services/firebase/masterDataService';
+import { classService } from '@/services/firebase/masterDataService';
 
 export default function StudentsPage() {
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState('');
-  const { user } = useAuthStore();
+  const { user, role } = useAuthStore();
   const queryClient = useQueryClient();
   const router = useRouter();
+
+  const isPrivileged = role === 'admin' || role === 'sub-admin';
   
   const authorizedClassIds = getAuthorizedClassIds(
     user ? { role: user.role, classIds: user.classIds } : null
   );
 
   // Master Data Queries
-  const { data: classes = [], isLoading: isLoadingClasses, isError: isErrorClasses } = useQuery({
+  const { data: classes = [], isLoading: isLoadingClasses } = useQuery({
     queryKey: ['classes'],
     queryFn: () => classService.getClasses(),
     staleTime: 5 * 60 * 1000,
@@ -175,18 +177,23 @@ export default function StudentsPage() {
           >
             <Eye size={16} />
           </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); setEditingStudent(student); setIsFormOpen(true); }}
-            className="p-1.5 text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors"
-          >
-            <Edit size={16} />
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); setStudentToDelete(student.id); setIsDeleteOpen(true); }}
-            className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-          >
-            <Trash2 size={16} />
-          </button>
+          
+          {isPrivileged && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setEditingStudent(student); setIsFormOpen(true); }}
+                className="p-1.5 text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors"
+              >
+                <Edit size={16} />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setStudentToDelete(student.id); setIsDeleteOpen(true); }}
+                className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+              >
+                <Trash2 size={16} />
+              </button>
+            </>
+          )}
         </div>
       )
     },
@@ -222,10 +229,10 @@ export default function StudentsPage() {
       <FilterBar
         onSearch={setSearch}
         onFilterChange={setClassFilter}
-        onAddClick={() => {
+        onAddClick={isPrivileged ? () => {
           setEditingStudent(null);
           setIsFormOpen(true);
-        }}
+        } : undefined}
         addLabel="New Admission"
         placeholder="Search by name or roll number..."
       />
