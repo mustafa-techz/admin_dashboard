@@ -34,6 +34,8 @@ export interface TimetableFormData {
   name: string;
   classId: string;
   sectionId: string;
+  className?: string; // For activity logging context
+  sectionName?: string; // For activity logging context
   academicYear: string;
   branchId: string;
 }

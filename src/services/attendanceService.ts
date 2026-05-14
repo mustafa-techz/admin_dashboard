@@ -17,6 +17,7 @@ import {
 import { db } from '../firebase/firestore';
 import { executeFirebaseOp } from '@/lib/api-errors';
 import { AttendanceSession, AttendanceStatus, StudentStats } from '../types/attendance';
+import { logActivity } from '@/lib/activityLogger';
 
 /** Builds the session document ID */
 const sessionId = (date: string, classId: string, section: string) =>
@@ -61,7 +62,9 @@ export const attendanceService = {
     teacherId: string,
     totalStudents: number,
     newStatuses: Record<string, AttendanceStatus>,
-    prevStatuses: Record<string, AttendanceStatus>
+    prevStatuses: Record<string, AttendanceStatus>,
+    className?: string,
+    sectionName?: string
   ) {
     return executeFirebaseOp(async () => {
       // ── 1. Determine which students actually changed ──────────────────
@@ -145,6 +148,32 @@ export const attendanceService = {
           chunks.slice(1).map((chunk) => this._runStatsBatch(chunk, prevStatuses))
         );
       }
+
+      // Resolve names if missing or look like IDs
+      let resolvedClassName = className;
+      let resolvedSectionName = sectionName;
+
+      if (!resolvedClassName || resolvedClassName === classId) {
+        const classSnap = await getDoc(doc(db, 'classes', classId));
+        if (classSnap.exists()) resolvedClassName = classSnap.data().className;
+      }
+      if (!resolvedSectionName || resolvedSectionName === section) {
+        const sectionSnap = await getDoc(doc(db, 'sections', section));
+        if (sectionSnap.exists()) resolvedSectionName = sectionSnap.data().sectionName;
+      }
+
+      // Log activity
+      const isNewSubmission = Object.keys(prevStatuses).length === 0;
+      await logActivity(
+        isNewSubmission ? 'attendance_submitted' : 'attendance_updated',
+        'attendance_session',
+        sessionId(date, classId, section),
+        { 
+          className: resolvedClassName || classId, 
+          sectionName: resolvedSectionName || section, 
+          date 
+        }
+      );
     }, 'saveSession');
   },
 

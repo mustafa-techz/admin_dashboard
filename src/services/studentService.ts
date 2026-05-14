@@ -19,6 +19,7 @@ import { db } from "../firebase/firestore";
 import { Student } from "../types/student";
 import { userService } from "./userService";
 import { executeFirebaseOp } from "@/lib/api-errors";
+import { logActivity } from "@/lib/activityLogger";
 
 const studentCollection = collection(db, "students");
 
@@ -130,6 +131,10 @@ export const studentService = {
           updateError
         );
       }
+
+      await logActivity('student_created', 'student', studentId, {
+        studentName: student.fullName,
+      });
 
       return studentId;
 
@@ -273,14 +278,26 @@ export const studentService = {
         ...student,
         updatedAt: serverTimestamp(),
       });
+
+      await logActivity('student_updated', 'student', id, {
+        studentName: student.fullName || 'Student',
+      });
     }, 'updateStudent');
   },
 
   // Delete
   async deleteStudent(id: string) {
     return executeFirebaseOp(async () => {
+      const student = await this.getStudentById(id);
       const docRef = doc(db, "students", id);
       await deleteDoc(docRef);
+
+      if (student) {
+        await logActivity('student_updated', 'student', id, {
+          studentName: student.fullName,
+          status: 'deleted'
+        });
+      }
     }, 'deleteStudent');
   }
 };

@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/firebase/firestore';
 import { executeFirebaseOp } from '@/lib/api-errors';
+import { logActivity } from '@/lib/activityLogger';
 import type {
   Timetable,
   TimetableFormData,
@@ -61,6 +62,8 @@ export const timetableService = {
         name: data.name,
         classId: data.classId,
         sectionId: data.sectionId,
+        className: data.className || '',
+        sectionName: data.sectionName || '',
         academicYear: data.academicYear,
         branchId: data.branchId,
         status: 'draft' as TimetableStatus,
@@ -87,6 +90,25 @@ export const timetableService = {
       }
 
       await batch.commit();
+
+      // Resolve names if missing or look like IDs
+      let resolvedClassName = data.className;
+      let resolvedSectionName = data.sectionName;
+
+      if (!resolvedClassName || resolvedClassName === data.classId) {
+        const classSnap = await getDoc(doc(db, 'classes', data.classId));
+        if (classSnap.exists()) resolvedClassName = classSnap.data().className;
+      }
+      if (!resolvedSectionName || resolvedSectionName === data.sectionId) {
+        const sectionSnap = await getDoc(doc(db, 'sections', data.sectionId));
+        if (sectionSnap.exists()) resolvedSectionName = sectionSnap.data().sectionName;
+      }
+
+      await logActivity('timetable_created', 'timetable', timetableRef.id, {
+        className: resolvedClassName || data.classId,
+        sectionName: resolvedSectionName || data.sectionId,
+      });
+
       return timetableRef.id;
     }, 'createTimetable');
   },
@@ -212,6 +234,8 @@ export const timetableService = {
       });
 
       await batch.commit();
+
+      await logActivity('timetable_updated', 'timetable', timetableId);
     }, 'saveSlots');
   },
 
@@ -230,7 +254,11 @@ export const timetableService = {
         updatedAt: serverTimestamp(),
       });
 
-
+      await logActivity('timetable_updated', 'timetable', id, {
+        className: (timetable as any).className || timetable.classId,
+        sectionName: (timetable as any).sectionName || timetable.sectionId,
+        status: 'published'
+      });
     }, 'publishTimetable');
   },
 
@@ -239,10 +267,19 @@ export const timetableService = {
    */
   async unpublishTimetable(id: string): Promise<void> {
     return executeFirebaseOp(async () => {
+      const timetable = await this.getTimetableById(id);
       await updateDoc(doc(timetablesCol, id), {
         status: 'draft' as TimetableStatus,
         updatedAt: serverTimestamp(),
       });
+
+      if (timetable) {
+        await logActivity('timetable_updated', 'timetable', id, {
+          className: (timetable as any).className || timetable.classId,
+          sectionName: (timetable as any).sectionName || timetable.sectionId,
+          status: 'draft'
+        });
+      }
     }, 'unpublishTimetable');
   },
 
@@ -263,6 +300,7 @@ export const timetableService = {
    */
   async deleteTimetable(id: string): Promise<void> {
     return executeFirebaseOp(async () => {
+      const timetable = await this.getTimetableById(id);
       const batch = writeBatch(db);
 
       // Delete all slots
@@ -273,6 +311,14 @@ export const timetableService = {
       batch.delete(doc(timetablesCol, id));
 
       await batch.commit();
+
+      if (timetable) {
+        await logActivity('timetable_updated', 'timetable', id, {
+          className: (timetable as any).className || timetable.classId,
+          sectionName: (timetable as any).sectionName || timetable.sectionId,
+          status: 'deleted'
+        });
+      }
     }, 'deleteTimetable');
   },
 };

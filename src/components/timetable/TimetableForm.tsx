@@ -118,12 +118,17 @@ export default function TimetableForm({ branchId, onSuccess }: { branchId: strin
     e.preventDefault();
     if (!isValid || !user?.id) return;
 
+    const selectedClass = classes.find(c => c.id === form.classId);
+    const selectedSection = sections.find(s => s.id === form.sectionId);
+
     await createMutation.mutateAsync({
       data: {
         type: 'class',
         name: form.name,
         classId: form.classId,
         sectionId: form.sectionId,
+        className: selectedClass?.className || '',
+        sectionName: selectedSection?.sectionName || '',
         academicYear: form.academicYear,
         branchId,
       },

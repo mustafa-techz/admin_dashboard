@@ -145,14 +145,19 @@ export default function AttendancePage() {
         ...committedAttendance,
         ...rawChanges,
       };
+      const selectedClass = classes.find(c => c.id === selectedClassId);
+      const selectedSection = sections.find(s => s.id === selectedSectionId);
+
       return attendanceService.saveSession(
         currentDate,
         selectedClassId,
         selectedSectionId,
-        'teacher_placeholder',
+        user?.id || 'teacher_placeholder',
         displayStudents.length,
         newStatuses,
-        committedAttendance
+        committedAttendance,
+        selectedClass?.className,
+        selectedSection?.sectionName
       );
     },
     onSuccess: () => {
