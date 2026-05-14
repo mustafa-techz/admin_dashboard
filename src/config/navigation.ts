@@ -30,14 +30,14 @@ export const NAVIGATION_CONFIG = {
       { label: 'Chat', href: '/chat', icon: MessageCircle },
       { label: 'Academics', href: '/academics', icon: GraduationCap },
       { label: 'People', href: '/people', icon: Users },
-      { label: 'Students', href: '/students', icon: UserIcon },
+      { label: 'Fees', href: '/fees', icon: IndianRupee },
     ],
     'sub-admin': [
       { label: 'Home', href: '/dashboard', icon: Home },
       { label: 'Chat', href: '/chat', icon: MessageCircle },
       { label: 'Academics', href: '/academics', icon: GraduationCap },
       { label: 'People', href: '/people', icon: Users },
-      { label: 'Students', href: '/students', icon: UserIcon },
+      { label: 'Fees', href: '/fees', icon: IndianRupee },
     ],
     teacher: [
       { label: 'Home', href: '/dashboard', icon: Home },
@@ -50,7 +50,7 @@ export const NAVIGATION_CONFIG = {
       { label: 'Home', href: '/dashboard', icon: Home },
       { label: 'Chat', href: '/chat', icon: MessageCircle },
       { label: 'Academics', href: '/academics', icon: GraduationCap },
-      { label: 'Students', href: '/students', icon: UserIcon },
+      { label: 'Fees', href: '/fees', icon: IndianRupee },
     ],
   } as Record<UserRole, NavItem[]>,
 
@@ -59,7 +59,8 @@ export const NAVIGATION_CONFIG = {
     { label: 'Chat', href: '/chat' },
     { label: 'Academics', href: '/academics' },
     { label: 'People', href: '/people', roles: ['admin', 'sub-admin'] },
-    { label: 'Students', href: '/students', roles: ['admin', 'sub-admin', 'teacher'] },
+    { label: 'Students', href: '/students', roles: ['teacher'] },
+    { label: 'Fees', href: '/fees', roles: ['admin', 'sub-admin', 'parent'] },
   ],
 
   groups: {
