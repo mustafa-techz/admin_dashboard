@@ -92,8 +92,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               // Teacher scope fields (from teacher doc or user doc)
               branchIds: teacherData?.branchIds || userData?.branchIds,
               branchId: teacherData?.branchId || userData?.branchId,
-              classIds: teacherData?.classIds,
-              classTeacherOf: teacherData?.classTeacher,
+              classIds: teacherData?.classIds || userData?.classIds,
+              classTeacherOf: teacherData?.classTeacher || userData?.classTeacherOf,
             },
             resolvedRole
           )

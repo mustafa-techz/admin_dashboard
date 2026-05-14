@@ -14,7 +14,7 @@ import StudentForm from '@/components/students/StudentForm';
 import StudentViewModal from '@/components/students/StudentViewModal';
 import ConfirmationModal from '@/components/shared/ConfirmationModal';
 import { useStudents } from '@/hooks/useStudents';
-import { classService } from '@/services/firebase/masterDataService';
+import { classService, sectionService } from '@/services/firebase/masterDataService';
 
 export default function StudentsPage() {
   const [search, setSearch] = useState('');
@@ -30,15 +30,11 @@ export default function StudentsPage() {
   );
 
   // Master Data Queries
-  const { data: classes = [], isLoading: isLoadingClasses } = useQuery({
+  const { data: classes = [], isLoading: isLoadingClasses, isError: isErrorClasses } = useQuery({
     queryKey: ['classes'],
     queryFn: () => classService.getClasses(),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    // For teachers, only show their assigned classes in the filter
-    select: (data) => authorizedClassIds
-      ? data.filter((c) => authorizedClassIds.includes(c.id))
-      : data,
   });
 
   const { data: sections = [], isLoading: isLoadingSections, isError: isErrorSections } = useQuery({
@@ -64,12 +60,6 @@ export default function StudentsPage() {
   const {
     students: studentsList,
     isLoading,
-    addStudent,
-    updateStudent,
-    deleteStudent,
-    isAdding,
-    isUpdating,
-    isDeleting,
   } = useStudents();
 
   const createMutation = useMutation({
@@ -162,12 +152,14 @@ export default function StudentsPage() {
         const sectionName = sections.find(s => s.id === student.sectionId)?.sectionName || student.sectionId;
         return (
           <div className="flex items-center gap-2">
-            <span className="font-bold text-foreground tracking-tight">{className}{sectionName}</span>
+            <span className="font-bold text-foreground tracking-tight">
+              {className} {sectionName && `- ${sectionName}`}
+            </span>
           </div>
         );
       }
     },
-    {
+    isPrivileged && {
       header: 'Actions',
       cell: (student: Student) => (
         <div className="flex items-center gap-2">
@@ -178,26 +170,24 @@ export default function StudentsPage() {
             <Eye size={16} />
           </button>
           
-          {isPrivileged && (
-            <>
-              <button
-                onClick={(e) => { e.stopPropagation(); setEditingStudent(student); setIsFormOpen(true); }}
-                className="p-1.5 text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors"
-              >
-                <Edit size={16} />
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setStudentToDelete(student.id); setIsDeleteOpen(true); }}
-                className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-              >
-                <Trash2 size={16} />
-              </button>
-            </>
-          )}
+          <>
+            <button
+              onClick={(e) => { e.stopPropagation(); setEditingStudent(student); setIsFormOpen(true); }}
+              className="p-1.5 text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors"
+            >
+              <Edit size={16} />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); setStudentToDelete(student.id); setIsDeleteOpen(true); }}
+              className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+            >
+              <Trash2 size={16} />
+            </button>
+          </>
         </div>
       )
     },
-  ];
+  ].filter(Boolean) as any[];
 
   if (isErrorClasses || isErrorSections) {
     return (
@@ -229,6 +219,7 @@ export default function StudentsPage() {
       <FilterBar
         onSearch={setSearch}
         onFilterChange={setClassFilter}
+        authorizedClassIds={authorizedClassIds}
         onAddClick={isPrivileged ? () => {
           setEditingStudent(null);
           setIsFormOpen(true);

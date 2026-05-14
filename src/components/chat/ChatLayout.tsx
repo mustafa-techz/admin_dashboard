@@ -32,7 +32,7 @@ export default function ChatLayout() {
   );
 
   return (
-    <div className="flex h-full overflow-hidden rounded-xl border border-border shadow-soft bg-background">
+    <div className="flex h-full overflow-hidden md:rounded-xl md:border md:border-border md:shadow-soft bg-background">
       {/* ── Sidebar ──────────────────────────────────────────────────────── */}
       {/* Desktop: always visible | Mobile: hidden when chat is open */}
       <div

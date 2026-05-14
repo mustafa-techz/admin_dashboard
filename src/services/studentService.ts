@@ -158,6 +158,11 @@ export const studentService = {
   // Read
   async getStudents(branchId?: string, classIds?: string[]): Promise<Student[]> {
     return executeFirebaseOp(async () => {
+      // Security Check: If teacher has explicitly 0 assigned classes, return empty to prevent data leak
+      if (classIds && classIds.length === 0) {
+        return [];
+      }
+
       let q = query(studentCollection, orderBy("createdAt", "desc"));
       
       if (branchId) {

@@ -15,8 +15,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+import schoolConfig from "@/config/school.json";
+
 export const metadata: Metadata = {
-  title: "SchoolDash - Management Dashboard",
+  title: `${schoolConfig.schoolName} - Management Dashboard`,
   description: "Modern, production-ready school management system.",
 };
 

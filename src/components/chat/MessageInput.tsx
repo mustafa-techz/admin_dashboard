@@ -120,20 +120,20 @@ export default function MessageInput({
       {!disabled && (
         <div className="flex items-end gap-2">
           {/* File attachment button */}
-          <button
+          {/* <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             className="h-9 w-9 flex-shrink-0 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
           >
             <Paperclip size={18} />
-          </button>
-          <input
+          </button> */}
+          {/* <input
             ref={fileInputRef}
             type="file"
             accept="image/*"
             className="hidden"
             onChange={handleFileChange}
-          />
+          /> */}
 
           {/* Textarea */}
           <textarea

@@ -11,10 +11,12 @@ import {
 import { useChatStore } from "@/store/chatStore";
 import { UserChat } from "@/types/chat";
 
+import schoolConfig from '@/config/school.json';
+
 const SOUND_THROTTLE_MS = 900;
 const NOTIFICATION_DEDUPE_TTL_MS = 10 * 60 * 1000;
 const ACTIVE_CHAT_TTL_MS = 3_000;
-const NOTIFICATION_CHANNEL = "schooldash-chat-notifications";
+const NOTIFICATION_CHANNEL = `${schoolConfig.shortName}-chat-notifications`;
 
 type BrowserNotificationPermission = NotificationPermission | "unsupported";
 
@@ -46,7 +48,7 @@ const buildNotificationKey = (userId: string, chat: UserChat) => {
 };
 
 const getActiveChatPresencePrefix = (userId: string, conversationId: string) =>
-  `schooldash:active-chat:${userId}:${conversationId}:`;
+  `${schoolConfig.shortName}:active-chat:${userId}:${conversationId}:`;
 
 const isAnyTabViewingChat = (userId: string, conversationId: string) => {
   const prefix = getActiveChatPresencePrefix(userId, conversationId);
@@ -72,7 +74,7 @@ const claimNotification = (
 ) => {
   if (handledKeys.has(key)) return false;
 
-  const storageKey = `schooldash:${key}`;
+  const storageKey = `${schoolConfig.shortName}:${key}`;
   const now = Date.now();
   const previous = Number(window.localStorage.getItem(storageKey) ?? 0);
 
