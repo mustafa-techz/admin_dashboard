@@ -37,7 +37,8 @@ const SkeletonItem = () => (
 );
 
 function AnnouncementList({ filter = {} }: AnnouncementListProps) {
-  const { role, user } = useAuthStore();
+  const role = useAuthStore(state => state.role);
+  const user = useAuthStore(state => state.user);
   const isAdminOrTeacher = role === 'admin' || role === 'sub-admin' || role === 'teacher';
 
   // Use admin query for staff, parent query for parents

@@ -34,7 +34,8 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const { login, logout } = useAuthStore()
+  const login = useAuthStore(state => state.login);
+  const logout = useAuthStore(state => state.logout);
 
   useEffect(() => {
     const unsubscribe = onIdTokenChanged(auth, async (currentUser) => {

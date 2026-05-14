@@ -9,12 +9,10 @@ import NewChatModal from "./NewChatModal";
 import { cn } from "@/lib/utils";
 
 export default function ChatLayout() {
-  const {
-    activeChatId,
-    isMobileChatOpen,
-    setActiveChatId,
-    openMobileChat,
-  } = useChatStore();
+  const activeChatId = useChatStore(state => state.activeChatId);
+  const isMobileChatOpen = useChatStore(state => state.isMobileChatOpen);
+  const setActiveChatId = useChatStore(state => state.setActiveChatId);
+  const openMobileChat = useChatStore(state => state.openMobileChat);
 
   const handleSelectChat = useCallback(
     (chatId: string) => {

@@ -8,11 +8,11 @@ import {
   where,
   writeBatch,
   serverTimestamp,
-  Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/firebase/firestore';
 import { executeFirebaseOp } from '@/lib/api-errors';
 import { logActivity } from '@/lib/activityLogger';
+import { tsToISO } from '@/lib/firestoreUtils';
 import type {
   Timetable,
   TimetableFormData,
@@ -30,14 +30,7 @@ function slotsCol(timetableId: string) {
   return collection(db, 'timetables', timetableId, 'slots');
 }
 
-// ─────────────────────────────────────────────────────────────────
-// Helper: Timestamp → ISO string
-// ─────────────────────────────────────────────────────────────────
-function tsToISO(ts: unknown): string {
-  if (ts instanceof Timestamp) return ts.toDate().toISOString();
-  if (typeof ts === 'string') return ts;
-  return new Date().toISOString();
-}
+
 
 // ─────────────────────────────────────────────────────────────────
 // Timetable Service
@@ -133,7 +126,7 @@ export const timetableService = {
           createdAt: tsToISO(d.data().createdAt),
           updatedAt: tsToISO(d.data().updatedAt),
         }))
-        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) as Timetable[];
+        .sort((a, b) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime()) as Timetable[];
     }, 'getTimetables');
   },
 

@@ -65,7 +65,7 @@ export default function TeacherForm({ initialData, onSubmit, onCancel, isLoading
     staleTime: 30 * 60 * 1000,
   });
 
-  const { selectedBranchId } = useBranchStore();
+  const selectedBranchId = useBranchStore(state => state.selectedBranchId);
 
   // Merge initialData with defaults, ensuring branchIds is always an array
   const mergedInitial = initialData

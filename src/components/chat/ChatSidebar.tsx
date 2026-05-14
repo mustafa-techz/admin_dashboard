@@ -13,8 +13,9 @@ interface ChatSidebarProps {
 }
 
 export default function ChatSidebar({ onSelectChat, activeChatId }: ChatSidebarProps) {
-  const { user, role } = useAuthStore();
-  const { openNewChatModal } = useChatStore();
+  const user = useAuthStore(state => state.user);
+  const role = useAuthStore(state => state.role);
+  const openNewChatModal = useChatStore(state => state.openNewChatModal);
   const [search, setSearch] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
 

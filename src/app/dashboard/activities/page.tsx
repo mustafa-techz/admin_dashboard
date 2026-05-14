@@ -21,7 +21,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { ActivityAction, ActivityLog } from '@/types/activity';
 
-const isFirestoreId = (val: any) => 
+const isFirestoreId = (val: unknown): boolean => 
   typeof val === 'string' && val.length >= 15 && /^[a-zA-Z0-9_-]+$/.test(val);
 
 const getActivityConfig = (action: ActivityAction) => {
@@ -115,7 +115,7 @@ const formatActionText = (log: ActivityLog): string => {
 
 export default function ActivitiesPage() {
   const router = useRouter();
-  const { user } = useAuthStore();
+  const user = useAuthStore(state => state.user);
   
   // For simplicity, we fetch 50 for the full page
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
@@ -211,11 +211,11 @@ export default function ActivitiesPage() {
                     {activity.metadata && Object.keys(activity.metadata).length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-2">
                         {Object.entries(activity.metadata).map(([key, value]) => (
-                          value && !isFirestoreId(value) && (
+                          value && !isFirestoreId(value) ? (
                             <span key={key} className="text-[10px] px-2 py-0.5 bg-muted rounded-md text-muted-foreground font-bold">
                               {key}: {String(value)}
                             </span>
-                          )
+                          ) : null
                         ))}
                       </div>
                     )}

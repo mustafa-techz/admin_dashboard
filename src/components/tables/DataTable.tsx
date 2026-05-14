@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 interface Column<T> {
@@ -15,7 +15,7 @@ interface DataTableProps<T> {
   isLoading?: boolean;
 }
 
-export default function DataTable<T extends { id: string }>({ 
+const DataTable = React.memo(function DataTable<T extends { id: string }>({ 
   columns, 
   data, 
   onRowClick,
@@ -87,4 +87,6 @@ export default function DataTable<T extends { id: string }>({
       </table>
     </div>
   );
-}
+}) as <T extends { id: string }>(props: DataTableProps<T>) => React.JSX.Element;
+
+export default DataTable;

@@ -22,7 +22,7 @@ export default function AddMembersModal({
   existingParticipantIds,
   onMembersAdded,
 }: AddMembersModalProps) {
-  const { user } = useAuthStore();
+  const user = useAuthStore(state => state.user);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<ChatUser[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<ChatUser[]>([]);

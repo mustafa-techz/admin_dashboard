@@ -7,7 +7,7 @@ export const logActivity = async (
   action: ActivityAction,
   entityType: string,
   entityId: string,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ) => {
   try {
     const user = useAuthStore.getState().user;

@@ -28,7 +28,7 @@ export function useAnnouncements(filter: AnnouncementFilter = {}) {
  * Scoped to the currently selected branch.
  */
 export function useUpcomingAnnouncements(limit = 3) {
-  const { selectedBranchId } = useBranchStore();
+  const selectedBranchId = useBranchStore(state => state.selectedBranchId);
   return useQuery({
     queryKey: [QUERY_KEY, 'upcoming', limit, selectedBranchId],
     queryFn: () => eventService.getUpcomingAnnouncements(limit, selectedBranchId || undefined),
@@ -44,7 +44,7 @@ export function useUpcomingAnnouncements(limit = 3) {
  * Shorter staleTime so admin sees fresh data.
  */
 export function useAdminEvents() {
-  const { selectedBranchId } = useBranchStore();
+  const selectedBranchId = useBranchStore(state => state.selectedBranchId);
   return useQuery({
     queryKey: [ADMIN_QUERY_KEY, selectedBranchId],
     queryFn: () => eventService.getAllEvents(50, selectedBranchId || undefined),

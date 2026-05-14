@@ -30,6 +30,7 @@ import {
   DocumentData,
   QueryDocumentSnapshot,
   arrayUnion,
+  QueryConstraint,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db } from "@/firebase/firestore";
@@ -449,7 +450,7 @@ export const searchUsers = async (
     const capitalizedQuery = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 
     // Base query constraints — fetch a generous batch for client-side refinement
-    const constraints: any[] = [
+    const constraints: QueryConstraint[] = [
       where("name", ">=", capitalizedQuery),
       where("name", "<=", capitalizedQuery + "\uf8ff"),
       limit(30),

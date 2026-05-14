@@ -12,7 +12,7 @@ import { CalendarDays, BookOpen } from 'lucide-react';
  * Fetches the student's class/section, then shows published timetables.
  */
 export default function TimetableView() {
-  const { user } = useAuthStore();
+  const user = useAuthStore(state => state.user);
 
   const { data: student, isLoading: studentLoading } = useQuery({
     queryKey: ['studentByParent', user?.id],

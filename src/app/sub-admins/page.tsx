@@ -6,7 +6,7 @@ import { getSubAdmins } from '@/services/mockApi';
 import DataTable from '@/components/tables/DataTable';
 import FilterBar from '@/components/tables/FilterBar';
 import { SubAdmin } from '@/types';
-import { Shield, Mail, Key, Trash2 } from 'lucide-react';
+import { Shield, Key, Trash2 } from 'lucide-react';
 
 export default function SubAdminsPage() {
   const [search, setSearch] = useState('');

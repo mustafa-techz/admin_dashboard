@@ -90,7 +90,7 @@ const MarkRow = React.memo(function MarkRow({
 
 
 export default function MarksEntry({ branchId }: { branchId: string }) {
-  const { user } = useAuthStore();
+  const user = useAuthStore(state => state.user);
   const { data: assessments = [] } = useAssessments(branchId);
   const [selectedAssessmentId, setSelectedAssessmentId] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');

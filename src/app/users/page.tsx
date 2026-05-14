@@ -14,7 +14,7 @@ import ConfirmationModal from '@/components/shared/ConfirmationModal';
 
 export default function UsersPage() {
   const router = useRouter();
-  const { role } = useAuthStore();
+  const role = useAuthStore(state => state.role);
   const { users, isLoading, isError, error, createUser, updateUser, deleteUser, isCreating, isUpdating } = useUsers();
 
   const [searchTerm, setSearchTerm] = useState('');

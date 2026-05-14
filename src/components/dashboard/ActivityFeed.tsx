@@ -4,6 +4,7 @@ import { useActivityLogs } from '@/hooks/useActivityLogs';
 import { formatDistanceToNow } from 'date-fns';
 import { ActivityAction, ActivityLog } from '@/types/activity';
 import { useRouter } from 'next/navigation';
+import React from 'react';
 
 const isFirestoreId = (val: any) => 
   typeof val === 'string' && val.length >= 15 && /^[a-zA-Z0-9_-]+$/.test(val);
@@ -97,7 +98,7 @@ const formatActionText = (log: ActivityLog): string => {
   }
 };
 
-export default function ActivityFeed({ branchId }: { branchId?: string }) {
+const ActivityFeed = React.memo(function ActivityFeed({ branchId }: { branchId?: string }) {
   const { data, isLoading, isError, refetch, isFetching } = useActivityLogs(branchId, 5);
   const router = useRouter();
 
@@ -180,4 +181,8 @@ export default function ActivityFeed({ branchId }: { branchId?: string }) {
       </div>
     </div>
   );
-}
+});
+
+ActivityFeed.displayName = 'ActivityFeed';
+
+export default ActivityFeed;

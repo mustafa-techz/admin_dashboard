@@ -18,7 +18,7 @@ export const activityService = {
         ...params,
         id: newLogRef.id,
         createdAt: now,
-        expiresAt: expiresAt as any,
+        expiresAt: expiresAt.getTime(),
       };
 
       await setDoc(newLogRef, logData);

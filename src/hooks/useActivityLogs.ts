@@ -10,7 +10,7 @@ export const queryKeys = {
 };
 
 export const useActivityLogs = (branchId?: string, limitCount = 20) => {
-  const { user } = useAuthStore();
+  const user = useAuthStore(state => state.user);
   
   return useQuery({
     queryKey: queryKeys.activityLogs.byBranch(branchId),

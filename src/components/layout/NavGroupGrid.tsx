@@ -1,5 +1,5 @@
 'use client';
-
+import React from 'react';
 import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
 import { NavItem } from '@/config/navigation';
@@ -13,10 +13,11 @@ interface NavGroupGridProps {
 }
 
 export default function NavGroupGrid({ title, items, description }: NavGroupGridProps) {
-  const { role } = useAuthStore();
-
-  const filteredItems = items.filter(
-    (item) => !item.roles || (role && item.roles.includes(role))
+  const role = useAuthStore(state => state.role);
+  
+  const filteredItems = React.useMemo(() => 
+    items.filter((item) => !item.roles || (role && item.roles.includes(role))),
+    [items, role]
   );
 
   return (

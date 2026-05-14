@@ -20,9 +20,10 @@ type Tab = "direct" | "group" | "broadcast";
 
 
 export default function NewChatModal({ onCreated }: NewChatModalProps) {
-  const { user } = useAuthStore();
-  const { isNewChatModalOpen, newChatTab, closeNewChatModal, setActiveChatId } =
-    useChatStore();
+  const user = useAuthStore(state => state.user);
+  const isNewChatModalOpen = useChatStore(state => state.isNewChatModalOpen);
+  const closeNewChatModal = useChatStore(state => state.closeNewChatModal);
+  const newChatTab = useChatStore(state => state.newChatTab);
 
   const [activeTab, setActiveTab] = useState<Tab>(newChatTab);
   const [searchQuery, setSearchQuery] = useState("");

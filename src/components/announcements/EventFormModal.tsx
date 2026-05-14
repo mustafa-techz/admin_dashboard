@@ -40,7 +40,7 @@ export default function EventFormModal({
   initialData,
   isSubmitting = false,
 }: EventFormModalProps) {
-  const { selectedBranchId } = useBranchStore();
+  const selectedBranchId = useBranchStore(state => state.selectedBranchId);
   const [title, setTitle] = useState(initialData?.title ?? '');
   const [description, setDescription] = useState(initialData?.description ?? '');
   const [type, setType] = useState<EventType>(initialData?.type ?? 'academic');

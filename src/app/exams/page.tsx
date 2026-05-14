@@ -21,8 +21,8 @@ const ADMIN_TABS: { key: AdminTab; label: string; icon: React.ReactNode }[] = [
 ];
 
 export default function ExamsPage() {
-  const { role } = useAuthStore();
-  const { selectedBranchId } = useBranchStore();
+  const role = useAuthStore(state => state.role);
+  const selectedBranchId = useBranchStore(state => state.selectedBranchId);
   const [activeTab, setActiveTab] = useState<AdminTab>('list');
 
   const branchId = selectedBranchId;
