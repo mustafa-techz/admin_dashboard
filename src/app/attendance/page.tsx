@@ -57,7 +57,8 @@ export default function AttendancePage() {
   const { data: allClasses = [] } = useQuery({
     queryKey: ['classes'],
     queryFn: () => classService.getClasses(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   // Filter classes for teacher scope
@@ -69,7 +70,8 @@ export default function AttendancePage() {
   const { data: sections = [] } = useQuery({
     queryKey: ['sections'],
     queryFn: () => sectionService.getSections(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   // ── 1. Fetch students (infinite / paginated) ──────────────────────────

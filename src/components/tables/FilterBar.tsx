@@ -33,7 +33,8 @@ const FilterBar = React.memo(function FilterBar({
   const { data: classesData = [] } = useQuery({
     queryKey: ['classes'],
     queryFn: () => classService.getClasses(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   const classes = React.useMemo(() => {

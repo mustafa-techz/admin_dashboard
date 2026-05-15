@@ -10,8 +10,10 @@ import DataTable from '@/components/tables/DataTable';
 import FilterBar from '@/components/tables/FilterBar';
 import { Student } from '@/types/student';
 import { Eye, Edit, Trash2 } from 'lucide-react';
-import StudentForm from '@/components/students/StudentForm';
-import StudentViewModal from '@/components/students/StudentViewModal';
+import dynamic from 'next/dynamic';
+
+const StudentForm = dynamic(() => import('@/components/students/StudentForm'), { ssr: false });
+const StudentViewModal = dynamic(() => import('@/components/students/StudentViewModal'), { ssr: false });
 import ConfirmationModal from '@/components/shared/ConfirmationModal';
 import { useStudents } from '@/hooks/useStudents';
 import { classService, sectionService } from '@/services/firebase/masterDataService';

@@ -32,7 +32,7 @@ export const useStudents = () => {
     mutationFn: (newStudent: Omit<Student, 'id' | 'createdAt'>) => 
       studentService.addStudent(newStudent),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['students', selectedBranchId] });
     },
   });
 
@@ -41,7 +41,7 @@ export const useStudents = () => {
     mutationFn: ({ id, data }: { id: string; data: Partial<Student> }) => 
       studentService.updateStudent(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['students', selectedBranchId] });
     },
   });
 
@@ -49,7 +49,7 @@ export const useStudents = () => {
   const deleteStudentMutation = useMutation({
     mutationFn: (id: string) => studentService.deleteStudent(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['students', selectedBranchId] });
     },
   });
 

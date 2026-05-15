@@ -8,6 +8,8 @@ export const useUsers = () => {
   const usersQuery = useQuery({
     queryKey: ["users"],
     queryFn: userService.getUsers,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const createUserMutation = useMutation({
