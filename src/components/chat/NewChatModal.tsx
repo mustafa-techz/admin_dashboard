@@ -99,6 +99,10 @@ export default function NewChatModal({ onCreated }: NewChatModalProps) {
         setIsSearching(false);
       }
     }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [searchQuery, user?.id]);
 
   const toggleUser = (u: ChatUser) => {

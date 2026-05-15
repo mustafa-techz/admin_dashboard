@@ -103,3 +103,48 @@ export async function executeFirebaseOp<T>(
     throw handleFirebaseError(error, context);
   }
 }
+
+/**
+ * Safe executor for REST API operations (fetch) to handle JSON responses
+ * and standardizing error handling.
+ */
+export async function executeApiOp<T>(
+  operation: () => Promise<Response>,
+  context?: string
+): Promise<T> {
+  try {
+    const response = await operation();
+    
+    // Parse JSON safely, fallback if empty
+    let data;
+    const text = await response.text();
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = text;
+    }
+
+    if (!response.ok) {
+      throw new AppError(
+        data?.error || data?.message || 'API request failed.',
+        data?.code || 'API_ERROR',
+        response.status,
+        data
+      );
+    }
+
+    return data as T;
+  } catch (error) {
+    if (error instanceof AppError) {
+      throw error;
+    }
+    
+    console.error(`[API Error] ${context ? `[${context}] ` : ''}`, error);
+    throw new AppError(
+      'A network or server error occurred.',
+      'NETWORK_ERROR',
+      500,
+      error
+    );
+  }
+}

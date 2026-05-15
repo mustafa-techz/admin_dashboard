@@ -262,6 +262,7 @@ export default function StudentsPage() {
         onConfirm={confirmSubmit}
         title="Confirm Submission"
         message={`Are you sure you want to ${editingStudent ? 'update' : 'add'} this student?`}
+        isLoading={createMutation.isPending || updateMutation.isPending}
       />
 
       {/* Delete Confirmation Modal */}
@@ -275,6 +276,7 @@ export default function StudentsPage() {
         message="Are you sure you want to delete this student? This action cannot be undone."
         confirmText="Delete"
         type="danger"
+        isLoading={deleteMutation.isPending}
       />
     </div>
   );

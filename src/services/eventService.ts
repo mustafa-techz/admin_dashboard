@@ -21,6 +21,7 @@ import {
   CreateEventData,
   AnnouncementFilter,
 } from '../types/announcement';
+import { executeFirebaseOp } from '@/lib/api-errors';
 
 const EVENTS_COLLECTION = 'events';
 const eventsRef = collection(db, EVENTS_COLLECTION);
@@ -60,7 +61,7 @@ export const eventService = {
     filter: AnnouncementFilter = {},
     lastDoc?: QueryDocumentSnapshot<DocumentData> | null
   ): Promise<{ events: SchoolEvent[]; lastDoc: QueryDocumentSnapshot<DocumentData> | null }> {
-    try {
+    return executeFirebaseOp(async () => {
       const now = Timestamp.now();
       const pageSize = filter.limit ?? 15;
 
@@ -100,11 +101,7 @@ export const eventService = {
           : null;
 
       return { events, lastDoc: last };
-
-    } catch (error) {
-      console.error('Error fetching announcements:', error);
-      throw error;
-    }
+    }, 'getPublishedAnnouncements');
   },
 
   /**
@@ -116,7 +113,7 @@ export const eventService = {
    * we'll prioritize the nearest start times.
    */
   async getUpcomingAnnouncements(limitCount = 3, branchId?: string): Promise<SchoolEvent[]> {
-    try {
+    return executeFirebaseOp(async () => {
       const now = Timestamp.now();
       
       const constraints: QueryConstraint[] = [
@@ -135,18 +132,14 @@ export const eventService = {
       const q = query(eventsRef, ...constraints);
       const snapshot = await getDocs(q);
       return snapshot.docs.map(docToEvent);
-
-    } catch (error) {
-      console.error('Error fetching upcoming announcements:', error);
-      throw error;
-    }
+    }, 'getUpcomingAnnouncements');
   },
 
   /**
    * Admin/Teacher: fetch all events
    */
   async getAllEvents(limitCount = 50, branchId?: string): Promise<SchoolEvent[]> {
-    try {
+    return executeFirebaseOp(async () => {
       const constraints: QueryConstraint[] = [
         where('isDeleted', '==', false),
         orderBy('createdAt', 'desc'),
@@ -160,11 +153,7 @@ export const eventService = {
       const q = query(eventsRef, ...constraints);
       const snapshot = await getDocs(q);
       return snapshot.docs.map(docToEvent);
-
-    } catch (error) {
-      console.error('Error fetching all events:', error);
-      throw error;
-    }
+    }, 'getAllEvents');
   },
 
   /**
@@ -175,7 +164,7 @@ export const eventService = {
     createdBy: string,
     createdByName: string
   ): Promise<string> {
-    try {
+    return executeFirebaseOp(async () => {
       const ref = await addDoc(eventsRef, {
         ...data,
         createdBy,
@@ -188,18 +177,14 @@ export const eventService = {
       });
 
       return ref.id;
-
-    } catch (error) {
-      console.error('Error creating event:', error);
-      throw error;
-    }
+    }, 'createEvent');
   },
 
   /**
    * Publish event
    */
   async publishEvent(eventId: string): Promise<void> {
-    try {
+    return executeFirebaseOp(async () => {
       const ref = doc(db, EVENTS_COLLECTION, eventId);
 
       await updateDoc(ref, {
@@ -207,11 +192,7 @@ export const eventService = {
         publishedToParents: true,
         updatedAt: serverTimestamp(),
       });
-
-    } catch (error) {
-      console.error('Error publishing event:', error);
-      throw error;
-    }
+    }, 'publishEvent');
   },
 
   /**
@@ -221,7 +202,7 @@ export const eventService = {
     eventId: string,
     data: Partial<SchoolEvent>
   ): Promise<void> {
-    try {
+    return executeFirebaseOp(async () => {
       const ref = doc(db, EVENTS_COLLECTION, eventId);
 
       const payload = { ...data };
@@ -232,36 +213,28 @@ export const eventService = {
         ...payload,
         updatedAt: serverTimestamp(),
       });
-
-    } catch (error) {
-      console.error('Error updating event:', error);
-      throw error;
-    }
+    }, 'updateEvent');
   },
 
   /**
    * Soft delete
    */
   async softDeleteEvent(eventId: string): Promise<void> {
-    try {
+    return executeFirebaseOp(async () => {
       const ref = doc(db, EVENTS_COLLECTION, eventId);
 
       await updateDoc(ref, {
         isDeleted: true,
         updatedAt: serverTimestamp(),
       });
-
-    } catch (error) {
-      console.error('Error deleting event:', error);
-      throw error;
-    }
+    }, 'softDeleteEvent');
   },
 
   /**
    * Archive event
    */
   async archiveEvent(eventId: string): Promise<void> {
-    try {
+    return executeFirebaseOp(async () => {
       const ref = doc(db, EVENTS_COLLECTION, eventId);
 
       await updateDoc(ref, {
@@ -269,10 +242,6 @@ export const eventService = {
         publishedToParents: false,
         updatedAt: serverTimestamp(),
       });
-
-    } catch (error) {
-      console.error('Error archiving event:', error);
-      throw error;
-    }
+    }, 'archiveEvent');
   },
 };

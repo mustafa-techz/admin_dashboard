@@ -14,6 +14,7 @@ import dynamic from 'next/dynamic';
 const TeacherForm = dynamic(() => import('@/components/teachers/TeacherForm'), { ssr: false });
 const TeacherViewModal = dynamic(() => import('@/components/teachers/TeacherViewModal'), { ssr: false });
 import ConfirmationModal from '@/components/shared/ConfirmationModal';
+import { queryKeys } from '@/lib/queryKeys';
 
 export default function TeachersPage() {
   const [search, setSearch] = useState('');
@@ -23,7 +24,7 @@ export default function TeachersPage() {
 
   // Master Data Queries
   const { data: classes = [], isLoading: isLoadingClasses } = useQuery({
-    queryKey: ['classes'],
+    queryKey: queryKeys.master.classes,
     queryFn: () => classService.getClasses(),
     staleTime: 5 * 60 * 1000,
   });
@@ -41,7 +42,7 @@ export default function TeachersPage() {
   const [pendingSubmitData, setPendingSubmitData] = useState<any>(null);
 
   const { data: teachers = [], isLoading: isLoadingTeachers } = useQuery<Teacher[]>({
-    queryKey: ['teachers', selectedBranchId],
+    queryKey: queryKeys.teachers.byBranch(selectedBranchId || 'all'),
     queryFn: () => teacherService.getTeachers(selectedBranchId || undefined),
     enabled: !!selectedBranchId,
     staleTime: 3 * 60 * 1000,
@@ -50,7 +51,7 @@ export default function TeachersPage() {
   const createMutation = useMutation({
     mutationFn: teacherService.addTeacher,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teachers', selectedBranchId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.teachers.all });
       setIsFormOpen(false);
       setPendingSubmitData(null);
     },
@@ -59,7 +60,7 @@ export default function TeachersPage() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<Teacher> }) => teacherService.updateTeacher(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teachers', selectedBranchId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.teachers.all });
       setIsFormOpen(false);
       setEditingTeacher(null);
       setPendingSubmitData(null);
@@ -69,7 +70,7 @@ export default function TeachersPage() {
   const deleteMutation = useMutation({
     mutationFn: teacherService.deleteTeacher,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teachers', selectedBranchId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.teachers.all });
       setTeacherToDelete(null);
       setIsDeleteOpen(false);
     },
@@ -243,6 +244,7 @@ export default function TeachersPage() {
         onConfirm={confirmSubmit}
         title="Confirm Teacher Details"
         message={`Are you sure you want to ${editingTeacher ? 'update' : 'add'} this teacher record?`}
+        isLoading={createMutation.isPending || updateMutation.isPending}
       />
 
       {/* Delete Confirmation Modal */}
@@ -256,6 +258,7 @@ export default function TeachersPage() {
         message="This will permanently delete the teacher record. This action cannot be undone."
         confirmText="Delete"
         type="danger"
+        isLoading={deleteMutation.isPending}
       />
     </div>
   );

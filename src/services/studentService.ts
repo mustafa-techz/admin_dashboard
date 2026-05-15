@@ -26,7 +26,7 @@ const studentCollection = collection(db, "students");
 export const studentService = {
   // Create with Sequential Roll Number
   async addStudent(student: Omit<Student, 'id' | 'createdAt'>) {
-    try {
+    return executeFirebaseOp(async () => {
       const classKey = `${student.classId}${student.sectionId}`;
 
       const counterDocRef = doc(db, "counters", classKey);
@@ -138,22 +138,7 @@ export const studentService = {
 
       return studentId;
 
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error("ADD STUDENT ERROR:", error);
-
-      /**
-       * Better duplicate email handling
-       */
-      if (
-        errorMessage?.includes("email") ||
-        errorMessage?.includes("already")
-      ) {
-        throw new Error("Parent email already exists");
-      }
-
-      throw error;
-    }
+    }, "addStudent");
   },
 
   // Read

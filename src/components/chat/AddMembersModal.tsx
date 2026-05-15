@@ -60,6 +60,10 @@ export default function AddMembersModal({
         setIsSearching(false);
       }
     }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [searchQuery, user?.id, existingParticipantIds, user?.role]);
 
   const toggleUser = (u: ChatUser) => {

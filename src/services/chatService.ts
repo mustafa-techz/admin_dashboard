@@ -45,6 +45,7 @@ import {
   MessageFanoutPayload,
   AddMembersInput,
 } from "@/types/chat";
+import { executeFirebaseOp } from "@/lib/api-errors";
 
 // ─── Collection helpers ───────────────────────────────────────────────────────
 
@@ -63,13 +64,15 @@ const userChatDocRef = (userId: string, conversationId: string) =>
  * Reads from userChats/{uid}/conversations sorted by lastMessageAt desc.
  */
 export const getChatList = async (userId: string): Promise<UserChat[]> => {
-  const q = query(
-    userChatsRef(userId),
-    orderBy("lastMessageAt", "desc"),
-    limit(50)
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserChat));
+  return executeFirebaseOp(async () => {
+    const q = query(
+      userChatsRef(userId),
+      orderBy("lastMessageAt", "desc"),
+      limit(50)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserChat));
+  }, 'getChatList');
 };
 
 /**
@@ -109,56 +112,58 @@ export const subscribeToChatList = (
 export const getOrCreateDirectConversation = async (
   input: CreateDirectChatInput
 ): Promise<string> => {
-  const { userAId, userAName, userBId, userBName, userARoleLabel, userBRoleLabel } = input;
+  return executeFirebaseOp(async () => {
+    const { userAId, userAName, userBId, userBName, userARoleLabel, userBRoleLabel } = input;
 
-  // Deterministic ID so two users always share the same conversation doc.
-  const conversationId = [userAId, userBId].sort().join("_");
-  const convDocRef = doc(db, "conversations", conversationId);
-  const convSnap = await getDoc(convDocRef);
+    // Deterministic ID so two users always share the same conversation doc.
+    const conversationId = [userAId, userBId].sort().join("_");
+    const convDocRef = doc(db, "conversations", conversationId);
+    const convSnap = await getDoc(convDocRef);
 
-  if (convSnap.exists()) {
+    if (convSnap.exists()) {
+      return conversationId;
+    }
+
+    // Create the conversation + seed userChats for both users in a batch.
+    const batch = writeBatch(db);
+
+    batch.set(convDocRef, {
+      type: "direct",
+      participants: [userAId, userBId],
+      admins: [],
+      lastMessage: "",
+      lastMessageAt: null,
+      createdAt: serverTimestamp(),
+      createdBy: userAId,
+    });
+
+    // Seed userChats for user A (showing user B's name + role label)
+    batch.set(userChatDocRef(userAId, conversationId), {
+      name: userBName,
+      type: "direct",
+      lastMessage: "",
+      lastMessageAt: null,
+      unreadCount: 0,
+      lastSeenAt: null,
+      avatarLetter: userBName.charAt(0).toUpperCase(),
+      ...(userBRoleLabel ? { roleLabel: userBRoleLabel } : {}),
+    });
+
+    // Seed userChats for user B (showing user A's name + role label)
+    batch.set(userChatDocRef(userBId, conversationId), {
+      name: userAName,
+      type: "direct",
+      lastMessage: "",
+      lastMessageAt: null,
+      unreadCount: 0,
+      lastSeenAt: null,
+      avatarLetter: userAName.charAt(0).toUpperCase(),
+      ...(userARoleLabel ? { roleLabel: userARoleLabel } : {}),
+    });
+
+    await batch.commit();
     return conversationId;
-  }
-
-  // Create the conversation + seed userChats for both users in a batch.
-  const batch = writeBatch(db);
-
-  batch.set(convDocRef, {
-    type: "direct",
-    participants: [userAId, userBId],
-    admins: [],
-    lastMessage: "",
-    lastMessageAt: null,
-    createdAt: serverTimestamp(),
-    createdBy: userAId,
-  });
-
-  // Seed userChats for user A (showing user B's name + role label)
-  batch.set(userChatDocRef(userAId, conversationId), {
-    name: userBName,
-    type: "direct",
-    lastMessage: "",
-    lastMessageAt: null,
-    unreadCount: 0,
-    lastSeenAt: null,
-    avatarLetter: userBName.charAt(0).toUpperCase(),
-    ...(userBRoleLabel ? { roleLabel: userBRoleLabel } : {}),
-  });
-
-  // Seed userChats for user B (showing user A's name + role label)
-  batch.set(userChatDocRef(userBId, conversationId), {
-    name: userAName,
-    type: "direct",
-    lastMessage: "",
-    lastMessageAt: null,
-    unreadCount: 0,
-    lastSeenAt: null,
-    avatarLetter: userAName.charAt(0).toUpperCase(),
-    ...(userARoleLabel ? { roleLabel: userARoleLabel } : {}),
-  });
-
-  await batch.commit();
-  return conversationId;
+  }, 'createDirectConversation');
 };
 
 // ─── Group / Broadcast conversation ──────────────────────────────────────────
@@ -166,37 +171,39 @@ export const getOrCreateDirectConversation = async (
 export const createGroupConversation = async (
   input: CreateGroupInput
 ): Promise<string> => {
-  const { name, type, participantIds, adminIds, createdBy, createdByName } = input;
+  return executeFirebaseOp(async () => {
+    const { name, type, participantIds, adminIds, createdBy, createdByName } = input;
 
-  const convDocRef = await addDoc(conversationsRef(), {
-    type,
-    name,
-    participants: participantIds,
-    admins: adminIds,
-    lastMessage: "",
-    lastMessageAt: null,
-    createdAt: serverTimestamp(),
-    createdBy,
-  });
-
-  const conversationId = convDocRef.id;
-  const batch = writeBatch(db);
-  const avatarLetter = name.charAt(0).toUpperCase();
-
-  participantIds.forEach((uid) => {
-    batch.set(userChatDocRef(uid, conversationId), {
-      name,
+    const convDocRef = await addDoc(conversationsRef(), {
       type,
-      lastMessage: `${createdByName} created the group`,
-      lastMessageAt: serverTimestamp(),
-      unreadCount: uid === createdBy ? 0 : 1,
-      lastSeenAt: null,
-      avatarLetter,
+      name,
+      participants: participantIds,
+      admins: adminIds,
+      lastMessage: "",
+      lastMessageAt: null,
+      createdAt: serverTimestamp(),
+      createdBy,
     });
-  });
 
-  await batch.commit();
-  return conversationId;
+    const conversationId = convDocRef.id;
+    const batch = writeBatch(db);
+    const avatarLetter = name.charAt(0).toUpperCase();
+
+    participantIds.forEach((uid) => {
+      batch.set(userChatDocRef(uid, conversationId), {
+        name,
+        type,
+        lastMessage: `${createdByName} created the group`,
+        lastMessageAt: serverTimestamp(),
+        unreadCount: uid === createdBy ? 0 : 1,
+        lastSeenAt: null,
+        avatarLetter,
+      });
+    });
+
+    await batch.commit();
+    return conversationId;
+  }, 'createGroupConversation');
 };
 
 export const addMembersToConversation = async (
@@ -278,30 +285,32 @@ export const loadMessages = async (
   messages: Message[];
   lastDoc: QueryDocumentSnapshot<DocumentData> | null;
 }> => {
-  let q = query(
-    messagesRef(conversationId),
-    orderBy("createdAt", "desc"),
-    limit(MESSAGES_PAGE_SIZE)
-  );
-
-  if (lastDoc) {
-    q = query(
+  return executeFirebaseOp(async () => {
+    let q = query(
       messagesRef(conversationId),
       orderBy("createdAt", "desc"),
-      startAfter(lastDoc),
       limit(MESSAGES_PAGE_SIZE)
     );
-  }
 
-  const snap = await getDocs(q);
-  const messages = snap.docs
-    .map((d) => ({ id: d.id, ...d.data() } as Message))
-    .reverse(); // chronological order for rendering
+    if (lastDoc) {
+      q = query(
+        messagesRef(conversationId),
+        orderBy("createdAt", "desc"),
+        startAfter(lastDoc),
+        limit(MESSAGES_PAGE_SIZE)
+      );
+    }
 
-  return {
-    messages,
-    lastDoc: snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null,
-  };
+    const snap = await getDocs(q);
+    const messages = snap.docs
+      .map((d) => ({ id: d.id, ...d.data() } as Message))
+      .reverse(); // chronological order for rendering
+
+    return {
+      messages,
+      lastDoc: snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null,
+    };
+  }, 'loadMessages');
 };
 
 /**
@@ -338,48 +347,50 @@ export const subscribeToMessages = (
  * and sends FCM push notifications.
  */
 export const sendMessage = async (input: SendMessageInput): Promise<string> => {
-  const {
-    conversationId,
-    senderId,
-    senderName,
-    text,
-    imageUrl,
-    participants,
-    conversationType,
-    conversationName,
-    tempId,
-  } = input;
+  return executeFirebaseOp(async () => {
+    const {
+      conversationId,
+      senderId,
+      senderName,
+      text,
+      imageUrl,
+      participants,
+      conversationType,
+      conversationName,
+      tempId,
+    } = input;
 
-  const msgRef = await addDoc(messagesRef(conversationId), {
-    senderId,
-    senderName,
-    ...(text ? { text } : {}),
-    ...(imageUrl ? { imageUrl } : {}),
-    createdAt: serverTimestamp(),
-    tempId, // Store tempId for deduplication
-  });
+    const msgRef = await addDoc(messagesRef(conversationId), {
+      senderId,
+      senderName,
+      ...(text ? { text } : {}),
+      ...(imageUrl ? { imageUrl } : {}),
+      createdAt: serverTimestamp(),
+      tempId, // Store tempId for deduplication
+    });
 
-  // Trigger fan-out via Next.js API route (updates userChats + sends FCM).
-  const payload: MessageFanoutPayload = {
-    conversationId,
-    messageId: msgRef.id,
-    senderId,
-    senderName,
-    text: text ?? (imageUrl ? "📷 Image" : ""),
-    ...(imageUrl ? { imageUrl } : {}),
-    participants,
-    conversationType,
-    conversationName,
-  };
+    // Trigger fan-out via Next.js API route (updates userChats + sends FCM).
+    const payload: MessageFanoutPayload = {
+      conversationId,
+      messageId: msgRef.id,
+      senderId,
+      senderName,
+      text: text ?? (imageUrl ? "📷 Image" : ""),
+      ...(imageUrl ? { imageUrl } : {}),
+      participants,
+      conversationType,
+      conversationName,
+    };
 
-  // Fire-and-forget: don't block the UI on the fan-out
-  fetch("/api/chat/message", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  }).catch((err) => console.error("Fan-out request failed:", err));
+    // Fire-and-forget: don't block the UI on the fan-out
+    fetch("/api/chat/message", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).catch((err) => console.error("Fan-out request failed:", err));
 
-  return msgRef.id;
+    return msgRef.id;
+  }, 'sendMessage');
 };
 
 // ─── Mark as read ─────────────────────────────────────────────────────────────
@@ -388,10 +399,12 @@ export const markAsRead = async (
   userId: string,
   conversationId: string
 ): Promise<void> => {
-  await updateDoc(userChatDocRef(userId, conversationId), {
-    unreadCount: 0,
-    lastSeenAt: serverTimestamp(),
-  });
+  return executeFirebaseOp(async () => {
+    await updateDoc(userChatDocRef(userId, conversationId), {
+      unreadCount: 0,
+      lastSeenAt: serverTimestamp(),
+    });
+  }, 'markAsRead');
 };
 
 // ─── Image upload ─────────────────────────────────────────────────────────────
@@ -400,10 +413,12 @@ export const uploadChatImage = async (
   file: File,
   conversationId: string
 ): Promise<string> => {
-  const uniqueName = `${Date.now()}_${file.name}`;
-  const storageRef = ref(storage, `chat-images/${conversationId}/${uniqueName}`);
-  await uploadBytes(storageRef, file);
-  return getDownloadURL(storageRef);
+  return executeFirebaseOp(async () => {
+    const uniqueName = `${Date.now()}_${file.name}`;
+    const storageRef = ref(storage, `chat-images/${conversationId}/${uniqueName}`);
+    await uploadBytes(storageRef, file);
+    return getDownloadURL(storageRef);
+  }, 'uploadChatImage');
 };
 
 // ─── User search (for new-chat modal) ────────────────────────────────────────
@@ -442,7 +457,7 @@ export const searchUsers = async (
   excludeUid: string,
   currentUserRole?: string
 ): Promise<ChatUser[]> => {
-  try {
+  return executeFirebaseOp(async () => {
     const trimmed = searchQuery.trim();
     if (!trimmed) return [];
 
@@ -484,10 +499,7 @@ export const searchUsers = async (
       }) as ChatUser)
       .filter((u) => u.uid !== excludeUid)
       .filter((u) => (u.name?.toLowerCase() || '').includes(normalizedSearch));
-  } catch (error) {
-    console.error("Error searching users:", error);
-    throw error;
-  }
+  }, 'searchUsers');
 };
 
 // ─── Get conversation metadata ────────────────────────────────────────────────
@@ -495,7 +507,9 @@ export const searchUsers = async (
 export const getConversation = async (
   conversationId: string
 ): Promise<Conversation | null> => {
-  const snap = await getDoc(doc(conversationsRef(), conversationId));
-  if (!snap.exists()) return null;
-  return { id: snap.id, ...snap.data() } as Conversation;
+  return executeFirebaseOp(async () => {
+    const snap = await getDoc(doc(conversationsRef(), conversationId));
+    if (!snap.exists()) return null;
+    return { id: snap.id, ...snap.data() } as Conversation;
+  }, 'getConversation');
 };

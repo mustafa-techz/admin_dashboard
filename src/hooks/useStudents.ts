@@ -5,6 +5,7 @@ import { useBranchStore } from "@/store/branchStore";
 import { useAuthStore } from "@/store/authStore";
 import { getAuthorizedClassIds } from "@/lib/teacherScope";
 import { Student } from "../types/student";
+import { queryKeys } from "@/lib/queryKeys";
 
 export const useStudents = () => {
   const queryClient = useQueryClient();
@@ -18,7 +19,7 @@ export const useStudents = () => {
 
   // Query: Get all students (branch + class scoped)
   const studentsQuery = useQuery({
-    queryKey: ['students', selectedBranchId, classIds],
+    queryKey: queryKeys.students.byBranch(selectedBranchId || 'all', classIds),
     queryFn: () => studentService.getStudents(
       selectedBranchId || undefined,
       classIds
@@ -32,7 +33,7 @@ export const useStudents = () => {
     mutationFn: (newStudent: Omit<Student, 'id' | 'createdAt'>) => 
       studentService.addStudent(newStudent),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['students', selectedBranchId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.students.all });
     },
   });
 
@@ -41,7 +42,7 @@ export const useStudents = () => {
     mutationFn: ({ id, data }: { id: string; data: Partial<Student> }) => 
       studentService.updateStudent(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['students', selectedBranchId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.students.all });
     },
   });
 
@@ -49,7 +50,7 @@ export const useStudents = () => {
   const deleteStudentMutation = useMutation({
     mutationFn: (id: string) => studentService.deleteStudent(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['students', selectedBranchId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.students.all });
     },
   });
 
