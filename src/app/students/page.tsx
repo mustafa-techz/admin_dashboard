@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { studentService } from '@/services/studentService';
 import { useAuthStore } from '@/store/authStore';
 import { getAuthorizedClassIds } from '@/lib/teacherScope';
+import { queryKeys } from '@/lib/queryKeys';
 import DataTable from '@/components/tables/DataTable';
 import FilterBar from '@/components/tables/FilterBar';
 import { Student } from '@/types/student';
@@ -57,7 +58,7 @@ export default function StudentsPage() {
 
   // Confirmation for Add/Edit
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
-  const [pendingSubmitData, setPendingSubmitData] = useState<any>(null);
+  const [pendingSubmitData, setPendingSubmitData] = useState<Partial<Student> | null>(null);
 
   // Students — uses branch store + teacher scope internally
   const {
@@ -68,7 +69,7 @@ export default function StudentsPage() {
   const createMutation = useMutation({
     mutationFn: studentService.addStudent,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.students.all });
       setIsFormOpen(false);
       setPendingSubmitData(null);
     },
@@ -77,7 +78,7 @@ export default function StudentsPage() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<Student> }) => studentService.updateStudent(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.students.all });
       setIsFormOpen(false);
       setEditingStudent(null);
       setPendingSubmitData(null);
@@ -87,7 +88,7 @@ export default function StudentsPage() {
   const deleteMutation = useMutation({
     mutationFn: studentService.deleteStudent,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.students.all });
       setStudentToDelete(null);
       setIsDeleteOpen(false);
     },
@@ -103,16 +104,17 @@ export default function StudentsPage() {
     return matchesSearch && matchesClass;
   }) || [];
 
-  const handleFormSubmit = (data: any) => {
+  const handleFormSubmit = (data: Partial<Student>) => {
     setPendingSubmitData(data);
     setIsSubmitConfirmOpen(true);
   };
 
   const confirmSubmit = () => {
+    if (!pendingSubmitData) return;
     if (editingStudent) {
       updateMutation.mutate({ id: editingStudent.id, data: pendingSubmitData });
     } else {
-      createMutation.mutate(pendingSubmitData);
+      createMutation.mutate(pendingSubmitData as Student);
     }
     setIsSubmitConfirmOpen(false);
   };
