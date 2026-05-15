@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useBranchStore } from '@/store/branchStore';
-import TimetableForm from '@/components/timetable/TimetableForm';
-import TimetableList from '@/components/timetable/TimetableList';
-import TimetableView from '@/components/timetable/TimetableView';
+import dynamic from 'next/dynamic';
 import { cn } from '@/lib/utils';
+
+const TimetableForm = dynamic(() => import('@/components/timetable/TimetableForm'), { ssr: false });
+const TimetableList = dynamic(() => import('@/components/timetable/TimetableList'), { ssr: false });
+const TimetableView = dynamic(() => import('@/components/timetable/TimetableView'), { ssr: false });
 import { CalendarDays, PlusCircle, LayoutList } from 'lucide-react';
 import RefreshButton from '@/components/shared/RefreshButton';
 import { useMemo } from 'react';

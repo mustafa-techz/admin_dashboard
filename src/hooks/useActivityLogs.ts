@@ -17,6 +17,6 @@ export const useActivityLogs = (branchId?: string, limitCount = 20) => {
     queryFn: () => activityService.getRecentActivities(branchId, limitCount),
     enabled: !!user && user.role === 'admin', // Only admins can view logs
     staleTime: 60 * 1000, // 1 minute
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 };

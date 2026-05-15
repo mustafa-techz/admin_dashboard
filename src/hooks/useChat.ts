@@ -250,10 +250,7 @@ export const useSendMessage = (userId: string | undefined) => {
     },
 
     onSuccess: () => {
-      // Invalidate the chat list so lastMessage preview refreshes
-      if (userId) {
-        queryClient.invalidateQueries({ queryKey: chatKeys.list(userId) });
-      }
+      // Chat list updates automatically via the global realtime listener
     },
 
     onError: (_err, input, context) => {
@@ -315,9 +312,7 @@ export const useCreateDirectChat = (userId: string | undefined) => {
     mutationFn: (input: CreateDirectChatInput) =>
       getOrCreateDirectConversation(input),
     onSuccess: () => {
-      if (userId) {
-        queryClient.invalidateQueries({ queryKey: chatKeys.list(userId) });
-      }
+      // Realtime listener handles updates
     },
   });
 };
@@ -330,9 +325,7 @@ export const useCreateGroup = (userId: string | undefined) => {
   return useMutation({
     mutationFn: (input: CreateGroupInput) => createGroupConversation(input),
     onSuccess: () => {
-      if (userId) {
-        queryClient.invalidateQueries({ queryKey: chatKeys.list(userId) });
-      }
+      // Realtime listener handles updates
     },
   });
 };
@@ -344,8 +337,8 @@ export const useAddMembersToChat = () => {
 
   return useMutation({
     mutationFn: (input: AddMembersInput) => addMembersToConversation(input),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: chatKeys.list(variables.addedBy) });
+    onSuccess: () => {
+      // Realtime listener handles updates
     },
   });
 };

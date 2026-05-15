@@ -9,14 +9,16 @@ import DataTable from '@/components/tables/DataTable';
 import FilterBar from '@/components/tables/FilterBar';
 import { Teacher } from '@/types/teacher';
 import { Eye, Edit, Trash2, UserCheck, BookOpen, BadgeCheck } from 'lucide-react';
-import TeacherForm from '@/components/teachers/TeacherForm';
-import TeacherViewModal from '@/components/teachers/TeacherViewModal';
+import dynamic from 'next/dynamic';
+
+const TeacherForm = dynamic(() => import('@/components/teachers/TeacherForm'), { ssr: false });
+const TeacherViewModal = dynamic(() => import('@/components/teachers/TeacherViewModal'), { ssr: false });
 import ConfirmationModal from '@/components/shared/ConfirmationModal';
 
 export default function TeachersPage() {
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState('');
-  const { selectedBranchId } = useBranchStore();
+  const selectedBranchId = useBranchStore(state => state.selectedBranchId);
   const queryClient = useQueryClient();
 
   // Master Data Queries
@@ -48,7 +50,7 @@ export default function TeachersPage() {
   const createMutation = useMutation({
     mutationFn: teacherService.addTeacher,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teachers'] });
+      queryClient.invalidateQueries({ queryKey: ['teachers', selectedBranchId] });
       setIsFormOpen(false);
       setPendingSubmitData(null);
     },
@@ -57,7 +59,7 @@ export default function TeachersPage() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<Teacher> }) => teacherService.updateTeacher(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teachers'] });
+      queryClient.invalidateQueries({ queryKey: ['teachers', selectedBranchId] });
       setIsFormOpen(false);
       setEditingTeacher(null);
       setPendingSubmitData(null);
@@ -67,7 +69,7 @@ export default function TeachersPage() {
   const deleteMutation = useMutation({
     mutationFn: teacherService.deleteTeacher,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teachers'] });
+      queryClient.invalidateQueries({ queryKey: ['teachers', selectedBranchId] });
       setTeacherToDelete(null);
       setIsDeleteOpen(false);
     },

@@ -7,9 +7,11 @@ import { User, UserRole, CreateUserData, UpdateUserData } from '@/types/user';
 import { useAuthStore } from '@/store/authStore';
 import UsersTable from '@/components/users/UsersTable';
 import UserFilterBar from '@/components/users/UserFilterBar';
-import CreateUserModal from '@/components/users/CreateUserModal';
-import EditUserModal from '@/components/users/EditUserModal';
-import ViewUserModal from '@/components/users/ViewUserModal';
+import dynamic from 'next/dynamic';
+
+const CreateUserModal = dynamic(() => import('@/components/users/CreateUserModal'), { ssr: false });
+const EditUserModal = dynamic(() => import('@/components/users/EditUserModal'), { ssr: false });
+const ViewUserModal = dynamic(() => import('@/components/users/ViewUserModal'), { ssr: false });
 import ConfirmationModal from '@/components/shared/ConfirmationModal';
 
 export default function UsersPage() {

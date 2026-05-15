@@ -5,12 +5,13 @@ import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-import FeeCreationForm from '@/components/fees/FeeCreationForm';
-import FeeStructuresList from '@/components/fees/FeeStructuresList';
-import AdminStudentFeeOverview from '@/components/fees/AdminStudentFeeOverview';
-import ParentFeeDashboard from '@/components/fees/ParentFeeDashboard';
-
+import dynamic from 'next/dynamic';
 import { cn } from '@/lib/utils';
+
+const FeeCreationForm = dynamic(() => import('@/components/fees/FeeCreationForm'), { ssr: false });
+const FeeStructuresList = dynamic(() => import('@/components/fees/FeeStructuresList'), { ssr: false });
+const AdminStudentFeeOverview = dynamic(() => import('@/components/fees/AdminStudentFeeOverview'), { ssr: false });
+const ParentFeeDashboard = dynamic(() => import('@/components/fees/ParentFeeDashboard'), { ssr: false });
 import {
   IndianRupee,
   PlusCircle,

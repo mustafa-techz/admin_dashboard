@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { feeService } from '@/services/feeService';
 import { useAuthStore } from '@/store/authStore';
+import { useBranchStore } from '@/store/branchStore';
 import type {
   FeeStructureFormData,
   FeeInstallmentFormData,
@@ -183,10 +184,13 @@ export function useStudentPayments(studentId: string) {
 export function useDeleteFeeStructure() {
   const queryClient = useQueryClient();
 
+  const selectedBranchId = useBranchStore(state => state.selectedBranchId);
+
   return useMutation({
     mutationFn: (feeStructureId: string) => feeService.deleteFeeStructure(feeStructureId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: feeKeys.all });
+      queryClient.invalidateQueries({ queryKey: feeKeys.structures(selectedBranchId) });
+      queryClient.invalidateQueries({ queryKey: feeKeys.branchAssignments(selectedBranchId) });
     },
   });
 }
@@ -195,9 +199,12 @@ export function useDeleteStudentFeeAssignment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (assignmentId: string) => feeService.deleteStudentFeeAssignment(assignmentId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: feeKeys.all });
+    mutationFn: ({ assignmentId, studentId }: { assignmentId: string; studentId: string }) => feeService.deleteStudentFeeAssignment(assignmentId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: feeKeys.studentAssignments(variables.studentId) });
+      queryClient.invalidateQueries({ queryKey: feeKeys.pendingInstallments(variables.studentId) });
+      // Invalidate the branch assignments cache to update summary charts in AdminStudentFeeOverview
+      queryClient.invalidateQueries({ queryKey: feeKeys.all }); 
     },
   });
 }

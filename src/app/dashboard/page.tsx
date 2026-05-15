@@ -5,9 +5,11 @@ import { useAuthStore } from '@/store/authStore';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { getDashboardStats } from '@/services/mockApi';
+import dynamic from 'next/dynamic';
 import DashboardCard from '@/components/dashboard/DashboardCard';
-import ActivityFeed from '@/components/dashboard/ActivityFeed';
-import DashboardAnnouncements from '@/components/dashboard/DashboardAnnouncements';
+
+const ActivityFeed = dynamic(() => import('@/components/dashboard/ActivityFeed'), { ssr: false });
+const DashboardAnnouncements = dynamic(() => import('@/components/dashboard/DashboardAnnouncements'), { ssr: false });
 
 import { 
   Users, UserCheck, BookOpen, AlertCircle, Calendar, 

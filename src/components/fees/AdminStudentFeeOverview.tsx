@@ -59,7 +59,7 @@ function StudentFeeDetail({
       : 0;
 
   const handleDelete = () => {
-    deleteMutation.mutate(assignment.id, {
+    deleteMutation.mutate({ assignmentId: assignment.id, studentId: assignment.studentId }, {
       onSuccess: () => {
         setIsDeleteOpen(false);
         onBack();

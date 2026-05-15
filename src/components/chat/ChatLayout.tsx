@@ -5,7 +5,8 @@ import { MessageSquareDashed } from "lucide-react";
 import { useChatStore } from "@/store/chatStore";
 import ChatSidebar from "./ChatSidebar";
 import ChatWindow from "./ChatWindow";
-import NewChatModal from "./NewChatModal";
+import dynamic from 'next/dynamic';
+const NewChatModal = dynamic(() => import('./NewChatModal'), { ssr: false });
 import { cn } from "@/lib/utils";
 
 export default function ChatLayout() {

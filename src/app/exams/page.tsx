@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useBranchStore } from '@/store/branchStore';
-import AssessmentForm from '@/components/exams/AssessmentForm';
-import AssessmentList from '@/components/exams/AssessmentList';
-import MarksEntry from '@/components/exams/MarksEntry';
-import ParentExamView from '@/components/exams/ParentExamView';
+import dynamic from 'next/dynamic';
 import { cn } from '@/lib/utils';
+
+const AssessmentForm = dynamic(() => import('@/components/exams/AssessmentForm'), { ssr: false });
+const AssessmentList = dynamic(() => import('@/components/exams/AssessmentList'), { ssr: false });
+const MarksEntry = dynamic(() => import('@/components/exams/MarksEntry'), { ssr: false });
+const ParentExamView = dynamic(() => import('@/components/exams/ParentExamView'), { ssr: false });
 import { ClipboardList, PlusCircle, LayoutList, PenLine } from 'lucide-react';
 import RefreshButton from '@/components/shared/RefreshButton';
 import { useMemo } from 'react';
