@@ -140,7 +140,7 @@ export default function AttendancePage() {
   }, [displayStudents.length, committedAttendance, drafts]);
 
   // ── 4. Changes pending submission ────────────────────────────────────
-  const rawChanges = useMemo(() => getChanges(committedAttendance), [getChanges, committedAttendance]);
+  const rawChanges = useMemo(() => getChanges(committedAttendance), [getChanges, committedAttendance, drafts]);
   const hasChanges = Object.keys(rawChanges).length > 0;
 
   // ── 5. Submit mutation ───────────────────────────────────────────────
