@@ -60,4 +60,17 @@ export const userService = {
       "deleteUser"
     );
   },
+
+  getSubAdmins: async (): Promise<any[]> => {
+    const users = await userService.getUsers();
+    return users
+      .filter((u) => u.role === "sub-admin")
+      .map((u) => ({
+        id: u.uid,
+        name: u.name,
+        email: u.email,
+        role: "sub-admin",
+        permissions: (u as any).permissions || [],
+      }));
+  },
 };

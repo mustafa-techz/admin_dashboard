@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Edit2, Trash2 } from 'lucide-react';
 import { classService, sectionService, branchService } from '@/services/firebase/masterDataService';
+import { queryKeys } from '@/lib/queryKeys';
 import MasterDataModal from '@/components/shared/MasterDataModal';
 import ConfirmationModal from '@/components/shared/ConfirmationModal';
 
@@ -36,17 +37,17 @@ export default function CreatePage() {
   // Mutations
   const classMutation = useMutation({
     mutationFn: async (data: any) => { modalState.mode === 'add' ? await classService.addClass(data) : await classService.updateClass(modalState.initialData.id, data); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['classes'] }); closeModal(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.master.classes }); closeModal(); },
   });
 
   const sectionMutation = useMutation({
     mutationFn: async (data: any) => { modalState.mode === 'add' ? await sectionService.addSection(data) : await sectionService.updateSection(modalState.initialData.id, data); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['sections'] }); closeModal(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.master.sections }); closeModal(); },
   });
 
   const branchMutation = useMutation({
     mutationFn: async (data: any) => { modalState.mode === 'add' ? await branchService.addBranch(data) : await branchService.updateBranch(modalState.initialData.id, data); },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['branches'] }); closeModal(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: queryKeys.master.branches }); closeModal(); },
   });
 
   const deleteMutation = useMutation({
@@ -56,7 +57,12 @@ export default function CreatePage() {
       return branchService.deleteBranch(id);
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: [variables.type + 'es' === 'sectiones' ? 'sections' : variables.type + 's'] });
+      const keyMap: Record<DataType, readonly string[]> = {
+        class: queryKeys.master.classes,
+        section: queryKeys.master.sections,
+        branch: queryKeys.master.branches,
+      };
+      queryClient.invalidateQueries({ queryKey: keyMap[variables.type] });
       setDeleteId(null);
     },
   });

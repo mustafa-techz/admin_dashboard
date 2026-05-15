@@ -7,7 +7,7 @@ import { classService } from '@/services/firebase/masterDataService';
 import { useBranchStore } from '@/store/branchStore';
 import DataTable from '@/components/tables/DataTable';
 import FilterBar from '@/components/tables/FilterBar';
-import { Teacher } from '@/types/teacher';
+import { Teacher, TeacherFormData } from '@/types/teacher';
 import { Eye, Edit, Trash2, UserCheck, BookOpen, BadgeCheck } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
@@ -39,6 +39,7 @@ export default function TeachersPage() {
 
   // Confirmation for Add/Edit
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [pendingSubmitData, setPendingSubmitData] = useState<any>(null);
 
   const { data: teachers = [], isLoading: isLoadingTeachers } = useQuery<Teacher[]>({
@@ -90,16 +91,18 @@ export default function TeachersPage() {
     return matchesSearch && matchesClass;
   }) || [];
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleFormSubmit = (data: any) => {
     setPendingSubmitData(data);
     setIsSubmitConfirmOpen(true);
   };
 
   const confirmSubmit = () => {
+    if (!pendingSubmitData) return;
     if (editingTeacher) {
       updateMutation.mutate({ id: editingTeacher.id, data: pendingSubmitData });
     } else {
-      createMutation.mutate(pendingSubmitData);
+      createMutation.mutate(pendingSubmitData as TeacherFormData);
     }
     setIsSubmitConfirmOpen(false);
   };

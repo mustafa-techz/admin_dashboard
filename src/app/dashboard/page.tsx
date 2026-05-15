@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
-import { getDashboardStats } from '@/services/mockApi';
+import { dashboardService } from '@/services/dashboardService';
 import dynamic from 'next/dynamic';
 import DashboardCard from '@/components/dashboard/DashboardCard';
 
@@ -32,7 +32,7 @@ export default function DashboardPage() {
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ['dashboardStats'],
-    queryFn: getDashboardStats,
+    queryFn: dashboardService.getDashboardStats,
     staleTime: 5 * 60 * 1000,
   });
 

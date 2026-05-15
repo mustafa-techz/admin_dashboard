@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getSubAdmins } from '@/services/mockApi';
+import { userService } from '@/services/userService';
 import DataTable from '@/components/tables/DataTable';
 import FilterBar from '@/components/tables/FilterBar';
 import { SubAdmin } from '@/types';
@@ -13,7 +13,7 @@ export default function SubAdminsPage() {
   
   const { data: subAdmins, isLoading } = useQuery({
     queryKey: ['subAdmins'],
-    queryFn: getSubAdmins,
+    queryFn: userService.getSubAdmins,
   });
 
   const filteredSubAdmins = subAdmins?.filter(admin => 

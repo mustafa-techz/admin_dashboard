@@ -16,7 +16,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase/firestore';
 import { executeFirebaseOp } from '@/lib/api-errors';
-import { AttendanceSession, AttendanceStatus, StudentStats } from '../types/attendance';
+import { AttendanceSession, AttendanceStatus, StudentStats, DailySummary } from '../types/attendance';
 import { logActivity } from '@/lib/activityLogger';
 
 /** Builds the session document ID */
@@ -283,5 +283,17 @@ export const attendanceService = {
       if (!snap.exists()) return null;
       return snap.data() as StudentStats;
     }, 'getStudentStats');
+  },
+
+  /**
+   * Fetch daily summary for a specific date.
+   */
+  async getDailySummary(date: string): Promise<DailySummary | null> {
+    return executeFirebaseOp(async () => {
+      const ref = doc(db, 'daily_summaries', date);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return null;
+      return snap.data() as DailySummary;
+    }, 'getDailySummary');
   },
 };
