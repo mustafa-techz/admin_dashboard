@@ -15,6 +15,7 @@ import {
 import { db } from "../firebase/firestore";
 import { Teacher, TeacherFormData } from "../types/teacher";
 import { userService } from "./userService";
+import { executeFirebaseOp } from "@/lib/api-errors";
 
 const teacherCollection = collection(db, "teachers");
 
@@ -22,7 +23,8 @@ export const teacherService = {
   // Create with Sequential Employee ID
   // Uses auth UID as the Firestore doc ID so AuthProvider can fetch teachers/{uid}
   async addTeacher(teacher: TeacherFormData) {
-    const counterDocRef = doc(db, "counters", "teachers");
+    return executeFirebaseOp(async () => {
+      const counterDocRef = doc(db, "counters", "teachers");
 
     // Resolve classTeacher classId to a readable label (e.g. "10-A")
     let classTeacherOf: string | undefined;
@@ -88,12 +90,13 @@ export const teacherService = {
       return newTeacherRef.id;
     });
 
-    return teacherId;
+      return teacherId;
+    }, "addTeacher");
   },
 
   // Read
   async getTeachers(branchId?: string): Promise<Teacher[]> {
-    try {
+    return executeFirebaseOp(async () => {
       if (branchId) {
         // Teachers can store branch in two ways:
         //   1. Legacy: branchId (single string)
@@ -150,15 +153,13 @@ export const teacherService = {
         const timeB = (b as Teacher & { createdAt?: { seconds: number } }).createdAt?.seconds || 0;
         return timeB - timeA;
       });
-    } catch (error) {
-      console.error("Error fetching teachers:", error);
-      return [];
-    }
+    }, "getTeachers");
   },
 
   // Get Single Teacher
   async getTeacherById(id: string): Promise<Teacher | null> {
-    const docRef = doc(db, "teachers", id);
+    return executeFirebaseOp(async () => {
+      const docRef = doc(db, "teachers", id);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
@@ -169,21 +170,26 @@ export const teacherService = {
         ...data,
       } as Teacher;
     }
-    return null;
+      return null;
+    }, "getTeacherById");
   },
 
   // Update
   async updateTeacher(id: string, teacher: Partial<Teacher>) {
-    const docRef = doc(db, "teachers", id);
+    return executeFirebaseOp(async () => {
+      const docRef = doc(db, "teachers", id);
     await updateDoc(docRef, {
       ...teacher,
       updatedAt: serverTimestamp(),
     });
+    }, "updateTeacher");
   },
 
   // Delete
   async deleteTeacher(id: string) {
-    const docRef = doc(db, "teachers", id);
-    await deleteDoc(docRef);
+    return executeFirebaseOp(async () => {
+      const docRef = doc(db, "teachers", id);
+      await deleteDoc(docRef);
+    }, "deleteTeacher");
   }
 };

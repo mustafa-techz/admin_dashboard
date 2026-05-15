@@ -2,9 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventService } from '../services/eventService';
 import { AnnouncementFilter, CreateEventData, SchoolEvent } from '../types/announcement';
 import { useBranchStore } from '@/store/branchStore';
-
-const QUERY_KEY = 'announcements';
-const ADMIN_QUERY_KEY = 'events-admin';
+import { queryKeys } from '@/lib/queryKeys';
 
 // ---------- Parent: published announcements ----------
 
@@ -15,7 +13,7 @@ const ADMIN_QUERY_KEY = 'events-admin';
  */
 export function useAnnouncements(filter: AnnouncementFilter = {}) {
   return useQuery({
-    queryKey: [QUERY_KEY, filter],
+    queryKey: queryKeys.announcements.list(filter),
     queryFn: () => eventService.getPublishedAnnouncements(filter),
     staleTime: 5 * 60 * 1000, // 5 minutes — avoids repeated Firestore reads
     gcTime: 10 * 60 * 1000,   // 10 minutes garbage collection window
@@ -30,7 +28,7 @@ export function useAnnouncements(filter: AnnouncementFilter = {}) {
 export function useUpcomingAnnouncements(limit = 3) {
   const selectedBranchId = useBranchStore(state => state.selectedBranchId);
   return useQuery({
-    queryKey: [QUERY_KEY, 'upcoming', limit, selectedBranchId],
+    queryKey: queryKeys.announcements.upcoming(limit, selectedBranchId || 'all'),
     queryFn: () => eventService.getUpcomingAnnouncements(limit, selectedBranchId || undefined),
     staleTime: 5 * 60 * 1000,
   });
@@ -46,7 +44,7 @@ export function useUpcomingAnnouncements(limit = 3) {
 export function useAdminEvents() {
   const selectedBranchId = useBranchStore(state => state.selectedBranchId);
   return useQuery({
-    queryKey: [ADMIN_QUERY_KEY, selectedBranchId],
+    queryKey: queryKeys.announcements.adminList(selectedBranchId || 'all'),
     queryFn: () => eventService.getAllEvents(50, selectedBranchId || undefined),
     staleTime: 60 * 1000, // 1 minute
     enabled: !!selectedBranchId,
@@ -68,7 +66,7 @@ export function useCreateEvent() {
       createdByName: string;
     }) => eventService.createEvent(data, createdBy, createdByName),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
     },
   });
 }
@@ -78,8 +76,7 @@ export function usePublishEvent() {
   return useMutation({
     mutationFn: (eventId: string) => eventService.publishEvent(eventId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
     },
   });
 }
@@ -90,8 +87,7 @@ export function useUpdateEvent() {
     mutationFn: ({ eventId, data }: { eventId: string; data: Partial<SchoolEvent> }) =>
       eventService.updateEvent(eventId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
     },
   });
 }
@@ -101,8 +97,7 @@ export function useSoftDeleteEvent() {
   return useMutation({
     mutationFn: (eventId: string) => eventService.softDeleteEvent(eventId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
     },
   });
 }
@@ -112,8 +107,7 @@ export function useArchiveEvent() {
   return useMutation({
     mutationFn: (eventId: string) => eventService.archiveEvent(eventId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY] });
-      queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
     },
   });
 }

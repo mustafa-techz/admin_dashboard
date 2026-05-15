@@ -202,6 +202,7 @@ export default function CreatePage() {
           message="Are you sure you want to delete this? This action cannot be undone."
           type="danger"
           confirmText="Delete"
+          isLoading={deleteMutation.isPending}
         />
       )}
     </div>

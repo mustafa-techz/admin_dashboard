@@ -1,12 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { userService } from "@/services/userService";
 import { CreateUserData, UpdateUserData } from "@/types/user";
+import { queryKeys } from "@/lib/queryKeys";
 
 export const useUsers = () => {
   const queryClient = useQueryClient();
 
   const usersQuery = useQuery({
-    queryKey: ["users"],
+    queryKey: queryKeys.users.all,
     queryFn: userService.getUsers,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -15,21 +16,21 @@ export const useUsers = () => {
   const createUserMutation = useMutation({
     mutationFn: (userData: CreateUserData) => userService.createUser(userData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
     },
   });
 
   const updateUserMutation = useMutation({
     mutationFn: (userData: UpdateUserData) => userService.updateUser(userData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
     },
   });
 
   const deleteUserMutation = useMutation({
     mutationFn: (uid: string) => userService.deleteUser(uid),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
     },
   });
 

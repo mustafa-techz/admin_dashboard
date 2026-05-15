@@ -51,34 +51,16 @@ export default function UsersPage() {
   const handleSetDeleteUser = useCallback((user: User) => setDeletingUser(user), []);
 
   const handleCreateUser = async (data: CreateUserData) => {
-    try {
-      await createUser(data);
-    } catch (error) {
-      console.error(error);
-      alert('Failed to create user');
-      throw error;
-    }
+    await createUser(data);
   };
 
   const handleUpdateUser = async (data: UpdateUserData) => {
-    try {
-      await updateUser(data);
-    } catch (error) {
-      console.error(error);
-      alert('Failed to update user');
-      throw error;
-    }
+    await updateUser(data);
   };
 
   const handleDeleteConfirm = async () => {
     if (deletingUser) {
-      try {
-        await deleteUser(deletingUser.uid);
-      } catch (error) {
-        console.error(error);
-        alert('Failed to delete user');
-        throw error;
-      }
+      await deleteUser(deletingUser.uid);
     }
   };
 

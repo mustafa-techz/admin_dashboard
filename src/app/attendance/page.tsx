@@ -146,6 +146,9 @@ export default function AttendancePage() {
   // ── 5. Submit mutation ───────────────────────────────────────────────
   const submitMutation = useMutation({
     mutationFn: () => {
+      if (!user?.id) {
+        return Promise.reject(new Error('User not authenticated'));
+      }
       // Merge draft over committed to form the full new state
       const newStatuses: Record<string, AttendanceStatus> = {
         ...committedAttendance,
@@ -158,7 +161,7 @@ export default function AttendancePage() {
         currentDate,
         selectedClassId,
         selectedSectionId,
-        user?.id || 'teacher_placeholder',
+        user.id,
         displayStudents.length,
         newStatuses,
         committedAttendance,
@@ -453,7 +456,7 @@ export default function AttendancePage() {
       {/* Floating submit button */}
       <div className="fixed bottom-8 right-8 z-40">
         <button
-          disabled={!hasChanges || submitMutation.isPending}
+          disabled={!hasChanges || submitMutation.isPending || !user?.id}
           onClick={() => submitMutation.mutate()}
           className={cn(
             'px-8 py-3 rounded-2xl font-black text-sm transition-all duration-300 shadow-xl flex items-center gap-2',
