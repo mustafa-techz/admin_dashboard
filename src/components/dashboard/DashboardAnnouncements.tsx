@@ -167,12 +167,12 @@ const SkeletonLoader = () => (
 export default function DashboardAnnouncements() {
   const { data: events, isLoading } = useUpcomingAnnouncements(3);
 
-  // Filter out any accidentally returned expired events on client (safety fallback)
+  // Filter out any accidentally returned expired or deleted events on client (safety fallback)
   const upcomingEvents = useMemo(() => {
     if (!events) return [];
     const now = Date.now();
     return events
-      .filter(e => e.endAt.toMillis() >= now)
+      .filter(e => !e.isDeleted && e.endAt.toMillis() >= now)
       .sort((a, b) => a.startAt.toMillis() - b.startAt.toMillis());
   }, [events]);
 

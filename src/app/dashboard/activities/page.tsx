@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ActivityAction, ActivityLog } from '@/types/activity';
+import { queryKeys } from '@/lib/queryKeys';
 
 const isFirestoreId = (val: unknown): boolean => 
   typeof val === 'string' && val.length >= 15 && /^[a-zA-Z0-9_-]+$/.test(val);
@@ -119,7 +120,7 @@ export default function ActivitiesPage() {
   
   // For simplicity, we fetch 50 for the full page
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
-    queryKey: ['activityLogs', 'full'],
+    queryKey: queryKeys.activityLogs.full,
     queryFn: () => activityService.getRecentActivities(undefined, 50),
     enabled: !!user && user.role === 'admin',
   });

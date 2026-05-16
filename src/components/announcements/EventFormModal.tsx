@@ -109,11 +109,11 @@ export default function EventFormModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
-            <div className="w-full md:max-w-lg bg-card rounded-t-3xl md:rounded-3xl shadow-2xl border border-border max-h-[90vh] overflow-y-auto">
+            <div className="w-full max-w-[95vw] sm:max-w-lg bg-card rounded-2xl shadow-2xl border border-border flex flex-col max-h-[90vh] overflow-hidden">
               {/* Header */}
-              <div className="flex items-center justify-between p-5 border-b border-border sticky top-0 bg-card z-10">
+              <div className="shrink-0 flex items-center justify-between p-5 border-b border-border bg-card">
                 <div>
                   <h2 className="text-lg font-black text-foreground">
                     {initialData?.id ? 'Edit Event' : 'Create Event'}
@@ -122,6 +122,7 @@ export default function EventFormModal({
                 </div>
                 <button
                   id="close-event-modal"
+                  type="button"
                   onClick={onClose}
                   className="p-2 rounded-xl hover:bg-muted transition-colors"
                 >
@@ -129,7 +130,7 @@ export default function EventFormModal({
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="p-5 space-y-4">
+              <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4">
                 {/* Title */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
@@ -164,7 +165,7 @@ export default function EventFormModal({
                 </div>
 
                 {/* Type + Priority row */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
                       Type
@@ -228,7 +229,7 @@ export default function EventFormModal({
 
                 {/* Class / Section IDs (optional) */}
                 {(scope === 'class' || scope === 'section') && (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
                         Class ID
@@ -261,7 +262,7 @@ export default function EventFormModal({
                 )}
 
                 {/* Date range */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
                       <Calendar size={11} /> Starts *
@@ -298,7 +299,7 @@ export default function EventFormModal({
                 )}
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-2">
+                <div className="shrink-0 flex gap-3 pt-4 border-t border-border mt-6">
                   <button
                     type="button"
                     onClick={onClose}

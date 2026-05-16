@@ -3,6 +3,11 @@ import { eventService } from '../services/eventService';
 import { AnnouncementFilter, CreateEventData, SchoolEvent } from '../types/announcement';
 import { useBranchStore } from '@/store/branchStore';
 import { queryKeys } from '@/lib/queryKeys';
+import {
+  prependActivityCache,
+  syncCreatedEventCache,
+  syncPublishedEventCache,
+} from '@/lib/dashboardCacheSync';
 
 // ---------- Parent: published announcements ----------
 
@@ -53,6 +58,23 @@ export function useAdminEvents() {
 
 // ---------- Mutations ----------
 
+/**
+ * Helper to safely update cached announcement queries whether stored as SchoolEvent[] or { events: SchoolEvent[], lastDoc?: any }
+ */
+function updateAnnouncementsCache(old: unknown, updater: (events: SchoolEvent[]) => SchoolEvent[]): unknown {
+  if (!old) return old;
+  if (Array.isArray(old)) {
+    return updater(old);
+  }
+  if (typeof old === 'object' && old !== null && 'events' in old && Array.isArray((old as any).events)) {
+    return {
+      ...old,
+      events: updater((old as any).events),
+    };
+  }
+  return old;
+}
+
 export function useCreateEvent() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -65,8 +87,15 @@ export function useCreateEvent() {
       createdBy: string;
       createdByName: string;
     }) => eventService.createEvent(data, createdBy, createdByName),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
+    onSuccess: (eventId, variables) => {
+      syncCreatedEventCache(
+        queryClient,
+        eventId,
+        variables.data,
+        variables.createdBy,
+        variables.createdByName
+      );
+      queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all, refetchType: 'none' });
     },
   });
 }
@@ -75,8 +104,9 @@ export function usePublishEvent() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (eventId: string) => eventService.publishEvent(eventId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
+    onSuccess: (_, eventId) => {
+      syncPublishedEventCache(queryClient, eventId);
+      queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all, refetchType: 'none' });
     },
   });
 }
@@ -86,18 +116,41 @@ export function useUpdateEvent() {
   return useMutation({
     mutationFn: ({ eventId, data }: { eventId: string; data: Partial<SchoolEvent> }) =>
       eventService.updateEvent(eventId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
+    onSuccess: (_, variables) => {
+      queryClient.setQueriesData(
+        { queryKey: queryKeys.announcements.all },
+        (old) => updateAnnouncementsCache(old, (events) =>
+          events.map((event) => (event.id === variables.eventId ? { ...event, ...variables.data } as SchoolEvent : event))
+        )
+      );
+      queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all, refetchType: 'none' });
     },
   });
 }
 
 export function useSoftDeleteEvent() {
   const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (eventId: string) => eventService.softDeleteEvent(eventId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
+    onSuccess: (_, eventId) => {
+      queryClient.setQueriesData(
+        { queryKey: queryKeys.announcements.all },
+        (old) => updateAnnouncementsCache(old, (events) =>
+          events.filter((event) => event.id !== eventId)
+        )
+      );
+
+      prependActivityCache(queryClient, {
+        action: 'event_deleted',
+        entityType: 'event',
+        entityId: eventId,
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.announcements.all,
+        refetchType: 'none',
+      });
     },
   });
 }
@@ -106,8 +159,18 @@ export function useArchiveEvent() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (eventId: string) => eventService.archiveEvent(eventId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all });
+    onSuccess: (_, eventId) => {
+      queryClient.setQueriesData(
+        { queryKey: queryKeys.announcements.all },
+        (old) => updateAnnouncementsCache(old, (events) =>
+          events.map((event) => (
+            event.id === eventId
+              ? { ...event, status: 'archived', publishedToParents: false }
+              : event
+          ))
+        )
+      );
+      queryClient.invalidateQueries({ queryKey: queryKeys.announcements.all, refetchType: 'none' });
     },
   });
 }

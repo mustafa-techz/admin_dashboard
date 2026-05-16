@@ -53,9 +53,9 @@ export default function RecordPaymentModal({ installment, onClose }: RecordPayme
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-background rounded-2xl border border-border shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200">
+      <div className="bg-background rounded-2xl border border-border shadow-2xl w-full max-w-[95vw] sm:max-w-md flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="p-5 border-b border-border flex items-center justify-between">
+        <div className="shrink-0 p-5 border-b border-border flex items-center justify-between bg-background">
           <div>
             <h3 className="text-lg font-black text-foreground flex items-center gap-2">
               <IndianRupee className="text-primary" size={20} />
@@ -74,7 +74,7 @@ export default function RecordPaymentModal({ installment, onClose }: RecordPayme
           </button>
         </div>
 
-        <div className="p-5 space-y-5">
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {/* Payment Summary */}
           <div className="bg-card rounded-xl border border-border p-4 grid grid-cols-3 gap-3 text-center">
             <div>
@@ -124,7 +124,7 @@ export default function RecordPaymentModal({ installment, onClose }: RecordPayme
             <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
               Payment Mode
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {PAYMENT_MODES.map((mode) => (
                 <button
                   type="button"
@@ -174,7 +174,7 @@ export default function RecordPaymentModal({ installment, onClose }: RecordPayme
         </div>
 
         {/* Actions */}
-        <div className="p-5 border-t border-border flex items-center justify-end gap-2">
+        <div className="shrink-0 p-5 border-t border-border flex items-center justify-end gap-2 bg-background">
           <button
             type="button"
             onClick={onClose}

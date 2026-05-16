@@ -1,13 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { activityService } from '@/services/activityService';
 import { useAuthStore } from '@/store/authStore';
-
-export const queryKeys = {
-  activityLogs: {
-    all: ['activityLogs'] as const,
-    byBranch: (branchId?: string) => ['activityLogs', { branchId }] as const,
-  }
-};
+import { queryKeys } from '@/lib/queryKeys';
 
 export const useActivityLogs = (branchId?: string, limitCount = 20) => {
   const user = useAuthStore(state => state.user);

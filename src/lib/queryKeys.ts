@@ -39,9 +39,25 @@ export const queryKeys = {
   // Announcements
   announcements: {
     all: ['announcements'] as const,
-    list: (filter?: any) => [...queryKeys.announcements.all, filter] as const,
+    list: (filter?: unknown) => [...queryKeys.announcements.all, filter] as const,
     upcoming: (limit: number, branchId?: string) => 
       [...queryKeys.announcements.all, 'upcoming', limit, branchId] as const,
     adminList: (branchId?: string) => [...queryKeys.announcements.all, 'admin', branchId] as const,
+  },
+
+  // Dashboard
+  dashboard: {
+    stats: ['dashboardStats'] as const,
+    dailyAttendanceSessions: (date: string) =>
+      ['daily-attendance-sessions', date] as const,
+    teacherSubmittedAttendance: (classIds: string[] | undefined, date: string) =>
+      ['teacher-submitted-attendance', classIds, date] as const,
+  },
+
+  // Activity Logs
+  activityLogs: {
+    all: ['activityLogs'] as const,
+    byBranch: (branchId?: string) => ['activityLogs', { branchId }] as const,
+    full: ['activityLogs', 'full'] as const,
   },
 };

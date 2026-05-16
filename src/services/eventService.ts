@@ -5,6 +5,7 @@ import {
   orderBy,
   limit,
   getDocs,
+  onSnapshot,
   addDoc,
   updateDoc,
   doc,
@@ -14,6 +15,7 @@ import {
   DocumentData,
   startAfter,
   QueryConstraint,
+  Unsubscribe,
 } from 'firebase/firestore';
 import { db } from '../firebase/firestore';
 import {
@@ -22,6 +24,7 @@ import {
   AnnouncementFilter,
 } from '../types/announcement';
 import { executeFirebaseOp } from '@/lib/api-errors';
+import { logActivity } from '@/lib/activityLogger';
 
 const EVENTS_COLLECTION = 'events';
 const eventsRef = collection(db, EVENTS_COLLECTION);
@@ -157,6 +160,46 @@ export const eventService = {
   },
 
   /**
+   * Lightweight realtime sync for recently published events only.
+   * Keep this listener small and branch-scoped when possible; dashboard analytics
+   * and other modules must continue using cache-first queries, not realtime.
+   */
+  subscribeToPublishedEvents({
+    branchId,
+    limitCount = 10,
+    onNext,
+    onError,
+  }: {
+    branchId?: string;
+    limitCount?: number;
+    onNext: (events: SchoolEvent[]) => void;
+    onError?: (error: Error) => void;
+  }): Unsubscribe {
+    const constraints: QueryConstraint[] = [
+      where('publishedToParents', '==', true),
+      where('isDeleted', '==', false),
+      orderBy('createdAt', 'desc'),
+      limit(limitCount),
+    ];
+
+    if (branchId) {
+      constraints.unshift(where('branchId', '==', branchId));
+    }
+
+    const q = query(eventsRef, ...constraints);
+
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        onNext(snapshot.docs.map(docToEvent));
+      },
+      (error) => {
+        onError?.(error);
+      }
+    );
+  },
+
+  /**
    * Create event
    */
   async createEvent(
@@ -176,6 +219,10 @@ export const eventService = {
         updatedAt: serverTimestamp(),
       });
 
+      await logActivity('event_created', 'event', ref.id, {
+        title: data.title,
+      });
+
       return ref.id;
     }, 'createEvent');
   },
@@ -192,6 +239,8 @@ export const eventService = {
         publishedToParents: true,
         updatedAt: serverTimestamp(),
       });
+
+      await logActivity('event_published', 'event', eventId);
     }, 'publishEvent');
   },
 
@@ -227,6 +276,8 @@ export const eventService = {
         isDeleted: true,
         updatedAt: serverTimestamp(),
       });
+
+      await logActivity('event_deleted', 'event', eventId);
     }, 'softDeleteEvent');
   },
 

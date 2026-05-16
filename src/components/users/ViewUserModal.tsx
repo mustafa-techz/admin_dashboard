@@ -52,15 +52,15 @@ export default function ViewUserModal({ user, isOpen, onClose }: ViewUserModalPr
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-card w-full max-w-md rounded-2xl shadow-xl border border-border animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between p-6 border-b border-border">
+      <div className="bg-card w-full max-w-[95vw] sm:max-w-md rounded-2xl shadow-xl border border-border flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="shrink-0 flex items-center justify-between p-6 border-b border-border">
           <h3 className="text-xl font-bold tracking-tight">User Details</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-full hover:bg-muted">
             <X size={20} />
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           <div className="flex flex-col items-center">
             <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-black mb-3 italic">
               {user?.name?.charAt(0) || 'U'}
@@ -130,7 +130,7 @@ export default function ViewUserModal({ user, isOpen, onClose }: ViewUserModalPr
           </div>
         </div>
 
-        <div className="p-6 pt-0">
+        <div className="shrink-0 p-6 border-t border-border bg-card">
           <button
             onClick={onClose}
             className="w-full py-3 rounded-xl text-sm font-black bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform uppercase tracking-widest italic"

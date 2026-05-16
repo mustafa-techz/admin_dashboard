@@ -32,8 +32,8 @@ export default function EditUserModal({ user, isOpen, onClose, onSubmit, isLoadi
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-card w-full max-w-md rounded-2xl shadow-xl border border-border animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between p-6 border-b border-border">
+      <div className="bg-card w-full max-w-[95vw] sm:max-w-md rounded-2xl shadow-xl border border-border flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="shrink-0 flex items-center justify-between p-6 border-b border-border">
           <h3 className="text-xl font-bold tracking-tight">Edit User</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-full hover:bg-muted">
             <X size={20} />
@@ -49,7 +49,7 @@ export default function EditUserModal({ user, isOpen, onClose, onSubmit, isLoadi
           }}
         >
           {({ isSubmitting, isValid }) => (
-            <Form className="p-6 space-y-4">
+            <Form className="flex-1 overflow-y-auto p-6 space-y-4">
               <div>
                 <label className="block text-sm font-bold mb-1">Full Name</label>
                 <Field
@@ -86,7 +86,7 @@ export default function EditUserModal({ user, isOpen, onClose, onSubmit, isLoadi
                 <ErrorMessage name="role" component="div" className="text-red-500 text-xs mt-1 font-bold" />
               </div>
 
-              <div className="pt-4 flex justify-end gap-3 border-t border-border mt-6">
+              <div className="shrink-0 pt-4 flex justify-end gap-3 border-t border-border mt-6">
                 <button
                   type="button"
                   onClick={onClose}

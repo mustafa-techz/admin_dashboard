@@ -21,6 +21,13 @@ export const activityService = {
         expiresAt: expiresAt.getTime(),
       };
 
+      // Ensure no undefined fields are passed to Firestore
+      Object.keys(logData).forEach((key) => {
+        if ((logData as any)[key] === undefined) {
+          delete (logData as any)[key];
+        }
+      });
+
       await setDoc(newLogRef, logData);
       return logData;
     }, 'logActivity');

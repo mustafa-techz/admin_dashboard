@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode, useState } from 'react';
 import ChatRealtimeProvider from '@/components/chat/ChatRealtimeProvider';
+import PublishedEventsRealtimeProvider from '@/components/announcements/PublishedEventsRealtimeProvider';
 
 export default function QueryProvider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
@@ -32,7 +33,9 @@ export default function QueryProvider({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ChatRealtimeProvider>
-        {children}
+        <PublishedEventsRealtimeProvider>
+          {children}
+        </PublishedEventsRealtimeProvider>
       </ChatRealtimeProvider>
     </QueryClientProvider>
   );
