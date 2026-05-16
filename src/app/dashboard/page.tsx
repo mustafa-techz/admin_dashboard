@@ -24,6 +24,7 @@ import { useAdminEvents, useUpcomingAnnouncements } from '@/hooks/useAnnouncemen
 import { useBranchStore } from '@/store/branchStore';
 import { cn } from '@/lib/utils';
 import { useBranchFeeAssignments } from '@/hooks/useFees';
+import { queryKeys } from '@/lib/queryKeys';
 
 export default function DashboardPage() {
   const role = useAuthStore(state => state.role);
@@ -31,7 +32,7 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const { data: stats, isLoading } = useQuery<DashboardStats>({
-    queryKey: ['dashboardStats'],
+    queryKey: queryKeys.dashboard.stats,
     queryFn: dashboardService.getDashboardStats,
     staleTime: 5 * 60 * 1000,
   });
@@ -104,7 +105,7 @@ function AdminDashboard({ stats }: { stats?: DashboardStats }) {
   // Dynamic Attendance Summary (Branch-scoped via students list)
   const currentDate = useMemo(() => new Date().toISOString().split('T')[0], []);
   const { data: todaySessions, isLoading: isAttendanceLoading } = useQuery({
-    queryKey: ['daily-attendance-sessions', currentDate],
+    queryKey: queryKeys.dashboard.dailyAttendanceSessions(currentDate),
     queryFn: async () => {
       const { collection, query, where, getDocs } = await import('firebase/firestore');
       const { db } = await import('@/firebase/firestore');
@@ -275,7 +276,7 @@ function TeacherDashboard() {
   // Truly Dynamic Pending Attendance: Number of classes minus today's submitted sessions
   const currentDate = new Date().toISOString().split('T')[0];
   const { data: submittedSessionsCount = 0, isLoading: isAttendanceChecking } = useQuery({
-    queryKey: ['teacher-submitted-attendance', user?.classIds, currentDate],
+    queryKey: queryKeys.dashboard.teacherSubmittedAttendance(user?.classIds, currentDate),
     queryFn: async () => {
       if (!user?.classIds || user.classIds.length === 0) return 0;
       

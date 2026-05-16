@@ -8,7 +8,9 @@ import type {
   RecordPaymentData,
   FeeStructure,
   FeeInstallment,
+  StudentFeeAssignment,
 } from '@/types/fees';
+import { prependActivityCache, syncFeePaymentCache } from '@/lib/dashboardCacheSync';
 
 // ─────────────────────────────────────────────────────────────────
 // Query Keys
@@ -60,9 +62,36 @@ export function useCreateFeeStructure() {
       data: FeeStructureFormData;
       installments: FeeInstallmentFormData[];
     }) => feeService.createFeeStructure(data, installments, user?.id ?? ''),
-    onSuccess: (_, variables) => {
+    onSuccess: (feeStructureId, variables) => {
+      const createdAt = new Date().toISOString();
+      const feeStructure: FeeStructure = {
+        id: feeStructureId,
+        feeName: variables.data.feeName,
+        academicYear: variables.data.academicYear,
+        totalAmount: variables.data.totalAmount,
+        splitType: variables.data.splitType,
+        installmentCount: variables.installments.length,
+        branchId: variables.data.branchId,
+        status: 'active',
+        createdBy: user?.id ?? '',
+        createdAt,
+        updatedAt: createdAt,
+      };
+
+      queryClient.setQueryData<FeeStructure[]>(
+        feeKeys.structures(variables.data.branchId),
+        (old = []) => [feeStructure, ...old.filter((item) => item.id !== feeStructureId)]
+      );
+      prependActivityCache(queryClient, {
+        action: 'fee_created',
+        entityType: 'feeStructure',
+        entityId: feeStructureId,
+        branchId: variables.data.branchId,
+        metadata: { feeName: variables.data.feeName, amount: variables.data.totalAmount },
+      });
       queryClient.invalidateQueries({
         queryKey: feeKeys.structures(variables.data.branchId),
+        refetchType: 'none',
       });
     },
   });
@@ -113,8 +142,27 @@ export function useAssignFeeToStudents() {
       feeStructure: FeeStructure;
       installments: FeeInstallment[];
     }) => feeService.assignFeeToStudents(students, feeStructure, installments),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: feeKeys.all });
+    onSuccess: (assignments, variables) => {
+      const assignedStudentIds = new Set(assignments.map((assignment) => assignment.studentId));
+      queryClient.setQueryData<StudentFeeAssignment[]>(
+        feeKeys.branchAssignments(variables.feeStructure.branchId),
+        (old = []) => [
+          ...assignments,
+          ...old.filter((item) => !assignedStudentIds.has(item.studentId)),
+        ]
+      );
+
+      prependActivityCache(queryClient, {
+        action: 'fee_created',
+        entityType: 'studentFeeAssignment',
+        entityId: variables.feeStructure.id,
+        branchId: variables.feeStructure.branchId,
+        metadata: {
+          feeName: variables.feeStructure.feeName,
+          studentsCount: variables.students.length,
+        },
+      });
+      queryClient.invalidateQueries({ queryKey: feeKeys.all, refetchType: 'none' });
     },
   });
 }
@@ -140,22 +188,28 @@ export function useRecordPayment() {
   return useMutation({
     mutationFn: (paymentData: RecordPaymentData) =>
       feeService.recordPayment(paymentData, user?.id ?? ''),
-    onSuccess: (_, variables) => {
-      // Invalidate affected queries
+    onSuccess: (paymentId, variables) => {
+      syncFeePaymentCache(queryClient, paymentId, variables);
+
       queryClient.invalidateQueries({
         queryKey: feeKeys.studentInstallments(variables.studentId, variables.feeStructureId),
+        refetchType: 'none',
       });
       queryClient.invalidateQueries({
         queryKey: feeKeys.studentAssignments(variables.studentId),
+        refetchType: 'none',
       });
       queryClient.invalidateQueries({
         queryKey: feeKeys.pendingInstallments(variables.studentId),
+        refetchType: 'none',
       });
       queryClient.invalidateQueries({
         queryKey: feeKeys.paymentHistory(variables.studentFeeInstallmentId),
+        refetchType: 'none',
       });
       queryClient.invalidateQueries({
         queryKey: feeKeys.branchAssignments(variables.branchId),
+        refetchType: 'none',
       });
     },
   });
@@ -199,7 +253,7 @@ export function useDeleteStudentFeeAssignment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ assignmentId, studentId }: { assignmentId: string; studentId: string }) => feeService.deleteStudentFeeAssignment(assignmentId),
+    mutationFn: ({ assignmentId }: { assignmentId: string; studentId: string }) => feeService.deleteStudentFeeAssignment(assignmentId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: feeKeys.studentAssignments(variables.studentId) });
       queryClient.invalidateQueries({ queryKey: feeKeys.pendingInstallments(variables.studentId) });

@@ -74,7 +74,7 @@ export function ForgotPasswordModal({ isOpen, onClose, defaultEmail = '' }: Forg
         onClick={onClose}
         aria-hidden="true"
       />
-      <div className="relative w-full max-w-md p-6 overflow-hidden bg-card rounded-2xl shadow-xl border border-border animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-[95vw] sm:max-w-md p-6 bg-card rounded-2xl shadow-xl border border-border flex flex-col max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
         <button
           onClick={onClose}
           className="absolute right-4 top-4 rounded-full p-1.5 text-muted-foreground hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"

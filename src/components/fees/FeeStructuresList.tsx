@@ -293,8 +293,8 @@ function AssignFeeModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-background rounded-2xl border border-border shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col animate-in zoom-in-95 duration-200">
-        <div className="p-5 border-b border-border">
+      <div className="bg-background rounded-2xl border border-border shadow-2xl w-full max-w-[95vw] sm:max-w-lg max-h-[80vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="shrink-0 p-5 border-b border-border bg-background">
           <h3 className="text-lg font-black">Assign: {feeStructure.feeName}</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             Select students to assign this fee structure ({formatINR(feeStructure.totalAmount)})
@@ -358,7 +358,7 @@ function AssignFeeModal({
           )}
         </div>
 
-        <div className="p-4 border-t border-border flex items-center justify-between gap-3">
+        <div className="shrink-0 p-4 border-t border-border flex items-center justify-between gap-3 bg-background">
           <p className="text-xs text-muted-foreground">
             {selectedStudents.size} student{selectedStudents.size !== 1 ? 's' : ''} selected
           </p>

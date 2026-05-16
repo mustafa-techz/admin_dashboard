@@ -12,6 +12,7 @@ import {
 import { db } from '@/firebase/firestore';
 import { executeFirebaseOp } from '@/lib/api-errors';
 import { tsToISO } from '@/lib/firestoreUtils';
+import { logActivity } from '@/lib/activityLogger';
 
 import type {
   FeeStructure,
@@ -80,6 +81,10 @@ export const feeService = {
       });
 
       await batch.commit();
+      await logActivity('fee_created', 'feeStructure', feeStructureRef.id, {
+        feeName: data.feeName,
+        amount: data.totalAmount,
+      });
       return feeStructureRef.id;
     }, 'createFeeStructure');
   },
@@ -191,7 +196,10 @@ export const feeService = {
 
       await batch.commit();
 
-
+      await logActivity('fee_created', 'studentFeeAssignment', assignmentRef.id, {
+        feeName: feeStructure.feeName,
+        studentName,
+      });
 
       return assignmentRef.id;
     }, 'assignFeeToStudent');
@@ -204,15 +212,31 @@ export const feeService = {
     students: Array<{ id: string; fullName: string, userId: string }>,
     feeStructure: FeeStructure,
     installments: FeeInstallment[],
-  ): Promise<void> {
+  ): Promise<StudentFeeAssignment[]> {
     return executeFirebaseOp(async () => {
       // Firestore batches max 500 ops. Chunk if needed.
       const BATCH_LIMIT = 450;
       let batch = writeBatch(db);
       let opCount = 0;
+      const createdAt = new Date().toISOString();
+      const assignments: StudentFeeAssignment[] = [];
 
       for (const student of students) {
         const assignmentRef = doc(studentFeeAssignmentsCol);
+        assignments.push({
+          id: assignmentRef.id,
+          studentId: student.id,
+          studentName: student.fullName,
+          feeStructureId: feeStructure.id,
+          branchId: feeStructure.branchId,
+          totalAmount: feeStructure.totalAmount,
+          totalPaid: 0,
+          totalPending: feeStructure.totalAmount,
+          status: 'pending',
+          createdAt,
+          updatedAt: createdAt,
+        });
+
         batch.set(assignmentRef, {
           studentId: student.id,
           studentName: student.fullName,
@@ -269,7 +293,12 @@ export const feeService = {
         await batch.commit();
       }
 
+      await logActivity('fee_created', 'studentFeeAssignment', feeStructure.id, {
+        feeName: feeStructure.feeName,
+        studentsCount: students.length,
+      });
 
+      return assignments;
     }, 'assignFeeToStudents');
   },
 
@@ -458,7 +487,10 @@ export const feeService = {
 
       await batch.commit();
 
-
+      await logActivity('fee_collected', 'payment', paymentRef.id, {
+        studentId: paymentData.studentId,
+        amount: paymentData.amount,
+      });
 
       return paymentRef.id;
     }, 'recordPayment');

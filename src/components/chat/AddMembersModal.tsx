@@ -106,7 +106,7 @@ export default function AddMembersModal({
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-background rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in slide-in-from-bottom-4 duration-200">
+      <div className="relative w-full max-w-[95vw] sm:max-w-md bg-background rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in slide-in-from-bottom-4 duration-200">
         {/* Modal header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
           <div className="flex items-center gap-2">

@@ -19,16 +19,16 @@ export const logActivity = async (
     const { selectedBranch } = useBranchStore.getState();
     const branchId = selectedBranch?.id || user.branchId || user.branchIds?.[0] || 'system';
 
-    await activityService.logActivity({
-      actorId: user.id,
-      actorName: user.name,
-      actorRole: user.role,
-      branchId,
-      action,
-      entityType,
-      entityId,
-      metadata,
-    });
+   await activityService.logActivity({
+  actorId: user.id,
+  actorName: user.name,
+  actorRole: user.role,
+  branchId,
+  action,
+  entityType,
+  entityId,
+  ...(metadata ? { metadata } : {}),
+});
   } catch (error) {
     // Silently fail to avoid breaking main application flows
     console.error('Failed to log activity:', error);

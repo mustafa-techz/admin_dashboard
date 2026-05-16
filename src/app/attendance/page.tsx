@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { useInfiniteQuery, useQuery, useMutation } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { studentService } from '@/services/studentService';
 import { attendanceService } from '@/services/attendanceService';
 import { useAttendanceDraftStore } from '@/store/attendanceDraftStore';
@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { syncAttendanceDashboardCache } from '@/lib/dashboardCacheSync';
 
 export default function AttendancePage() {
   const [search, setSearch] = useState('');
@@ -40,6 +41,7 @@ export default function AttendancePage() {
   const user = useAuthStore(state => state.user);
   const role = useAuthStore(state => state.role);
   const selectedBranchId = useBranchStore(state => state.selectedBranchId);
+  const queryClient = useQueryClient();
   const authorizedClassIds = useMemo(() => getAuthorizedClassIds(
     user ? { role: user.role, classIds: user.classIds } : null
   ), [user]);
@@ -117,7 +119,6 @@ export default function AttendancePage() {
   // ── 2. Fetch today's committed session (ONE Firestore read) ───────────
   const {
     data: committedAttendance = {},
-    refetch: refetchSession,
   } = useQuery({
     queryKey: ['attendance_session', selectedClassId, selectedSectionId, currentDate],
     queryFn: () => attendanceService.getSession(currentDate, selectedClassId, selectedSectionId),
@@ -170,7 +171,25 @@ export default function AttendancePage() {
       );
     },
     onSuccess: () => {
-      refetchSession();
+      const selectedClass = classes.find(c => c.id === selectedClassId);
+      const selectedSection = sections.find(s => s.id === selectedSectionId);
+      const newStatuses: Record<string, AttendanceStatus> = {
+        ...committedAttendance,
+        ...rawChanges,
+      };
+
+      syncAttendanceDashboardCache(queryClient, {
+        date: currentDate,
+        classId: selectedClassId,
+        sectionId: selectedSectionId,
+        teacherId: user?.id ?? '',
+        totalStudents: displayStudents.length,
+        newStatuses,
+        prevStatuses: committedAttendance,
+        className: selectedClass?.className,
+        sectionName: selectedSection?.sectionName,
+        branchId: selectedBranchId,
+      });
       clearDrafts();
       setIsEditing({});
       setIsModalOpen(true);

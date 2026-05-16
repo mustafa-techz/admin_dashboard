@@ -170,9 +170,9 @@ export default function NewChatModal({ onCreated }: NewChatModalProps) {
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-background rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in slide-in-from-bottom-4 duration-200">
+      <div className="relative w-full max-w-[95vw] sm:max-w-md bg-background rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in slide-in-from-bottom-4 duration-200">
         {/* Modal header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0 bg-background">
           <h2 className="text-base font-bold">New Conversation</h2>
           <button
             onClick={closeNewChatModal}
@@ -183,7 +183,7 @@ export default function NewChatModal({ onCreated }: NewChatModalProps) {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-border shrink-0">
+        <div className="flex border-b border-border shrink-0 bg-background">
           {TAB_CONFIG.map((tab) => (
             <button
               key={tab.key}
@@ -241,7 +241,7 @@ export default function NewChatModal({ onCreated }: NewChatModalProps) {
               {activeTab === "direct" ? "Search user" : "Add participants"}
             </label>
             <div className="relative">
-              <Search
+               <Search
                 size={14}
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
               />
@@ -305,7 +305,7 @@ export default function NewChatModal({ onCreated }: NewChatModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-border shrink-0">
+        <div className="px-5 py-4 border-t border-border shrink-0 bg-background">
           <button
             onClick={handleCreate}
             disabled={!canSubmit}

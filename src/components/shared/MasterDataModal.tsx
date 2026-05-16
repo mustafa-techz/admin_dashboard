@@ -37,10 +37,11 @@ export default function MasterDataModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-card w-full max-w-md rounded-2xl shadow-xl border border-border animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between p-6 border-b border-border">
+      <div className="bg-card w-full max-w-[95vw] sm:max-w-md rounded-2xl shadow-xl border border-border flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="shrink-0 flex items-center justify-between p-6 border-b border-border bg-card">
           <h3 className="text-xl font-bold tracking-tight">{title}</h3>
           <button 
+            type="button"
             onClick={onClose}
             className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-full hover:bg-muted"
           >
@@ -48,8 +49,8 @@ export default function MasterDataModal({
           </button>
         </div>
         
-        <form onSubmit={handleSubmit}>
-          <div className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
             <div>
               <label className="block text-sm font-bold mb-1.5 text-foreground">Name</label>
               <input
@@ -64,7 +65,7 @@ export default function MasterDataModal({
             </div>
           </div>
           
-          <div className="p-6 pt-0 flex justify-end gap-3">
+          <div className="shrink-0 p-6 pt-4 flex justify-end gap-3 border-t border-border bg-card">
             <button
               type="button"
               onClick={onClose}
@@ -75,7 +76,7 @@ export default function MasterDataModal({
             <button
               type="submit"
               disabled={isLoading || !name.trim()}
-              className="px-6 py-2.5 rounded-xl text-sm font-bold bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:scale-105 transition-transform disabled:opacity-50 disabled:scale-100 flex items-center gap-2"
+              className="px-6 py-2.5 rounded-xl text-sm font-bold bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:scale-100 flex items-center gap-2"
             >
               {isLoading && <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
               {initialValue ? 'Update' : 'Add'}
