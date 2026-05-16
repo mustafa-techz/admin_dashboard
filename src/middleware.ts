@@ -7,9 +7,15 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isProtectedPage = pathname.startsWith('/users') || pathname.startsWith('/create');
+  const isParentRestricted =
+    pathname === '/attendance' ||
+    pathname === '/students' ||
+    pathname.startsWith('/teachers') ||
+    pathname.startsWith('/users');
   const isProtectedApi = pathname.startsWith('/api/users');
+  const isDashboard = pathname.startsWith('/dashboard');
 
-  if (!isProtectedPage && !isProtectedApi) {
+  if (!isProtectedPage && !isParentRestricted && !isProtectedApi && !isDashboard) {
     return NextResponse.next();
   }
 
@@ -23,13 +29,18 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  if (userRole === 'parent' && isParentRestricted) {
+    console.warn(`Middleware: Access denied for parent role at ${pathname}`);
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
   // If the role is missing, we might still allow API requests to proceed 
   // since they are verified more thoroughly in the route handlers (checking both cookies and headers)
   if (!userRole && isProtectedApi) {
     return NextResponse.next();
   }
 
-  if (userRole !== 'admin') {
+  if ((isProtectedPage || isProtectedApi) && userRole !== 'admin') {
     console.warn(`Middleware: Access denied for role: ${userRole} at ${pathname}`);
     if (isProtectedApi) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -42,5 +53,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/users/:path*', '/create/:path*', '/api/users/:path*'],
+  matcher: ['/users/:path*', '/create/:path*', '/api/users/:path*', '/attendance/:path*', '/students/:path*', '/teachers/:path*', '/dashboard/:path*'],
 };
