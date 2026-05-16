@@ -18,6 +18,8 @@ const StudentViewModal = dynamic(() => import('@/components/students/StudentView
 import ConfirmationModal from '@/components/shared/ConfirmationModal';
 import { useStudents } from '@/hooks/useStudents';
 import { classService, sectionService } from '@/services/firebase/masterDataService';
+import RoleGuard from '@/components/shared/RoleGuard';
+
 
 export default function StudentsPage() {
   const [search, setSearch] = useState('');
@@ -196,90 +198,95 @@ export default function StudentsPage() {
 
   if (isErrorClasses || isErrorSections) {
     return (
-      <div className="p-12 text-center flex flex-col items-center gap-4 bg-red-50 rounded-3xl border border-red-100">
-        <div className="h-16 w-16 bg-red-100 rounded-3xl flex items-center justify-center text-red-600">
-          <Trash2 size={32} />
+      <RoleGuard allowedRoles={['admin', 'sub-admin', 'teacher']}>
+        <div className="p-12 text-center flex flex-col items-center gap-4 bg-red-50 rounded-3xl border border-red-100">
+          <div className="h-16 w-16 bg-red-100 rounded-3xl flex items-center justify-center text-red-600">
+            <Trash2 size={32} />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-xl font-black tracking-tight text-red-700">Error Loading Master Data</h3>
+            <p className="text-sm font-medium text-red-600/80">There was a problem fetching classes or sections. Please try again.</p>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2.5 bg-red-600 text-white rounded-xl font-black text-sm shadow-lg shadow-red-200 hover:scale-105 transition-transform"
+          >
+            Retry Connection
+          </button>
         </div>
-        <div className="space-y-1">
-          <h3 className="text-xl font-black tracking-tight text-red-700">Error Loading Master Data</h3>
-          <p className="text-sm font-medium text-red-600/80">There was a problem fetching classes or sections. Please try again.</p>
-        </div>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-6 py-2.5 bg-red-600 text-white rounded-xl font-black text-sm shadow-lg shadow-red-200 hover:scale-105 transition-transform"
-        >
-          Retry Connection
-        </button>
-      </div>
+      </RoleGuard>
     );
   }
 
+
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div>
-        <h2 className="text-3xl font-black tracking-tight">Students</h2>
-        <p className="text-muted-foreground mt-1 font-medium">Browse and manage school student records.</p>
-      </div>
+    <RoleGuard allowedRoles={['admin', 'sub-admin', 'teacher']}>
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div>
+          <h2 className="text-3xl font-black tracking-tight">Students</h2>
+          <p className="text-muted-foreground mt-1 font-medium">Browse and manage school student records.</p>
+        </div>
 
-      <FilterBar
-        onSearch={setSearch}
-        onFilterChange={setClassFilter}
-        authorizedClassIds={authorizedClassIds}
-        onAddClick={isPrivileged ? () => {
-          setEditingStudent(null);
-          setIsFormOpen(true);
-        } : undefined}
-        addLabel="New Admission"
-        placeholder="Search by name or roll number..."
-      />
+        <FilterBar
+          onSearch={setSearch}
+          onFilterChange={setClassFilter}
+          authorizedClassIds={authorizedClassIds}
+          onAddClick={isPrivileged ? () => {
+            setEditingStudent(null);
+            setIsFormOpen(true);
+          } : undefined}
+          addLabel="New Admission"
+          placeholder="Search by name or roll number..."
+        />
 
-      <DataTable
-        columns={columns}
-        data={filteredStudents}
-        isLoading={isLoading || isLoadingClasses || isLoadingSections}
-        onRowClick={(student) => router.push(`/students/${student.id}`)}
-      />
+        <DataTable
+          columns={columns}
+          data={filteredStudents}
+          isLoading={isLoading || isLoadingClasses || isLoadingSections}
+          onRowClick={(student) => router.push(`/students/${student.id}`)}
+        />
 
-      {/* View Modal */}
-      <StudentViewModal
-        isOpen={isViewOpen}
-        onClose={() => { setIsViewOpen(false); setViewingStudent(null); }}
-        student={viewingStudent}
-      />
+        {/* View Modal */}
+        <StudentViewModal
+          isOpen={isViewOpen}
+          onClose={() => { setIsViewOpen(false); setViewingStudent(null); }}
+          student={viewingStudent}
+        />
 
-      {/* Form Modal */}
-      {isFormOpen && (
-        <StudentForm
-          initialData={editingStudent || undefined}
-          onSubmit={handleFormSubmit}
-          onCancel={() => { setIsFormOpen(false); setEditingStudent(null); }}
+        {/* Form Modal */}
+        {isFormOpen && (
+          <StudentForm
+            initialData={editingStudent || undefined}
+            onSubmit={handleFormSubmit}
+            onCancel={() => { setIsFormOpen(false); setEditingStudent(null); }}
+            isLoading={createMutation.isPending || updateMutation.isPending}
+          />
+        )}
+
+        {/* Submit Confirmation Modal */}
+        <ConfirmationModal
+          isOpen={isSubmitConfirmOpen}
+          onClose={() => setIsSubmitConfirmOpen(false)}
+          onConfirm={confirmSubmit}
+          title="Confirm Submission"
+          message={`Are you sure you want to ${editingStudent ? 'update' : 'add'} this student?`}
           isLoading={createMutation.isPending || updateMutation.isPending}
         />
-      )}
 
-      {/* Submit Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={isSubmitConfirmOpen}
-        onClose={() => setIsSubmitConfirmOpen(false)}
-        onConfirm={confirmSubmit}
-        title="Confirm Submission"
-        message={`Are you sure you want to ${editingStudent ? 'update' : 'add'} this student?`}
-        isLoading={createMutation.isPending || updateMutation.isPending}
-      />
-
-      {/* Delete Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={isDeleteOpen}
-        onClose={() => { setIsDeleteOpen(false); setStudentToDelete(null); }}
-        onConfirm={() => {
-          if (studentToDelete) deleteMutation.mutate(studentToDelete);
-        }}
-        title="Delete Student"
-        message="Are you sure you want to delete this student? This action cannot be undone."
-        confirmText="Delete"
-        type="danger"
-        isLoading={deleteMutation.isPending}
-      />
-    </div>
+        {/* Delete Confirmation Modal */}
+        <ConfirmationModal
+          isOpen={isDeleteOpen}
+          onClose={() => { setIsDeleteOpen(false); setStudentToDelete(null); }}
+          onConfirm={() => {
+            if (studentToDelete) deleteMutation.mutate(studentToDelete);
+          }}
+          title="Delete Student"
+          message="Are you sure you want to delete this student? This action cannot be undone."
+          confirmText="Delete"
+          type="danger"
+          isLoading={deleteMutation.isPending}
+        />
+      </div>
+    </RoleGuard>
   );
 }

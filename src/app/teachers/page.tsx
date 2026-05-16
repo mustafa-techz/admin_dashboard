@@ -15,11 +15,17 @@ const TeacherForm = dynamic(() => import('@/components/teachers/TeacherForm'), {
 const TeacherViewModal = dynamic(() => import('@/components/teachers/TeacherViewModal'), { ssr: false });
 import ConfirmationModal from '@/components/shared/ConfirmationModal';
 import { queryKeys } from '@/lib/queryKeys';
+import RoleGuard from '@/components/shared/RoleGuard';
+import { useAuthStore } from '@/store/authStore';
+
+
 
 export default function TeachersPage() {
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState('');
   const selectedBranchId = useBranchStore(state => state.selectedBranchId);
+  const role = useAuthStore(state => state.role);
+  const isPrivileged = role === 'admin' || role === 'sub-admin';
   const queryClient = useQueryClient();
 
   // Master Data Queries
@@ -170,7 +176,7 @@ export default function TeachersPage() {
           </span>
        )
     },
-    {
+    isPrivileged && {
       header: 'Actions',
       cell: (teacher: Teacher) => (
         <div className="flex items-center gap-2">
@@ -195,74 +201,76 @@ export default function TeachersPage() {
         </div>
       )
     },
-  ];
+  ].filter(Boolean) as any[];
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-black tracking-tight">Teachers</h2>
-          <p className="text-muted-foreground mt-1 font-medium">Manage faculty records and class assignments.</p>
+    <RoleGuard allowedRoles={['admin', 'sub-admin']}>
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-black tracking-tight">Teachers</h2>
+            <p className="text-muted-foreground mt-1 font-medium">Manage faculty records and class assignments.</p>
+          </div>
         </div>
-      </div>
 
-      <FilterBar
-        onSearch={setSearch}
-        onFilterChange={setClassFilter}
-        onAddClick={() => {
-          setEditingTeacher(null);
-          setIsFormOpen(true);
-        }}
-        addLabel="Add Teacher"
-        placeholder="Search by name, ID, or subject..."
-      />
+        <FilterBar
+          onSearch={setSearch}
+          onFilterChange={setClassFilter}
+          onAddClick={isPrivileged ? () => {
+            setEditingTeacher(null);
+            setIsFormOpen(true);
+          } : undefined}
+          addLabel="Add Teacher"
+          placeholder="Search by name, ID, or subject..."
+        />
 
-      <DataTable
-        columns={columns}
-        data={filteredTeachers}
-        isLoading={isLoadingTeachers || isLoadingClasses}
-      />
+        <DataTable
+          columns={columns}
+          data={filteredTeachers}
+          isLoading={isLoadingTeachers || isLoadingClasses}
+        />
 
-      {/* View Modal */}
-      <TeacherViewModal
-        isOpen={isViewOpen}
-        onClose={() => { setIsViewOpen(false); setViewingTeacher(null); }}
-        teacher={viewingTeacher}
-      />
+        {/* View Modal */}
+        <TeacherViewModal
+          isOpen={isViewOpen}
+          onClose={() => { setIsViewOpen(false); setViewingTeacher(null); }}
+          teacher={viewingTeacher}
+        />
 
-      {/* Form Modal */}
-      {isFormOpen && (
-        <TeacherForm
-          initialData={editingTeacher || undefined}
-          onSubmit={handleFormSubmit}
-          onCancel={() => { setIsFormOpen(false); setEditingTeacher(null); }}
+        {/* Form Modal */}
+        {isFormOpen && (
+          <TeacherForm
+            initialData={editingTeacher || undefined}
+            onSubmit={handleFormSubmit}
+            onCancel={() => { setIsFormOpen(false); setEditingTeacher(null); }}
+            isLoading={createMutation.isPending || updateMutation.isPending}
+          />
+        )}
+
+        {/* Submit Confirmation Modal */}
+        <ConfirmationModal
+          isOpen={isSubmitConfirmOpen}
+          onClose={() => setIsSubmitConfirmOpen(false)}
+          onConfirm={confirmSubmit}
+          title="Confirm Teacher Details"
+          message={`Are you sure you want to ${editingTeacher ? 'update' : 'add'} this teacher record?`}
           isLoading={createMutation.isPending || updateMutation.isPending}
         />
-      )}
 
-      {/* Submit Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={isSubmitConfirmOpen}
-        onClose={() => setIsSubmitConfirmOpen(false)}
-        onConfirm={confirmSubmit}
-        title="Confirm Teacher Details"
-        message={`Are you sure you want to ${editingTeacher ? 'update' : 'add'} this teacher record?`}
-        isLoading={createMutation.isPending || updateMutation.isPending}
-      />
-
-      {/* Delete Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={isDeleteOpen}
-        onClose={() => { setIsDeleteOpen(false); setTeacherToDelete(null); }}
-        onConfirm={() => {
-          if (teacherToDelete) deleteMutation.mutate(teacherToDelete);
-        }}
-        title="Delete Teacher Record"
-        message="This will permanently delete the teacher record. This action cannot be undone."
-        confirmText="Delete"
-        type="danger"
-        isLoading={deleteMutation.isPending}
-      />
-    </div>
+        {/* Delete Confirmation Modal */}
+        <ConfirmationModal
+          isOpen={isDeleteOpen}
+          onClose={() => { setIsDeleteOpen(false); setTeacherToDelete(null); }}
+          onConfirm={() => {
+            if (teacherToDelete) deleteMutation.mutate(teacherToDelete);
+          }}
+          title="Delete Teacher Record"
+          message="This will permanently delete the teacher record. This action cannot be undone."
+          confirmText="Delete"
+          type="danger"
+          isLoading={deleteMutation.isPending}
+        />
+      </div>
+    </RoleGuard>
   );
 }

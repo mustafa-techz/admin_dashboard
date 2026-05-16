@@ -13,7 +13,7 @@ const DashboardAnnouncements = dynamic(() => import('@/components/dashboard/Dash
 
 import { 
   Users, UserCheck, BookOpen, AlertCircle, Calendar, 
-  CreditCard, Clock,
+  CreditCard, Clock, CalendarDays,
   ClipboardCheck, MessageSquare, Award 
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -25,6 +25,7 @@ import { useBranchStore } from '@/store/branchStore';
 import { cn } from '@/lib/utils';
 import { useBranchFeeAssignments } from '@/hooks/useFees';
 import { queryKeys } from '@/lib/queryKeys';
+import { studentService } from '@/services/studentService';
 
 export default function DashboardPage() {
   const role = useAuthStore(state => state.role);
@@ -384,14 +385,26 @@ function TeacherDashboard() {
 
 function ParentDashboard() {
   const router = useRouter();
-  
+  const user = useAuthStore(state => state.user);
+
+  const { data: student } = useQuery({
+    queryKey: queryKeys.students.byParent(user?.id ?? 'none'),
+    queryFn: async () => {
+      if (!user?.id) return null;
+      let s = await studentService.getStudentByParentUserId(user.id);
+      if (!s && user.studentRollNumber) {
+        s = await studentService.getStudentByRollNumber(user.studentRollNumber);
+      }
+      return s;
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
   return (
     <div className="space-y-8">
-
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         <div className="xl:col-span-2 space-y-8">
-         
-          
           <DashboardAnnouncements />
         </div>
         
@@ -403,6 +416,7 @@ function ParentDashboard() {
               <QuickActionCard icon={<MessageSquare />} label="Chat" onClick={() => router.push('/chat')} color="bg-blue-500" />
               <QuickActionCard icon={<Clock />} label="Timetable" onClick={() => router.push('/timetable')} color="bg-purple-500" />
               <QuickActionCard icon={<Award />} label="Results" onClick={() => router.push('/academics')} color="bg-green-500" />
+              <QuickActionCard icon={<CalendarDays />} label="Attendance" onClick={() => student ? router.push(`/students/${student.id}/attendance`) : null} color="bg-indigo-500" />
             </div>
           </div>
         </div>

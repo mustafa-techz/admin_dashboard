@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { syncAttendanceDashboardCache } from '@/lib/dashboardCacheSync';
+import RoleGuard from '@/components/shared/RoleGuard';
 
 export default function AttendancePage() {
   const [search, setSearch] = useState('');
@@ -349,210 +350,212 @@ export default function AttendancePage() {
 
   // ── Render ────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-28 relative">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-black tracking-tight">Attendance</h2>
-          <p className="text-muted-foreground mt-1 font-medium italic">
-            Mark and track student presence for today.
-          </p>
-        </div>
-        <div className="flex items-center gap-3 bg-card border border-border px-4 py-2.5 rounded-2xl shadow-soft">
-          <CalendarIcon size={18} className="text-primary" />
-          <span className="text-sm font-black">
-            {new Date().toLocaleDateString('en-US', {
-              month: 'long',
-              day: 'numeric',
-              year: 'numeric',
-            })}
-          </span>
-        </div>
-      </div>
-
-      {/* Selection Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-card border border-border p-6 rounded-3xl shadow-soft">
-        <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
-            Select Class
-          </label>
-          <Select
-            value={selectedClassId}
-            onValueChange={setSelectedClassId}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Choose Class" />
-            </SelectTrigger>
-            <SelectContent>
-              {classes.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.className}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
-            Select Section
-          </label>
-          <Select
-            value={selectedSectionId}
-            onValueChange={setSelectedSectionId}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Choose Section" />
-            </SelectTrigger>
-            <SelectContent>
-              {sections.map((s) => (
-                <SelectItem key={s.id} value={s.id}>
-                  {s.sectionName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-green-50 border border-green-100 p-6 rounded-3xl">
-          <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-1">
-            Present Today
-          </p>
-          <h3 className="text-3xl font-black text-green-700">{stats.present}</h3>
-        </div>
-        <div className="bg-red-50 border border-red-100 p-6 rounded-3xl">
-          <p className="text-[10px] font-black text-red-600 uppercase tracking-widest mb-1">
-            Absent Today
-          </p>
-          <h3 className="text-3xl font-black text-red-700">{stats.absent}</h3>
-        </div>
-        <div className="bg-primary/5 border border-primary/10 p-6 rounded-3xl">
-          <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">
-            Total Strength
-          </p>
-          <h3 className="text-3xl font-black text-foreground">{stats.total}</h3>
-        </div>
-      </div>
-
-      {/* Bulk actions */}
-      <div className="flex flex-wrap gap-3 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
-        <button
-          onClick={() => handleMarkAll('present')}
-          className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-xl text-xs font-black hover:bg-green-700 transition-all active:scale-95"
-        >
-          <Check size={14} /> ALL PRESENT
-        </button>
-        <button
-          onClick={() => handleMarkAll('absent')}
-          className="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-xl text-xs font-black hover:bg-red-700 transition-all active:scale-95"
-        >
-          <X size={14} /> ALL ABSENT
-        </button>
-        <button
-          onClick={() => handleMarkAll('leave')}
-          className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 text-white rounded-xl text-xs font-black hover:bg-amber-600 transition-all active:scale-95"
-        >
-          <CalendarIcon size={14} /> ALL LEAVE
-        </button>
-      </div>
-
-      <FilterBar
-        onSearch={setSearch}
-        placeholder="Search by student name..."
-      />
-
-      <VirtualDataTable
-        columns={columns}
-        data={filteredStudents}
-        isLoading={isLoadingStudents}
-        onEndReached={() => {
-          if (hasNextPage && !isFetchingNextPage) fetchNextPage();
-        }}
-      />
-
-      {/* Floating submit button */}
-      <div className="fixed bottom-8 right-8 z-40">
-        <button
-          disabled={!hasChanges || submitMutation.isPending || !user?.id}
-          onClick={() => submitMutation.mutate()}
-          className={cn(
-            'px-8 py-3 rounded-2xl font-black text-sm transition-all duration-300 shadow-xl flex items-center gap-2',
-            hasChanges && !submitMutation.isPending
-              ? 'bg-foreground text-background hover:scale-105 cursor-pointer'
-              : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-70'
-          )}
-        >
-          {submitMutation.isPending ? (
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
-          ) : (
-            hasChanges && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1, rotate: 360 }}
-                transition={{
-                  scale: { type: 'spring', stiffness: 200 },
-                  rotate: { repeat: Infinity, duration: 4, ease: 'linear' },
-                }}
-              >
-                <CheckCircle2 size={18} className="text-green-400" />
-              </motion.div>
-            )
-          )}
-          <span>
-            {submitMutation.isPending
-              ? 'Saving...'
-              : hasChanges
-                ? `Submit Changes (${Object.keys(rawChanges).length})`
-                : 'No Changes'}
-          </span>
-        </button>
-      </div>
-
-      {/* Success modal */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsModalOpen(false)}
-              className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
-            />
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0, y: 40 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.8, opacity: 0, y: 40 }}
-              className="relative bg-white rounded-[3rem] p-10 max-w-sm w-full text-center shadow-3xl border border-slate-100"
-            >
-              <div className="mx-auto bg-green-50 w-24 h-24 rounded-full flex items-center justify-center mb-8 ring-8 ring-green-50/50">
-                <CheckCircle2 className="h-12 w-12 text-green-600" />
-              </div>
-              <h2 className="text-3xl font-black text-slate-900 tracking-tight">
-                Session Saved!
-              </h2>
-              <p className="text-slate-500 mt-3 mb-8 leading-relaxed">
-                Attendance session written to Firestore as a single document.
-                <br />
-                <span className="font-bold text-slate-800">
-                  {Object.keys(rawChanges).length === 0
-                    ? Object.keys(committedAttendance).length
-                    : Object.keys(rawChanges).length}{' '}
-                  student records updated.
-                </span>
-              </p>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl active:scale-95"
-              >
-                Done
-              </button>
-            </motion.div>
+    <RoleGuard allowedRoles={['admin', 'sub-admin', 'teacher']}>
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-28 relative">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-black tracking-tight">Attendance</h2>
+            <p className="text-muted-foreground mt-1 font-medium italic">
+              Mark and track student presence for today.
+            </p>
           </div>
-        )}
-      </AnimatePresence>
-    </div>
+          <div className="flex items-center gap-3 bg-card border border-border px-4 py-2.5 rounded-2xl shadow-soft">
+            <CalendarIcon size={18} className="text-primary" />
+            <span className="text-sm font-black">
+              {new Date().toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </span>
+          </div>
+        </div>
+
+        {/* Selection Filters */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-card border border-border p-6 rounded-3xl shadow-soft">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+              Select Class
+            </label>
+            <Select
+              value={selectedClassId}
+              onValueChange={setSelectedClassId}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Choose Class" />
+              </SelectTrigger>
+              <SelectContent>
+                {classes.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.className}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+              Select Section
+            </label>
+            <Select
+              value={selectedSectionId}
+              onValueChange={setSelectedSectionId}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Choose Section" />
+              </SelectTrigger>
+              <SelectContent>
+                {sections.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.sectionName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-green-50 border border-green-100 p-6 rounded-3xl">
+            <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-1">
+              Present Today
+            </p>
+            <h3 className="text-3xl font-black text-green-700">{stats.present}</h3>
+          </div>
+          <div className="bg-red-50 border border-red-100 p-6 rounded-3xl">
+            <p className="text-[10px] font-black text-red-600 uppercase tracking-widest mb-1">
+              Absent Today
+            </p>
+            <h3 className="text-3xl font-black text-red-700">{stats.absent}</h3>
+          </div>
+          <div className="bg-primary/5 border border-primary/10 p-6 rounded-3xl">
+            <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">
+              Total Strength
+            </p>
+            <h3 className="text-3xl font-black text-foreground">{stats.total}</h3>
+          </div>
+        </div>
+
+        {/* Bulk actions */}
+        <div className="flex flex-wrap gap-3 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
+          <button
+            onClick={() => handleMarkAll('present')}
+            className="flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-xl text-xs font-black hover:bg-green-700 transition-all active:scale-95"
+          >
+            <Check size={14} /> ALL PRESENT
+          </button>
+          <button
+            onClick={() => handleMarkAll('absent')}
+            className="flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-xl text-xs font-black hover:bg-red-700 transition-all active:scale-95"
+          >
+            <X size={14} /> ALL ABSENT
+          </button>
+          <button
+            onClick={() => handleMarkAll('leave')}
+            className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 text-white rounded-xl text-xs font-black hover:bg-amber-600 transition-all active:scale-95"
+          >
+            <CalendarIcon size={14} /> ALL LEAVE
+          </button>
+        </div>
+
+        <FilterBar
+          onSearch={setSearch}
+          placeholder="Search by student name..."
+        />
+
+        <VirtualDataTable
+          columns={columns}
+          data={filteredStudents}
+          isLoading={isLoadingStudents}
+          onEndReached={() => {
+            if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+          }}
+        />
+
+        {/* Floating submit button */}
+        <div className="fixed bottom-8 right-8 z-40">
+          <button
+            disabled={!hasChanges || submitMutation.isPending || !user?.id}
+            onClick={() => submitMutation.mutate()}
+            className={cn(
+              'px-8 py-3 rounded-2xl font-black text-sm transition-all duration-300 shadow-xl flex items-center gap-2',
+              hasChanges && !submitMutation.isPending
+                ? 'bg-foreground text-background hover:scale-105 cursor-pointer'
+                : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-70'
+            )}
+          >
+            {submitMutation.isPending ? (
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
+            ) : (
+              hasChanges && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1, rotate: 360 }}
+                  transition={{
+                    scale: { type: 'spring', stiffness: 200 },
+                    rotate: { repeat: Infinity, duration: 4, ease: 'linear' },
+                  }}
+                >
+                  <CheckCircle2 size={18} className="text-green-400" />
+                </motion.div>
+              )
+            )}
+            <span>
+              {submitMutation.isPending
+                ? 'Saving...'
+                : hasChanges
+                  ? `Submit Changes (${Object.keys(rawChanges).length})`
+                  : 'No Changes'}
+            </span>
+          </button>
+        </div>
+
+        {/* Success modal */}
+        <AnimatePresence>
+          {isModalOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsModalOpen(false)}
+                className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
+              />
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0, y: 40 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.8, opacity: 0, y: 40 }}
+                className="relative bg-white rounded-[3rem] p-10 max-w-sm w-full text-center shadow-3xl border border-slate-100"
+              >
+                <div className="mx-auto bg-green-50 w-24 h-24 rounded-full flex items-center justify-center mb-8 ring-8 ring-green-50/50">
+                  <CheckCircle2 className="h-12 w-12 text-green-600" />
+                </div>
+                <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+                  Session Saved!
+                </h2>
+                <p className="text-slate-500 mt-3 mb-8 leading-relaxed">
+                  Attendance session written to Firestore as a single document.
+                  <br />
+                  <span className="font-bold text-slate-800">
+                    {Object.keys(rawChanges).length === 0
+                      ? Object.keys(committedAttendance).length
+                      : Object.keys(rawChanges).length}{' '}
+                    student records updated.
+                  </span>
+                </p>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl active:scale-95"
+                >
+                  Done
+                </button>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
+    </RoleGuard>
   );
 }
