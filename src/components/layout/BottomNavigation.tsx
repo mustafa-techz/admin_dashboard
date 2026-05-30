@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuthStore } from '@/store/authStore';
+import { useChatStore } from '@/store/chatStore';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -9,12 +10,13 @@ import { NAVIGATION_CONFIG } from '@/config/navigation';
 export default function BottomNavigation() {
   const role = useAuthStore(state => state.role);
   const pathname = usePathname();
+  const isKeyboardOpen = useChatStore(state => state.isKeyboardOpen);
 
   const navLinks = role && NAVIGATION_CONFIG.bottomNav[role] 
     ? NAVIGATION_CONFIG.bottomNav[role] 
     : [];
 
-  if (!role) return null;
+  if (!role || (isKeyboardOpen && pathname?.startsWith('/chat'))) return null;
 
   const isActiveRoute = (linkHref: string) => {
     if (pathname === linkHref) return true;

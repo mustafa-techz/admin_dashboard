@@ -7,6 +7,7 @@ import { Message } from "@/types/chat";
 import { ConversationType } from "@/types/chat";
 import MessageBubble from "./MessageBubble";
 import { useMessages, useRealtimeMessages } from "@/hooks/useChat";
+import { useChatStore } from "@/store/chatStore";
 
 interface MessageListProps {
   conversationId: string;
@@ -50,6 +51,7 @@ export default function MessageList({
   const topSentinelRef = useRef<HTMLDivElement>(null);
   const scrollHeightRef = useRef<number>(0);
   const isFirstLoad = useRef(true);
+  const isKeyboardOpen = useChatStore((state) => state.isKeyboardOpen);
 
   const allMessages =
     data?.pages
@@ -64,10 +66,37 @@ export default function MessageList({
       bottomRef.current?.scrollIntoView({ behavior: "instant" });
       isFirstLoad.current = false;
     } else if (!isFirstLoad.current) {
-      // Smooth scroll for new messages (detected by length change)
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      const lastMessage = allMessages[allMessages.length - 1];
+      const isMine = lastMessage?.senderId === currentUserId;
+
+      const container = containerRef.current;
+      const isNearBottom = container
+        ? container.scrollHeight - container.scrollTop - container.clientHeight < 150
+        : true;
+
+      // Only scroll to bottom if the message is mine OR the user is already near the bottom
+      if (isMine || isNearBottom) {
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      }
     }
-  }, [allMessages.length, isLoading]);
+  }, [allMessages.length, isLoading, currentUserId]);
+
+  // Adjust scroll when keyboard opens
+  useEffect(() => {
+    if (isKeyboardOpen && !isFirstLoad.current) {
+      const container = containerRef.current;
+      const isNearBottom = container
+        ? container.scrollHeight - container.scrollTop - container.clientHeight < 200
+        : true;
+
+      if (isNearBottom) {
+        const timer = setTimeout(() => {
+          bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 120);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isKeyboardOpen]);
 
   // 2. Preserve scroll position when loading history (prepending)
   useEffect(() => {

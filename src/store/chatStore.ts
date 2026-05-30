@@ -16,6 +16,8 @@ interface ChatUIState {
   isNewChatModalOpen: boolean;
   /** Which tab inside the new-chat modal is active. */
   newChatTab: "direct" | "group" | "broadcast";
+  /** Mobile: whether the software keyboard is open. */
+  isKeyboardOpen: boolean;
 
   // Actions
   setActiveChatId: (id: string | null) => void;
@@ -25,6 +27,7 @@ interface ChatUIState {
   closeMobileChat: () => void;
   openNewChatModal: (tab?: "direct" | "group" | "broadcast") => void;
   closeNewChatModal: () => void;
+  setKeyboardOpen: (open: boolean) => void;
 }
 
 export const useChatStore = create<ChatUIState>((set) => ({
@@ -35,6 +38,7 @@ export const useChatStore = create<ChatUIState>((set) => ({
   isMobileChatOpen: false,
   isNewChatModalOpen: false,
   newChatTab: "direct",
+  isKeyboardOpen: false,
 
   setActiveChatId: (id) => set({ activeChatId: id }),
 
@@ -66,4 +70,7 @@ export const useChatStore = create<ChatUIState>((set) => ({
 
   closeNewChatModal: () =>
     set({ isNewChatModalOpen: false }),
+
+  setKeyboardOpen: (open) =>
+    set({ isKeyboardOpen: open }),
 }));

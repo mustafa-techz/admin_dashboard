@@ -49,6 +49,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return
       }
 
+      setLoading(true)
+
       try {
         const userSnapshot = await getDoc(doc(db, "users", currentUser.uid))
         const userData = userSnapshot.data()

@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { MessageSquareDashed } from "lucide-react";
 import { useChatStore } from "@/store/chatStore";
+import { useVisualViewport } from "@/hooks/useVisualViewport";
 import ChatSidebar from "./ChatSidebar";
 import ChatWindow from "./ChatWindow";
 import dynamic from 'next/dynamic';
@@ -14,6 +15,8 @@ export default function ChatLayout() {
   const isMobileChatOpen = useChatStore(state => state.isMobileChatOpen);
   const setActiveChatId = useChatStore(state => state.setActiveChatId);
   const openMobileChat = useChatStore(state => state.openMobileChat);
+
+  const { height, offsetTop, isKeyboardOpen } = useVisualViewport();
 
   const handleSelectChat = useCallback(
     (chatId: string) => {
@@ -31,7 +34,23 @@ export default function ChatLayout() {
   );
 
   return (
-    <div className="flex h-full overflow-hidden md:rounded-xl md:border md:border-border md:shadow-soft bg-background">
+    <div
+      style={
+        typeof window !== "undefined" && window.innerWidth < 768
+          ? {
+              position: "fixed",
+              top: isKeyboardOpen ? `${offsetTop}px` : "4rem",
+              left: 0,
+              right: 0,
+              height: isKeyboardOpen
+                ? `${height}px`
+                : `calc(${height}px - 8rem - env(safe-area-inset-bottom, 0px))`,
+              zIndex: 40,
+            }
+          : {}
+      }
+      className="flex h-full overflow-hidden md:rounded-xl md:border md:border-border md:shadow-soft bg-background"
+    >
       {/* ── Sidebar ──────────────────────────────────────────────────────── */}
       {/* Desktop: always visible | Mobile: hidden when chat is open */}
       <div

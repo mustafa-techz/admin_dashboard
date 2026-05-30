@@ -31,16 +31,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative">
+    <div className={`bg-background flex flex-col relative ${pathname?.startsWith('/chat') ? 'h-[100dvh] md:h-auto md:min-h-screen overflow-hidden' : 'min-h-screen'}`}>
       <div className="half-moon-bg" />
       {pathname !== '/login' && <Header />}
 
       <main
-        className={`flex-1 relative z-10 ${pathname !== '/chat' ? 'pb-20 md:pb-0 md:pt-16' : ''}`}
+        className={`flex-1 relative z-10 min-h-0 flex flex-col ${!pathname?.startsWith('/chat') ? 'pb-20 md:pb-0 md:pt-16' : ''}`}
       >
-        {pathname === '/chat' ? (
-          // Full-height. On mobile, subtract Header (4rem) + BottomNav (4rem) = 8rem. On desktop, just Header (4rem).
-          <div className="h-[calc(100dvh-8rem)] md:h-[calc(100dvh-4rem)] w-full">
+        {pathname?.startsWith('/chat') ? (
+          <div className="h-full w-full flex-1 flex flex-col min-h-0">
             {children}
           </div>
         ) : (
